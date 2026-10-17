@@ -82,9 +82,6 @@ function office(C) {
   O.add(box(9, .3, 2.4, '#2A2E3A', 0, 3.4, 7));             // canopy
   const s = sign('BROKAI LABS', 13, 2, { bg: '#16192E', fg: '#FFC93C', glow: true, font: '900 76px "Big Shoulders Display", "Arial Narrow", sans-serif' });
   s.position.set(0, 9.8, 6.08); O.add(s);
-  // rooftop sign box (visible over the street)
-  const rs = sign('BROKAI LABS', 10, 1.6, { bg: '#16192E', fg: '#FFC93C', glow: true, font: '900 76px "Big Shoulders Display", "Arial Narrow", sans-serif' });
-  rs.position.set(0, 15, 2); O.add(rs); O.add(box(.2, 1.6, .2, '#444', -4.6, 13.6, 1.9)); O.add(box(.2, 1.6, .2, '#444', 4.6, 13.6, 1.9));
   // a planter and a bench at the entrance
   O.add(box(3, .6, 1, '#4A4F5C', -7, 0, 7)); O.add(ball(.7, '#3E7A46', -7.6, 1, 7, 1)); O.add(ball(.6, '#3E7A46', -6.4, .95, 7, 1));
   C.add(O, x0, z0);
