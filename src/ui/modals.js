@@ -32,7 +32,7 @@ export function setupModals({ onGo }) {
     ['irving', '7-Eleven', '7-Eleven, Data Scientist co-op (Jun–Dec 2022): PySpark ETL across 10+ sources (data accuracy up 18%, KPI runtimes down 23.7%); clustering of 1,000+ promotional offers at 98.2% accuracy.'],
     ['boston', 'Northeastern University', 'Master\'s, Northeastern University, Boston.'],
     ['blr', 'ANA Packaging & Trading', 'A year at ANA Packaging & Trading, a paper-cup factory (2020–21), straight through COVID.'],
-    ['blr', 'Engineering college', 'Bachelor\'s in mechanical engineering, Bangalore. Grew up in Nadiad, Gujarat, where the family runs a dairy farm.'],
+    ['blr', 'PES University', 'Bachelor\'s in mechanical engineering at PES University, Bangalore. Grew up in Nadiad, Gujarat, where the family runs a dairy farm.'],
   ];
   $('#quickList').innerHTML = facts.map(([id, t, txt]) => { const [ci, k] = spotIdx(id, t); return `<li>${esc(txt)} <button class="go" type="button" data-go="${ci}:${k}">See it</button></li>`; }).join('');
   $('#quickContact').innerHTML = contactHtml();
