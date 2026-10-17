@@ -181,7 +181,7 @@ export function build() {
   wt.add(cyl(.9, .9, WY, '#D6D9DB', 0, 0, 0, 8));
   for (let i = 0; i < 6; i++) { const a = i / 6 * Math.PI * 2; const l = cyl(.22, .26, WY + 2.5, '#C9CCCE', Math.cos(a) * 4.6, 0, Math.sin(a) * 4.6, 6); wt.add(l); }
   wt.add(cyl(4.9, 4.9, .4, '#C9CCCE', 0, WY * .55, 0, 12)); wt.add(cyl(6.3, 6.3, .3, '#B9BCBE', 0, WY + 4.6, 0, 20));
-  [0, Math.PI].forEach(r => { const s = sign('IRVING', 8, 2.2, { bg: '#EEF1F2', fg: '#2B5FA8', font: '900 92px "Big Shoulders Display", "Arial Narrow", sans-serif' }); s.position.set(Math.sin(r) * 6.05, WY + 5.2, Math.cos(r) * 6.05); s.rotation.y = r; wt.add(s); });
+  [0, Math.PI].forEach(r => { const s = sign('IRVING', 10, 2.6, { bg: '#EEF1F2', fg: '#2B5FA8', font: '900 92px "Big Shoulders Display", "Arial Narrow", sans-serif' }); s.position.set(Math.sin(r) * 6.1, WY + 5.2, Math.cos(r) * 6.05); s.rotation.y = r; wt.add(s); });
   C.add(wt, 74, -12, -.5);
 
   // ---------- convenience store + fuel canopy (generic, no brand) ----------
@@ -212,8 +212,8 @@ export function build() {
   C.crowd([[SX - 5, 36], [SX + 3, 35.5], [SX + 10, 40]]);
 
   // ---------- Reunion Tower + Dallas skyline on the horizon ----------
-  C.add(reunionTower(), 125, -175);
-  [[147, -195, 12, 46], [161, -180, 10, 34], [171, -205, 14, 56], [185, -190, 10, 40], [137, -210, 10, 30]].forEach(([x, z, w, h], i) => C.add(box(w, h, w, mat(['#9DB3C6', '#B5C4D0', '#8FA7BB'][i % 3], { fog: false })), x, z));
+  C.add(reunionTower(), 178, -100);
+  [[196, -118, 12, 46], [206, -96, 10, 34], [214, -136, 14, 56], [190, -146, 10, 40], [222, -112, 10, 30]].forEach(([x, z, w, h], i) => C.add(box(w, h, w, mat(['#9DB3C6', '#B5C4D0', '#8FA7BB'][i % 3], { fog: false })), x, z));
 
   // ---------- live oaks, dry grass, scrub ----------
   [[-80, 30], [-62, 36], [10, 34], [26, 30], [44, 36], [-90, -20], [100, 20], [-100, 44], [62, 26], [-14, 30]].forEach(([x, z]) => C.add(liveOak(.9 + rnd() * .4), x, z));
