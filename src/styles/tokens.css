@@ -1,0 +1,32 @@
+/* Design tokens shared by the app shell, cards and missions. Single look by choice (no theme switch). */
+:root{
+  color-scheme: dark;
+  --ink:#16192E; --ink-soft:#4B4F69; --paper:#FFFBF3; --paper-2:#F3ECDD; --line:#E3D9C5;
+  --sun:#FFC93C; --sun-ink:#4A3200; --live:#F0473C; --night:#0B1026; --ok:#2E7D4F; --warn:#B5651D;
+  --display:'Big Shoulders Display','Arial Narrow',sans-serif;
+  --body:'Schibsted Grotesk',system-ui,-apple-system,sans-serif;
+  --hand:'Kalam','Segoe Print','Comic Sans MS',cursive;
+  --mono:ui-monospace,'SF Mono',Menlo,Consolas,monospace;
+}
+html,body{height:100%}
+body{margin:0;background:var(--night);color:var(--paper);font-family:var(--body);font-size:15px}
+button{font:inherit;color:inherit;cursor:pointer}
+[hidden]{display:none!important}
+:focus-visible{outline:3px solid var(--sun);outline-offset:3px}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+.btn{min-height:44px;padding:0 18px;border-radius:22px;border:2px solid var(--ink);background:var(--paper);color:var(--ink);font-weight:700;font-size:14px;display:inline-flex;align-items:center;gap:8px}
+.btn.primary{background:var(--sun);border-color:var(--sun);color:var(--sun-ink);box-shadow:0 4px 0 #C99318}
+.btn.primary:active{transform:translateY(2px);box-shadow:0 2px 0 #C99318}
+.btn:disabled{opacity:.55;cursor:default}
+/* Paper card used for story cards and the mission harness */
+.card{background:var(--paper);color:var(--ink);border-radius:8px;box-shadow:0 20px 50px rgba(0,0,0,.35);padding:24px}
+.card p{line-height:1.6;margin:0 0 10px}
+.card .city{font-family:var(--hand);font-size:18px;line-height:1.45;color:#5A4A2E;background:var(--paper-2);padding:10px 12px;border-radius:6px}
+.card .todo{border:1.5px dashed #B9AE96;border-radius:6px;padding:8px 10px;color:var(--ink-soft);font-family:var(--hand);font-size:16px}
+/* Show-your-work panel */
+.worklog{list-style:none;margin:0;padding:0;font-size:13px;color:var(--ink)}
+.worklog li{display:flex;gap:10px;padding:8px 0;border-top:1px solid var(--line)}
+.worklog .wl-n{flex:none;width:22px;height:22px;border-radius:11px;background:var(--ink);color:var(--paper);display:grid;place-items:center;font-size:11px;font-weight:700}
+.worklog em{font-style:normal;color:var(--ok);font-weight:700;font-family:var(--mono);font-size:12px}
+.worklog pre{margin:4px 0 0;white-space:pre-wrap;font-family:var(--mono);font-size:12px;color:var(--ink-soft);background:var(--paper-2);padding:6px 8px;border-radius:4px;max-height:160px;overflow:auto}
+.worklog .wl-empty{color:var(--ink-soft)}
