@@ -1,6 +1,6 @@
 // Bangalore — evening rush, the streetlights coming on.
 // Layout: main road along x. North (z<0): engineering college + cricket ground, darshini, shop row, Vidhana Soudha far behind.
-// South (z>0): ANA paper-cup factory. Namma Metro (Purple Line) viaduct runs along z at x = -62 and crosses the road.
+// South (z>0): ANA paper-cup factory, Cubbon-style lawn. Namma Metro (Purple Line) viaduct runs parallel to the road at z = -23.
 import { newCity } from '../kit/city.js';
 import {
   THREE, mat, glow, mesh, box, cyl, cone, ball, lathe, extrude, grp, building, sign,
@@ -54,7 +54,7 @@ export function build() {
 
   // ---------- spots (order = stops.js) ----------
   C.spot(-20, 11, -11);   // 1 Engineering college (gate)
-  C.spot(2, 20, 29);     // 2 ANA Packaging & Trading
+  C.spot(0, 16, 29); // 2 ANA Packaging & Trading
   C.spot(16, 6, -16);     // 3 The darshini
   return C;
 }
