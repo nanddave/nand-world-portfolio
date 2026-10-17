@@ -120,8 +120,7 @@ function lane(C) {
   // low tiled-roof houses (south-west, kept low so the lane stays visible)
   [[-64, 24], [-50, 27], [-36, 22], [-74, 34], [-58, 38], [-12, 22], [4, 25]].forEach(([hx, hz], i) => {
     const g = grp(box(8, 3, 6, ['#F0DDBA', '#E9C9A0', '#DCE6D4'][i % 3]), box(1.2, 2.1, .1, WOOD, 0, 0, 3.02), box(1, .9, .1, '#4A6A7A', 2.4, 1.2, 3.02), box(1, .9, .1, '#4A6A7A', -2.4, 1.2, 3.02));
-    [-1, 1].forEach(sd => { const r = box(8.8, .2, 3.8, '#B5532E', 0, 0, 0); r.position.set(0, 3.55, sd * 1.6); r.rotation.x = sd * .45; g.add(r); });
-    g.add(extrude([[-3, 0], [3, 0], [0, 1.5]], 8, '#E3CBA4')); g.children[g.children.length - 1].rotation.y = Math.PI / 2; g.children[g.children.length - 1].position.y = 3;
+    g.add(extrude([[-3.5, 0], [3.5, 0], [0, 1.7]], 8.8, '#B5532E')); g.children[g.children.length - 1].rotation.y = Math.PI / 2; g.children[g.children.length - 1].position.y = 3;
     C.add(g, hx, hz, (i % 2) * .2);
   });
   return roofs;
@@ -246,7 +245,7 @@ function kites(C, roofs) {
   });
   const ks = [];
   for (let i = 0; i < 18; i++) {
-    const m = new THREE.MeshStandardMaterial({ color: COLS[i % COLS.length], side: THREE.DoubleSide, roughness: .6 });
+    const m = new THREE.MeshStandardMaterial({ color: COLS[i % COLS.length], emissive: COLS[i % COLS.length], emissiveIntensity: .35, side: THREE.DoubleSide, roughness: .6 });
     const k = new THREE.Mesh(kgeo, m); k.scale.setScalar(1.2 + rnd() * .5);
     const tail = new THREE.Mesh(new THREE.ConeGeometry(.35, .6, 3), m); tail.position.y = -1.2; tail.rotation.z = Math.PI; k.add(tail);
     const home = new THREE.Vector3(-50 + rnd() * 100, 12 + rnd() * 10, -34 + rnd() * 50);

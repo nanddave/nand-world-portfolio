@@ -37,7 +37,7 @@ export function mount(el, ctx) {
   function drawTL() {
     const rows = turns.length; const svg = $('tl'); let h = '';
     LANES.forEach(([n, c], i) => { h += `<rect x="${8 + i * 78}" y="2" width="9" height="9" fill="${c}"/><text x="${21 + i * 78}" y="10" font-size="9">${n}</text>`; });
-    turns.forEach((t, r) => { let x = 46; const y = 20 + r * 22; h += `<text x="0" y="${y + 10}" font-size="9" font-family="monospace">turn ${r + 1}</text>`; t.forEach((d, i) => { if (!d) return; const w = d / 1500 * 260; h += `<rect x="${x.toFixed(1)}" y="${y}" width="${w.toFixed(1)}" height="14" rx="2" fill="${LANES[i][1]}"/>${w > 22 ? `<text x="${(x + 3).toFixed(1)}" y="${y + 10}" font-size="8" fill="#fff">${d}</text>` : ''}`; x += w; }); h += `<text x="${(x + 4).toFixed(1)}" y="${y + 10}" font-size="9" font-family="monospace">${t.reduce((a, b) => a + b, 0)} ms</text>`; });
+    turns.forEach((t, r) => { let x = 46; const y = 20 + r * 22; h += `<text x="0" y="${y + 10}" font-size="9" font-family="monospace">turn ${r + 1}</text>`; t.forEach((d, i) => { if (!d) return; const w = d / 1800 * 240; h += `<rect x="${x.toFixed(1)}" y="${y}" width="${w.toFixed(1)}" height="14" rx="2" fill="${LANES[i][1]}"/>${w > 22 ? `<text x="${(x + 3).toFixed(1)}" y="${y + 10}" font-size="8" fill="#fff">${d}</text>` : ''}`; x += w; }); h += `<text x="${(x + 4).toFixed(1)}" y="${y + 10}" font-size="9" font-family="monospace">${t.reduce((a, b) => a + b, 0)} ms</text>`; });
     if (!rows) h += '<text x="160" y="60" text-anchor="middle" font-size="10" fill="#4B4F69">Play the call to fill this in</text>';
     svg.innerHTML = h;
   }
@@ -70,7 +70,7 @@ export function mount(el, ctx) {
       if (!L.alive) return; let result = null; let tt = now();
       if (line.who === 'agent') {
         const st = STAGE[agentTurn] || STAGE[0];
-        if (line.tool) { drawCal(line.tool.args.time); $('st').textContent = `calling ${line.tool.name}…`; if (!await L.sleep(ctx.reduceMotion ? 50 : 500)) return; result = tools[line.tool.name](line.tool.args); drawCal(); ctx.work.step(`tool: ${line.tool.name}`, `args: ${json(line.tool.args)}\nresult: ${json(result)}`, { ms: ms(tt) }); }
+        if (line.tool) { drawCal(line.tool.args.time); $('st').textContent = `calling ${line.tool.name}…`; if (!await L.sleep(ctx.reduceMotion ? 50 : 500)) return; tt = now(); result = tools[line.tool.name](line.tool.args); drawCal(); ctx.work.step(`tool: ${line.tool.name}`, `args: ${json(line.tool.args)}\nresult: ${json(result)}`, { ms: ms(tt) }); }
         turns.push([...st.slice(0, 2), line.tool ? st[2] : 0, st[3]]); drawTL(); agentTurn++;
       }
       const text = typeof line.text === 'function' ? line.text(result) : line.text;

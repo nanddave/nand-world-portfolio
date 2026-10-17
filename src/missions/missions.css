@@ -1,5 +1,5 @@
 /* Missions: rendered inside a light paper card (~440px, must work at 360px). All classes prefixed ms-. */
-.ms{color:var(--ink);font-family:var(--body);font-size:14px;line-height:1.5;display:flex;flex-direction:column;gap:12px;min-width:0}
+.ms{overflow-wrap:anywhere;color:var(--ink);font-family:var(--body);font-size:14px;line-height:1.5;display:flex;flex-direction:column;gap:12px;min-width:0}
 .ms *{box-sizing:border-box}
 .ms{color-scheme:light}
 .ms input[type=radio],.ms input[type=checkbox]{accent-color:var(--ink);width:16px;height:16px}
@@ -115,7 +115,7 @@ svg.ms-svg{display:block;width:100%;height:auto}
 .ms-sketch{display:grid;gap:6px}
 .ms-sk{border:1.5px dashed #B9AE96;border-radius:6px;padding:8px 10px;background:#fff}
 .ms-sk b{display:block;font-family:var(--hand);font-size:16px}
-.ms-email{display:flex;gap:6px;align-items:center;flex-wrap:wrap;font-family:var(--mono);font-size:13px}
+.ms-email{word-break:break-all;display:flex;gap:6px;align-items:center;flex-wrap:wrap;font-family:var(--mono);font-size:13px}
 
 @media (max-width:400px){
   .ms-station .ms-read{font-size:9.5px}
