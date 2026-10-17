@@ -4,6 +4,8 @@
 // Behind: downtown with the Transamerica Pyramid, Coit Tower on Telegraph Hill, then the bay and the Golden Gate Bridge.
 // South side: Alamo-Square-style park slope with the hilltop lookout bench.
 import { newCity } from '../kit/city.js';
+import { addOSM } from '../kit/osm.js';
+import sfOSM from '../data/osm/sf.json';
 import { THREE, mat, glow, mesh, box, cyl, cone, ball, lathe, extrude, tube, grp, building, person, SKIN, treeRound, streetLight, car, cablecar, rnd, reseed } from '../kit/kit.js';
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 
@@ -263,5 +265,12 @@ export function build() {
 
   C.spot(18, 5.5, -11);
   C.spot(-30, PR + 2.5, 33);
+  addOSM(C, sfOSM, {
+    handRoads: [{ z: 0, half: 8, halfX: 115 }],
+    clearBoxes: [{ minX: -54, maxX: -2, minZ: -24, maxZ: -6 },       // Painted Ladies row (the real 710-722 Steiner footprints land here)
+      { minX: -400, maxX: 400, minZ: -600, maxZ: -170 },              // the bay
+      { minX: -218, maxX: -82, minZ: -172, maxZ: -48 }],              // hand-made inlet
+  });
+  C.credit = 'Streets & buildings: © OpenStreetMap contributors';
   return C;
 }

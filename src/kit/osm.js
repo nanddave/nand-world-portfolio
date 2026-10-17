@@ -1,5 +1,11 @@
 // Renders baked OSM JSON (see tools/osm-bake.mjs, docs/PLAN.md 1.3 D) into a city: merged buildings, roads, green, water, a few trees.
-// addOSM(C, data, opts) -> { counts }. opts: { clearRadius, clearBoxes:[{minX,maxX,minZ,maxZ}], roadStrip:{halfZ:8, halfX:130}, maxTrees:300 }
+// addOSM(C, data, opts) -> { counts }. opts:
+//   clearRadius, clearBoxes:[{minX,maxX,minZ,maxZ}]  area kept free of OSM buildings, roads, green, water and trees (big hand-made landmarks, hand-made water/hills)
+//   handRoads:[{z, half, halfX}]  hand-made roads (centre z, half-width incl. verges, half-length) that OSM must not overlap; default one road at z=0, half 8, halfX 130
+//   roadStrip:{halfZ, halfX}  legacy shorthand for handRoads[0]
+//   greenColor, treeColors:[3 hex], roofColor, roadColor  palette overrides (e.g. snow)
+//   maxTrees:300
+// Anything whose footprint/midpoint falls on a hand-made object (auto-derived colliders: height > 1.2 m, i.e. also raised hand-made hills and pedestals) is dropped instead of floating or sinking.
 import { THREE, mat } from './kit.js';
 import { autoColliders, overlaps } from './collide.js';
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
@@ -84,17 +90,22 @@ function roofGeo(p, h) {
 
 export function addOSM(C, data, opts = {}) {
   const night = !!C.cfg?.night, scene = C.scene;
-  const strip = Object.assign({ halfZ: 8, halfX: 130 }, opts.roadStrip || {});
+  const strip0 = Object.assign({ halfZ: 8, halfX: 130 }, opts.roadStrip || {});
+  const handRoads = opts.handRoads || [{ z: 0, half: strip0.halfZ, halfX: strip0.halfX }];
+  const onRoad = (x, z, pad = 0) => handRoads.some(r => Math.abs(z - r.z) < r.half + pad && Math.abs(x) < r.halfX);
   const hand = autoColliders(C, { explicit: false });
   const clearBoxes = (opts.clearBoxes || []);
   const clearR = opts.clearRadius || 0;
   if (!C.colliders) C.colliders = [];
   const blocked = (bb, m = 2) => {
-    if (bb.maxZ > -strip.halfZ - 1 && bb.minZ < strip.halfZ + 1 && bb.maxX > -strip.halfX && bb.minX < strip.halfX) return true; // main road + verges
+    for (const r of handRoads) if (bb.maxZ > r.z - r.half - 1 && bb.minZ < r.z + r.half + 1 && bb.maxX > -r.halfX && bb.minX < r.halfX) return true; // hand-made roads + verges
     for (const c of hand) if (overlaps(bb, c, m)) return true;
     for (const c of clearBoxes) if (overlaps(bb, c, 0)) return true;
     return false;
   };
+  const inClear = (x, z) => { for (const c of clearBoxes) if (x > c.minX && x < c.maxX && z > c.minZ && z < c.maxZ) return true; return clearR > 0 && Math.hypot(x, z) < clearR; };
+  const inHandAt = (x, z, m = 0) => { for (const c of hand) if (x > c.minX - m && x < c.maxX + m && z > c.minZ - m && z < c.maxZ + m) return true; return false; };
+  const polyBlocked = a => { const p = decode(a); let cx = 0, cz = 0; p.forEach(q => { cx += q[0]; cz += q[1]; }); cx /= p.length; cz /= p.length; return inClear(cx, cz) || inHandAt(cx, cz) || onRoad(cx, cz, -2); };
   const counts = { buildings: 0, skippedB: 0, roads: 0, green: 0, water: 0, trees: 0, meshes: 0 };
   const add = (m, shadow = false) => { m.userData.noCollide = true; m.castShadow = shadow; m.receiveShadow = true; scene.add(m); counts.meshes++; return m; };
 
@@ -122,7 +133,7 @@ export function addOSM(C, data, opts = {}) {
     if (night) { o.emissive = new THREE.Color(0xffffff); o.emissiveMap = t.emi; o.emissiveIntensity = 1; }
     add(new THREE.Mesh(mergeGeometries(list, false), new THREE.MeshStandardMaterial(o)), true);
   });
-  if (roofs.length) add(new THREE.Mesh(mergeGeometries(roofs, false), mat('#7C7770', { flatShading: false })), true);
+  if (roofs.length) add(new THREE.Mesh(mergeGeometries(roofs, false), mat(opts.roofColor || '#7C7770', { flatShading: false })), true);
 
   // ---- roads: flat ribbons, one segment quad each ----
   const rp = [], ri = [];
@@ -132,8 +143,8 @@ export function addOSM(C, data, opts = {}) {
       const w = ROAD_W[rec[0]] ?? 6, pts = decode(rec.slice(1));
       for (let i = 0; i + 1 < pts.length; i++) {
         const [ax, az] = pts[i], [bx, bz] = pts[i + 1], mx = (ax + bx) / 2, mz = (az + bz) / 2;
-        if (Math.abs(mz) < strip.halfZ + w / 2 && Math.abs(mx) < strip.halfX) continue; // hand-made main road
-        if (inHand(mx, mz)) continue;
+        if (onRoad(mx, mz, w / 2)) continue; // hand-made roads
+        if (inHand(mx, mz) || inClear(mx, mz)) continue;
         const dx = bx - ax, dz = bz - az, L = Math.hypot(dx, dz); if (L < .1) continue;
         const nx = -dz / L * w / 2, nz = dx / L * w / 2, ex = dx / L * w * .25, ez = dz / L * w * .25; // slight overlap closes joints
         const k = rp.length / 3, y = .02;
@@ -148,20 +159,21 @@ export function addOSM(C, data, opts = {}) {
   if (rp.length) {
     const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(rp, 3));
     g.setAttribute('normal', new THREE.Float32BufferAttribute(rp.map((_, i) => i % 3 === 1 ? 1 : 0), 3)); g.setIndex(ri);
-    const m = new THREE.MeshStandardMaterial({ color: '#4A4B53', roughness: .9, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2 });
+    const m = new THREE.MeshStandardMaterial({ color: opts.roadColor || '#4A4B53', roughness: .9, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2 });
     add(new THREE.Mesh(g, m));
   }
 
   // ---- green + water ----
   const poly = (list, y) => { const gs = []; list.forEach(a => { try { const g = flatPoly(decode(a), y); if (g) gs.push(g); } catch (e) { /* skip */ } }); return gs; };
-  const greens = poly(data.g || [], .015); counts.green = greens.length;
-  if (greens.length) add(new THREE.Mesh(mergeGeometries(greens, false), new THREE.MeshStandardMaterial({ color: '#5E7A44', roughness: .95, polygonOffset: true, polygonOffsetFactor: -1, polygonOffsetUnits: -1 })));
-  const waters = poly(data.w || [], .012); counts.water = waters.length;
+  const greens = poly((data.g || []).filter(a => !polyBlocked(a)), .015); counts.green = greens.length;
+  if (greens.length) add(new THREE.Mesh(mergeGeometries(greens, false), new THREE.MeshStandardMaterial({ color: opts.greenColor || '#5E7A44', roughness: .95, polygonOffset: true, polygonOffsetFactor: -1, polygonOffsetUnits: -1 })));
+  const waters = poly((data.w || []).filter(a => !polyBlocked(a)), .012); counts.water = waters.length;
   if (waters.length) add(new THREE.Mesh(mergeGeometries(waters, false), new THREE.MeshStandardMaterial({ color: '#3C5A7A', roughness: .25, metalness: .1 })));
 
   // ---- trees inside parks (instanced, seeded) ----
   const maxTrees = Math.min(opts.maxTrees ?? 300, 300), rt = rng(23), spots = [];
-  const parks = (data.g || []).map(decode).filter(p => p.length > 3 && Math.abs(sarea(p)) > 250).sort((a, b) => Math.abs(sarea(b)) - Math.abs(sarea(a)));
+  const tcol = opts.treeColors || ['#4A7F3A', '#5E8C3E', '#6F9A3F'];
+  const parks = (data.g || []).filter(a => !polyBlocked(a)).map(decode).filter(p => p.length > 3 && Math.abs(sarea(p)) > 250).sort((a, b) => Math.abs(sarea(b)) - Math.abs(sarea(a)));
   const inPoly = (p, x, z) => { let c = false; for (let i = 0, j = p.length - 1; i < p.length; j = i++) if ((p[i][1] > z) !== (p[j][1] > z) && x < (p[j][0] - p[i][0]) * (z - p[i][1]) / (p[j][1] - p[i][1]) + p[i][0]) c = !c; return c; };
   const obstacles = hand.concat(C.colliders);
   outer: for (let pass = 0; pass < 6 && spots.length < maxTrees; pass++) {
@@ -171,7 +183,7 @@ export function addOSM(C, data, opts = {}) {
       for (let k = 0; k < want; k++) {
         for (let tr = 0; tr < 6; tr++) {
           const x = bb.minX + rt() * (bb.maxX - bb.minX), z = bb.minZ + rt() * (bb.maxZ - bb.minZ);
-          if (Math.hypot(x, z) > 300 || !inPoly(p, x, z) || Math.abs(z) < strip.halfZ + 3 && Math.abs(x) < strip.halfX) continue;
+          if (Math.hypot(x, z) > 300 || !inPoly(p, x, z) || onRoad(x, z, 3) || inClear(x, z)) continue;
           const b = { minX: x - 1.5, maxX: x + 1.5, minZ: z - 1.5, maxZ: z + 1.5 };
           if (obstacles.some(c => overlaps(b, c, 0)) || clearBoxes.some(c => overlaps(b, c, 0))) continue;
           spots.push([x, z, .8 + rt() * .7, rt()]); break;
@@ -186,7 +198,7 @@ export function addOSM(C, data, opts = {}) {
     spots.forEach(([x, z, s, t], i) => {
       d.position.set(x, 1.3 * s, z); d.scale.setScalar(s); d.rotation.set(0, t * 6, 0); d.updateMatrix(); trunk.setMatrixAt(i, d.matrix);
       d.position.set(x, 3.7 * s, z); d.scale.set(s * 1.15, s * .8, s * 1.15); d.updateMatrix(); crown.setMatrixAt(i, d.matrix);
-      crown.setColorAt(i, c.set(t < .7 ? '#4A7F3A' : t < .9 ? '#5E8C3E' : '#6F9A3F'));
+      crown.setColorAt(i, c.set(t < .7 ? tcol[0] : t < .9 ? tcol[1] : tcol[2]));
     });
     crown.instanceColor.needsUpdate = true;
     add(crown, true); add(trunk, true); counts.trees = n;

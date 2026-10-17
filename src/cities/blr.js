@@ -1,5 +1,5 @@
 // Bangalore — evening rush, the streetlights coming on.
-// Layout: main road along x. North (z<0): engineering college + cricket ground, darshini, shop row, Vidhana Soudha far behind.
+// Layout: main road along x. North (z<0): PES University + cricket ground, darshini, shop row, Vidhana Soudha far behind.
 // South (z>0): ANA paper-cup factory, Cubbon-style lawn. Namma Metro (Purple Line) viaduct runs parallel to the road at z = -23.
 import { newCity } from '../kit/city.js';
 import { addOSM } from '../kit/osm.js';
@@ -55,7 +55,7 @@ export function build() {
   C.hero(-8, 4.6, 0);
 
   // ---------- spots (order = stops.js) ----------
-  C.spot(-20, 11, -11);   // 1 Engineering college (gate)
+  C.spot(-20, 11, -11);   // 1 PES University (gate)
   C.spot(0, 16, 29); // 2 ANA Packaging & Trading
   C.spot(16, 6, -16);     // 3 The darshini
   addOSM(C, blrOSM, { clearRadius: 0, clearBoxes: [{ minX: -5, maxX: 101, minZ: -152, maxZ: -48 }] }); // clearBoxes = hand-made Vidhana Soudha plinth
@@ -147,7 +147,7 @@ function college(C) {
   arch.position.set(gx, 0, gz); C.add(arch);
   C.add(box(14, .6, 2, TRIM, gx, 9, gz));
   [-6.2, 6.2].forEach(dx => { C.add(box(2, 1.4, 2, STONE, gx + dx, 9.6, gz)); C.add(cone(1, 1.2, STONE, gx + dx, 11, gz, 4)); });
-  const cs = sign('ENGINEERING COLLEGE', 10, 1.4, { bg: '#7A2E1E', fg: '#FFE7B8', font: FONT, glow: true }); cs.position.set(gx, 8.2, gz + .82); C.add(cs);
+  const cs = sign('PES UNIVERSITY', 10, 1.4, { bg: '#7A2E1E', fg: '#FFE7B8', font: FONT, glow: true }); cs.position.set(gx, 8.2, gz + .82); C.add(cs);
   [-8, 8].forEach(dx => C.add(ball(.3, glow('#FFD8A0', 2.4), gx + dx * .82, 9.9, gz + 1, 1)));
   // driveway
   C.road(gx, -22, 21, 6, Math.PI / 2, { dash: false, color: '#8E8577' });

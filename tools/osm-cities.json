@@ -1,13 +1,68 @@
 {
   "blr": {
-    "_note": "Anchor = geographic point mapped to the scene origin. rotDeg (applied after equirectangular projection, x'=x cos-z sin, z'=x sin+z cos) is the bearing fit of Doctor B R Ambedkar Veedhi (-46.94 deg in raw east/north-up frame) so it runs along +x. Anchor was solved so the road centre line sits on z=0 and the real Vidhana Soudha relation bbox centre sits at x=48. The real building is ~158 m behind the road (hand-made one is at z=-100), so the real centroid lands near (48,-158); the hand-made group replaces it.",
-    "lat": 12.978430,
-    "lon": 77.591401,
-    "rotDeg": 46.94,
-    "radius": 650,
+    "_note": "PES University (RR campus, Banashankari). Raw = pes.json (centre 12.9340,77.5360). Fit with tools/osm-fit.mjs: Outer Ring Road (trunk, both carriageways, 250 m fit radius around 12.93625,77.53468, rms 5 m) is rotated onto +x and put at z=0; the campus (amenity=university) lies on the north side (z<0, ~270 m behind the road, the real gap) with its centre at x~-10 so it sits behind the hand-made gate (-20,-11). Anchor lat/lon is the scene origin; rotDeg applied after equirectangular projection (x'=x cos-z sin, z'=x sin+z cos). The hand-made Vidhana Soudha is a stylised far landmark; its footprint is kept clear via clearBoxes in src/cities/blr.js.",
+    "raw": "pes",
+    "lat": 12.936873,
+    "lon": 77.53341,
+    "rotDeg": 152.29,
+    "radius": 450,
+    "clearRadius": 0
+  },
+  "nadiad": {
+    "_note": "Raw nadiad.json is sparse (36 buildings, Santram Mandir unmapped). Anchor = the primary road ~215 m west-south-west of the raw centre 22.6933,72.8622 (the only primary/secondary within reach), fitted with tools/osm-fit.mjs over 150 m (rms 0.3 m) and rotated onto +x; the denser side (Virgo Arcade, bus-station cluster) is put on the north side (z<0) to match the hand-made north houses. rotDeg applied after equirectangular projection (x'=x cos-z sin, z'=x sin+z cos).",
+    "lat": 22.693082,
+    "lon": 72.860126,
+    "rotDeg": -164.4,
+    "radius": 450,
+    "clearRadius": 0
+  },
+  "boston": {
+    "_note": "Beacon Street (primary, rms 2 m) fitted along x directly below the State House dome: the real dome centre lands at about x=-18, 55 m behind the road centre line (hand-made State House is at (-18,-60)). Real 'Massachusetts State House' footprint excluded so the hand-made dome replaces it. Common/snow green is recoloured at runtime. Radius reduced to keep the JSON under 120 KB.",
+    "lat": 42.357774,
+    "lon": -71.063112,
+    "rotDeg": 23.82,
+    "radius": 420,
     "clearRadius": 0,
-    "exclude": ["Vidhana Soudha"],
-    "landmarkAt": { "name": "Vidhana Soudha", "x": 48, "z": -100 },
-    "rawCentre": { "lat": 12.97935, "lon": 77.59070 }
+    "exclude": [
+      "Massachusetts State House"
+    ],
+    "minArea": 20,
+    "simp": 0.8
+  },
+  "irving": {
+    "_note": "North O'Connor Boulevard (secondary, both carriageways, rms 9 m) put on z=12 so it coincides with the hand-made Las Colinas Blvd (road centre z=12); the real Williams Square centre (raw centre 32.8693,-96.9387) maps to x=8 (hand-made PX=8) and lies north (z<0) of the road ~75 m, the real gap.",
+    "lat": 32.86986,
+    "lon": -96.938703,
+    "rotDeg": -172.31,
+    "radius": 450,
+    "clearRadius": 0
+  },
+  "seattle": {
+    "_note": "1st Avenue (secondary, rms 9 m: it bends) along x at z=0 with the raw centre (Pike Place Market, 47.6097,-122.3422) at x=-6 (hand-made market at (-6,-21)); the real market is ~90 m behind 1st Ave (it sits on Pike Place, one block west). Elliott Bay is left to the hand-made water plane (z<-100 is cleared at runtime).",
+    "lat": 47.610198,
+    "lon": -122.341432,
+    "rotDeg": 129.36,
+    "radius": 400,
+    "clearRadius": 0,
+    "minArea": 20,
+    "simp": 0.8
+  },
+  "sf": {
+    "_note": "Steiner Street (residential, N-S, rms 0 m) rotated onto +x (heading south) at z=0; the Painted Ladies (710-722 Steiner, east side of the street = north side after rotation) are centred at x=-28 to coincide with the hand-made row (x -47..-9, z -15). Real Painted Ladies footprints are cleared at runtime via clearBoxes. Radius reduced for the 120 KB budget.",
+    "lat": 37.776,
+    "lon": -122.432936,
+    "rotDeg": -80.86,
+    "radius": 360,
+    "clearRadius": 0,
+    "minArea": 25,
+    "simp": 1.0
+  },
+  "brokai": {
+    "_note": "Whitefield Road (primary, rms 8 m over 200 m) along x at z=0; anchored at its closest point to the raw centre (12.9857,77.7365, ITPL/Whitefield tech parks), which lies on the north side (z<0) like the hand-made tech park.",
+    "lat": 12.98763,
+    "lon": 77.736334,
+    "rotDeg": 177.65,
+    "radius": 450,
+    "clearRadius": 0
   }
 }

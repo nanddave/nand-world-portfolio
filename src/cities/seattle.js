@@ -1,5 +1,7 @@
 // Seattle & Bellevue — rain, overcast. Space Needle, Mount Rainier, Pike Place Market, monorail, Bellevue towers, ferry.
 import { newCity } from '../kit/city.js';
+import { addOSM } from '../kit/osm.js';
+import seattleOSM from '../data/osm/seattle.json';
 import { THREE, V, mat, glow, mesh, box, cyl, cone, ball, lathe, tube, grp, building, sign, fir, car, person, SKIN, streetLight, rnd, reseed } from '../kit/kit.js';
 
 const WHITE = '#ECEBE6';
@@ -204,5 +206,12 @@ export function build() {
   C.spot(34, 6.5, -16); // 2 Catch the leak
   C.spot(58, 17, -16); // 3 Agents that argue
   C.spot(16, 4, 19); // 4 badminton court
+  addOSM(C, seattleOSM, {
+    handRoads: [{ z: 0, half: 10, halfX: 125 }],
+    clearBoxes: [{ minX: -400, maxX: 400, minZ: -600, maxZ: -98 },  // Elliott Bay (hand-made water + seawall)
+      { minX: -42, maxX: -2, minZ: -98, maxZ: -60 },                // Space Needle lawn
+      { minX: 16, maxX: 84, minZ: -38, maxZ: -22 }],                // plaza in front of the Bellevue towers
+  });
+  C.credit = 'Streets & buildings: © OpenStreetMap contributors';
   return C;
 }

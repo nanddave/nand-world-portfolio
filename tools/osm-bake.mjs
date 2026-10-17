@@ -7,7 +7,9 @@ const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const id = process.argv[2] || 'blr';
 const cfg = JSON.parse(fs.readFileSync(path.join(root, 'tools/osm-cities.json'), 'utf8'))[id];
 if (!cfg) throw new Error('no config for ' + id);
-const raw = JSON.parse(fs.readFileSync(path.join(root, `data/osm-raw/${id}.json`), 'utf8'));
+// cfg.raw = raw file stem (default: id). Truncated Overpass dumps (cut off mid-array) are repaired by dropping the last partial element.
+const rawText = fs.readFileSync(path.join(root, `data/osm-raw/${cfg.raw || id}.json`), 'utf8');
+let raw; try { raw = JSON.parse(rawText); } catch (e) { raw = JSON.parse(rawText.slice(0, rawText.lastIndexOf('\n},\n') + 2) + ']}'); console.log('note: raw file was truncated; repaired, kept', raw.elements.length, 'elements'); }
 
 // ---- projection: equirectangular about the anchor, north = -z, then rotate by rotDeg ----
 const kx = Math.cos(cfg.lat * Math.PI / 180) * 111320, kz = 110540;
@@ -59,6 +61,8 @@ function rings(rel) {
   return out;
 }
 
+const MINA = cfg.minArea ?? 12, SIMP = cfg.simp ?? .5, RR = cfg.roadSimp ?? .5, MINH = cfg.roadClasses ?? 0;
+const DROP = new Set(cfg.dropHighway || []), XR = cfg.excludeRects || []; // excludeRects: scene-space [minX,maxX,minZ,maxZ] boxes whose buildings are dropped
 const R = cfg.radius, CR = cfg.clearRadius || 0, ex = new Set(cfg.exclude || []);
 const out = { v: 1, id, attribution: '© OpenStreetMap contributors', anchor: { lat: cfg.lat, lon: cfg.lon, rotDeg: cfg.rotDeg }, b: [], r: [], g: [], w: [] };
 const st = { bIn: 0, bExcl: 0, bTiny: 0, bFar: 0, relNoGeom: 0 };
@@ -80,13 +84,14 @@ function height(t, eid) {
 function addBuilding(geom, t, eid) {
   let p = pg(geom); if (p.length > 1 && p[0][0] === p[p.length - 1][0] && p[0][1] === p[p.length - 1][1]) p.pop();
   if (p.length < 3) return;
-  if (Math.abs(area(p)) < 12) { if (st.bTiny < 3) console.log("tiny", area(p), p.length, JSON.stringify(geom).slice(0,200)); st.bTiny++; return; }
+  if (Math.abs(area(p)) < MINA) { st.bTiny++; return; }
   const c = centroid(p);
-  if (Math.hypot(c[0], c[1]) > R) { if (st.bFar < 3) console.log("far", c, p.length); st.bFar++; return; }
+  if (Math.hypot(c[0], c[1]) > R) { st.bFar++; return; }
   if (Math.hypot(c[0], c[1]) < CR) { st.bExcl++; return; }
   if (ex.has(t.name) || exBounds.some(b => geom.every(g => g.lat >= b.minlat && g.lat <= b.maxlat && g.lon >= b.minlon && g.lon <= b.maxlon) || (() => { const lat = geom.reduce((s, g) => s + g.lat, 0) / geom.length, lon = geom.reduce((s, g) => s + g.lon, 0) / geom.length; return lat >= b.minlat && lat <= b.maxlat && lon >= b.minlon && lon <= b.maxlon; })())) { st.bExcl++; return; }
-  p = dpRing(p, 0.5);
-  if (p.length < 3 || Math.abs(area(p)) < 12) { st.bTiny++; return; }
+  if (XR.some(r => c[0] > r[0] && c[0] < r[1] && c[1] > r[2] && c[1] < r[3])) { st.bExcl++; return; }
+  p = dpRing(p, SIMP);
+  if (p.length < 3 || Math.abs(area(p)) < MINA) { st.bTiny++; return; }
   if (area(p) < 0) p.reverse(); // positive signed area in (x,z) = CCW as drawn here
   out.b.push([Math.round(height(t, eid) * 10) / 10, ...dm(p)]); st.bIn++;
 }
@@ -100,11 +105,11 @@ for (const e of raw.elements) {
     if (e.type === 'way' && e.geometry) {
       const closed = e.geometry.length > 3 && e.geometry[0].lat === e.geometry.at(-1).lat && e.geometry[0].lon === e.geometry.at(-1).lon;
       if (t.building && closed) addBuilding(e.geometry, t, e.id);
-      else if (t.highway && t.highway in HW) {
+      else if (t.highway && t.highway in HW && !DROP.has(t.highway)) {
         const p = pg(e.geometry), cl = []; let cur = [];
         p.forEach(q => { if (Math.hypot(q[0], q[1]) <= R + 20) cur.push(q); else { if (cur.length > 1) cl.push(cur); cur = []; } });
         if (cur.length > 1) cl.push(cur);
-        cl.forEach(l => { l = dp(l, 0.5); if (l.length > 1) out.r.push([HW[t.highway], ...dm(l)]); });
+        cl.forEach(l => { l = dp(l, RR); if (l.length > 1) out.r.push([HW[t.highway], ...dm(l)]); });
       } else if (closed && t.natural === 'water') {
         const p = pg(e.geometry); p.pop(); const c = centroid(p);
         if (Math.hypot(c[0], c[1]) <= R && Math.abs(area(p)) > 20) out.w.push(dm(dpRing(p, 0.8)));

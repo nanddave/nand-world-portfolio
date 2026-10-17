@@ -1,5 +1,7 @@
 // Boston — a snowy winter night. State House gold dome, Zakim bridge, Charles River, Back Bay brownstones, Green Line on Huntington Ave.
 import { newCity } from '../kit/city.js';
+import { addOSM } from '../kit/osm.js';
+import bostonOSM from '../data/osm/boston.json';
 import { THREE, V, mat, glow, mesh, box, cyl, cone, ball, dome, extrude, tube, grp, building, car, person, SKIN, bareTree, trolley, rnd, reseed } from '../kit/kit.js';
 
 const SNOW = '#EEF2F6';
@@ -171,5 +173,12 @@ export function build() {
   C.spot(30, 18, -22.4); // 1 Northeastern University
   C.spot(-11, 8, -15.6); // 2 My first apartment
   C.spot(22, 4.2, 0); // 3 The Green Line
+  addOSM(C, bostonOSM, {
+    handRoads: [{ z: 0, half: 16, halfX: 125 }],
+    greenColor: '#E4EAF0', roofColor: '#EEF2F6', treeColors: ['#C9D3DC', '#D6DEE6', '#E4EAF0'],
+    clearBoxes: [{ minX: -48, maxX: 12, minZ: -104, maxZ: -38 }, // hand-made State House terrace + hill (real footprint is excluded in the bake)
+      { minX: -400, maxX: 400, minZ: -600, maxZ: -152 }],        // Charles River + Zakim bridge
+  });
+  C.credit = 'Streets & buildings: © OpenStreetMap contributors';
   return C;
 }

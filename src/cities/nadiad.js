@@ -2,6 +2,8 @@
 // Layout: old-town lane along x. North side (z<0): pastel 2–3 storey houses with jharokhas; Santram Mandir behind them.
 // South side: a few houses to the east; the family dairy farm to the south-west. Uttarayan kites over the rooftops.
 import { newCity } from '../kit/city.js';
+import { addOSM } from '../kit/osm.js';
+import nadiadOSM from '../data/osm/nadiad.json';
 import {
   THREE, mat, mesh, box, cyl, cone, ball, lathe, extrude, tube, grp, building, sign,
   treeRound, bike, person, SKIN, wheel, rnd, reseed,
@@ -52,6 +54,8 @@ export function build() {
   C.spot(34, 20, -58);                        // 2 Santram Mandir
   C.spot(66, 7, -27);                         // 3 The family farm
   C.spot(flyers.x, flyers.y + 5, flyers.z);   // 4 Uttarayan (rooftops)
+  addOSM(C, nadiadOSM, { handRoads: [{ z: 0, half: 6, halfX: 112 }] });
+  C.credit = 'Streets & buildings: © OpenStreetMap contributors';
   return C;
 }
 

@@ -4,6 +4,8 @@
 // line and the canal behind. South: convenience store + fuel canopy on the frontage road, then a 6-lane highway with a
 // flyover interchange. Far east: Reunion Tower on the Dallas skyline. Water tower "IRVING" to the east.
 import { newCity } from '../kit/city.js';
+import { addOSM } from '../kit/osm.js';
+import irvingOSM from '../data/osm/irving.json';
 import { THREE, mat, glow, mesh, box, cyl, cone, ball, lathe, extrude, grp, building, sign, person, SKIN, car, pickup, semi, streetLight, rnd, reseed } from '../kit/kit.js';
 
 const BRONZE = mat('#7B5531', { metalness: .6, roughness: .4 });
@@ -224,5 +226,10 @@ export function build() {
   C.spot(-48, 24, -16);
   C.spot(PX, 6, PZ);
   C.spot(SX - 4, 3.5, SZ + 4);
+  addOSM(C, irvingOSM, {
+    handRoads: [{ z: 12, half: 10, halfX: 125 }, { z: 52, half: 5, halfX: 125 }, { z: 70, half: 20, halfX: 125 }],
+    clearBoxes: [{ minX: -130, maxX: 130, minZ: -96, maxZ: 4 }], // Williams Square plaza + fountain, towers, DART line, canal
+  });
+  C.credit = 'Streets & buildings: © OpenStreetMap contributors';
   return C;
 }

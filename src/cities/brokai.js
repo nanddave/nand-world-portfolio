@@ -2,6 +2,8 @@
 // Layout: main road along x. North (z<0): Brokai Labs office, the salon storefront, tech-park towers behind.
 // South (z>0): street-food cart, low shops, and the empty lot ("your company here") that C.raiseLot() builds on.
 import { newCity } from '../kit/city.js';
+import { addOSM } from '../kit/osm.js';
+import brokaiOSM from '../data/osm/brokai.json';
 import {
   THREE, mat, glow, box, cyl, ball, grp, building, sign, textTex,
   treeRain, streetLight, auto, car, bike, person, SKIN, wheel, rnd, reseed, clamp,
@@ -46,6 +48,12 @@ export function build() {
   C.spot(-24, 16, -19);   // 1 Brokai Labs
   C.spot(12, 8, -16);     // 2 The salon
   C.spot(-6, 7, 25);      // 3 Your company here
+  addOSM(C, brokaiOSM, {
+    handRoads: [{ z: 0, half: 10, halfX: 135 }],
+    clearBoxes: [{ minX: -19, maxX: 7, minZ: 15, maxZ: 35 },         // the empty lot ("your company here") that raiseLot() builds on
+      { minX: 24, maxX: 36, minZ: -47, maxZ: -14 }],                  // tech-park gate road
+  });
+  C.credit = 'Streets & buildings: © OpenStreetMap contributors';
   return C;
 }
 
