@@ -25,6 +25,28 @@ export const Sound = {
   },
   every(min, max, fn) { const go = () => { fn(); this.timers.push(setTimeout(go, (min + Math.random() * (max - min)) * 1000)); }; this.timers.push(setTimeout(go, min * 500)); },
   stop() { const c = this.ctx; if (!c) return; this.timers.forEach(clearTimeout); this.timers = []; this.nodes.forEach(n => { try { n.gn.gain.setTargetAtTime(0, c.currentTime, .4); n.s.stop(c.currentTime + 1.5); } catch (e) { /* already stopped */ } }); this.nodes = []; },
+  /** One-shot synth voice for horns: osc → optional filter → gain envelope → master. */
+  voice(type, f, at, dur, g, flt) {
+    const c = this.ctx, t = c.currentTime + at, o = c.createOscillator(), gn = c.createGain(); o.type = type; o.frequency.value = f;
+    gn.gain.setValueAtTime(0, t); gn.gain.linearRampToValueAtTime(g, t + .015); gn.gain.setValueAtTime(g, t + dur * .7); gn.gain.exponentialRampToValueAtTime(.0001, t + dur);
+    let out = o; if (flt) { const fl = c.createBiquadFilter(); fl.type = flt[0]; fl.frequency.value = flt[1]; fl.Q.value = flt[2] || 1; o.connect(fl); out = fl; }
+    out.connect(gn); gn.connect(this.master); o.start(t); o.stop(t + dur + .05);
+  },
+  /** City-specific horn. Returns false (and plays nothing) when sound is off. */
+  horn(id) {
+    if (!this.ctx || !this.on) return false; const v = (...a) => this.voice(...a);
+    if (id === 'sf') [0, .28, .56].forEach((t, i) => [[1200, .09], [2470, .05], [3900, .03]].forEach(([f, g]) => { const c = this.ctx, o = c.createOscillator(), gn = c.createGain(), at = c.currentTime + t; o.frequency.value = f; gn.gain.setValueAtTime(g * (1 - i * .15), at); gn.gain.exponentialRampToValueAtTime(.0001, at + .6); o.connect(gn); gn.connect(this.master); o.start(at); o.stop(at + .65); }));
+    else if (id === 'irving') { v('sawtooth', 300, 0, .6, .09, ['lowpass', 1500]); v('sawtooth', 370, 0, .6, .09, ['lowpass', 1500]); }
+    else if (id === 'boston' || id === 'seattle' || id === 'bellevue') { v('sawtooth', 400, 0, .35, .09, ['lowpass', 1800]); v('sawtooth', 500, 0, .35, .09, ['lowpass', 1800]); }
+    else [0, .2].forEach(t => { v('square', 520, t, .13, .07, ['bandpass', 1100, 1.4]); v('square', 780, t, .13, .06, ['bandpass', 1100, 1.4]); });
+    return true;
+  },
+  /** Soft bump when the car hits a wall (0..1). Respects the sound toggle. */
+  thud(k = .5) {
+    if (!this.ctx || !this.on) return; const c = this.ctx, t = c.currentTime, o = c.createOscillator(), gn = c.createGain();
+    o.type = 'sine'; o.frequency.setValueAtTime(120, t); o.frequency.exponentialRampToValueAtTime(40, t + .18);
+    gn.gain.setValueAtTime(.12 + .25 * k, t); gn.gain.exponentialRampToValueAtTime(.0001, t + .22); o.connect(gn); gn.connect(this.master); o.start(t); o.stop(t + .25);
+  },
   play(name, force) {
     this.current = name; if (!this.ctx || !this.on) return; if (!force && this._last === name) return; this._last = name; this.stop(); const S = this;
     const scapes = {

@@ -2,6 +2,8 @@
 // Layout: main road along x. North (z<0): engineering college + cricket ground, darshini, shop row, Vidhana Soudha far behind.
 // South (z>0): ANA paper-cup factory, Cubbon-style lawn. Namma Metro (Purple Line) viaduct runs parallel to the road at z = -23.
 import { newCity } from '../kit/city.js';
+import { addOSM } from '../kit/osm.js';
+import blrOSM from '../data/osm/blr.json';
 import {
   THREE, mat, glow, mesh, box, cyl, cone, ball, lathe, extrude, grp, building, sign,
   treeRain, streetLight, auto, bus, car, bike, person, SKIN, wheel, rnd, reseed,
@@ -56,6 +58,8 @@ export function build() {
   C.spot(-20, 11, -11);   // 1 Engineering college (gate)
   C.spot(0, 16, 29); // 2 ANA Packaging & Trading
   C.spot(16, 6, -16);     // 3 The darshini
+  addOSM(C, blrOSM, { clearRadius: 0, clearBoxes: [{ minX: -5, maxX: 101, minZ: -152, maxZ: -48 }] }); // clearBoxes = hand-made Vidhana Soudha plinth
+  C.credit = 'Streets & buildings: © OpenStreetMap contributors';
   return C;
 }
 

@@ -6,6 +6,7 @@ import { STOPS } from './content/stops.js';
 import { VISITOR } from './core/visitor.js';
 import { createGlobe } from './core/globe.js';
 import { createCityView } from './core/cityview.js';
+import { createDrive } from './core/drive.js';
 import { createPost } from './core/post.js';
 import { Sound } from './core/sound.js';
 import { ask, search, SUGGESTIONS } from './core/copilot.js';
@@ -32,6 +33,8 @@ const post = createPost(renderer, !SMALL);
 const state = { mode: 'intro', cityIdx: -1, spot: -1, stamped: new Set(), missions: new Set(), pending: null, transit: false };
 const globe = createGlobe({ small: SMALL, reduce: REDUCE, pinsEl: $('#pins'), onPin: i => travelTo(i) });
 const city = createCityView({ reduce: REDUCE, spotsEl: $('#pins'), onSpot: k => focusSpot(k) });
+city.drive = createDrive({ cam: city.cam, reduce: REDUCE });
+const drive = city.drive;
 const card = createCard({
   reduce: REDUCE,
   onNext: (ci, k) => { const n = STOPS[ci].spots.length; if (k < n - 1) focusSpot(k + 1); else if (ci < LAST) travelTo(ci + 1); else finish(); },
@@ -83,7 +86,7 @@ async function enterCity(i) {
   const s = STOPS[i]; state.mode = 'city'; state.cityIdx = i; state.spot = -1;
   globe.view = 'hidden'; globe.hidePins(); city.show(i, C);
   document.body.classList.add('incity');
-  $('#cStop').textContent = `Stop ${i + 1} of ${STOPS.length}`; $('#cName').textContent = s.name; $('#cMeta').innerHTML = `${s.region}<br>${s.coord}<br>${s.mood}`; $('#ctitle').classList.add('show');
+  $('#cStop').textContent = `Stop ${i + 1} of ${STOPS.length}`; $('#cName').textContent = s.name; $('#cMeta').innerHTML = `${s.region}<br>${s.coord}<br>${s.mood}`; $('#cCredit').textContent = C.credit || ''; setDriveUI(); $('#ctitle').classList.add('show');
   $('#next').textContent = i < LAST ? `Continue to ${short(STOPS[i + 1])}` : (VISITOR.company ? `Finish: next stop, ${VISITOR.company}` : 'Finish the trip');
   Sound.play(C.cfg?.sound || s.id); updateChips(); fade(false); state.transit = false;
   if (state.pending !== null) { const p = state.pending; state.pending = null; setTimeout(() => state.cityIdx === i && focusSpot(p), REDUCE ? 0 : 1300); }
@@ -92,7 +95,7 @@ async function enterCity(i) {
 }
 async function exitCity() {
   if (state.transit || state.mode !== 'city') return; state.transit = true; card.close(); fade(true); await wait(600);
-  state.mode = 'globe'; city.hide(); globe.view = 'travel'; document.body.classList.remove('incity', 'focus'); $('#ctitle').classList.remove('show');
+  setDrive(false); state.mode = 'globe'; city.hide(); globe.view = 'travel'; document.body.classList.remove('incity', 'focus'); $('#ctitle').classList.remove('show');
   Sound.play('globe'); fade(false); state.transit = false; state.cityIdx = -1; updateChips();
 }
 /** Last stop's continue: with a company, take them to the empty lot first; then back to the globe to roam. */
@@ -157,14 +160,76 @@ addEventListener('pointermove', e => {
   if (state.mode === 'city') city.drag(dx, dy); else if (globe.view === 'intro' || globe.view === 'orbit') globe.drag(dx, dy);
 });
 canvas.addEventListener('wheel', e => { e.preventDefault(); if (state.mode === 'city') city.wheel(e.deltaY); }, { passive: false });
+/* drive mode: keyboard, joystick, HUD */
+const keys = new Set(), hint = $('#driveHint'), prompt = $('#drivePrompt'), hornBtn = $('#hornBtn');
+let hintShown = false, promptK = -2;
+function setDriveUI() {
+  const on = drive.active; document.body.classList.toggle('driving', on);
+  const b = $('#driveBtn'); b.textContent = on ? 'Orbit' : 'Drive'; b.setAttribute('aria-pressed', String(on));
+  if (!on) { prompt.hidden = true; promptK = -2; hint.classList.remove('show'); }
+}
+function setDrive(on) {
+  if (on === drive.active) return;
+  if (on) {
+    if (state.mode !== 'city' || state.transit || card.isOpen() || !city.enterDrive()) return;
+    if (!hintShown) { hintShown = true; hint.classList.add('show'); setTimeout(() => hint.classList.remove('show'), 6000); }
+  } else { city.exitDrive(); keys.clear(); }
+  setDriveUI();
+}
+$('#driveBtn').addEventListener('click', () => setDrive(!drive.active));
+function honk() {
+  if (Sound.horn(STOPS[state.cityIdx]?.id)) return;
+  hornBtn.textContent = 'sound off'; setTimeout(() => { hornBtn.textContent = 'Horn'; }, 1200);
+  if (!Sound.on) { prompt.textContent = 'Sound is off'; prompt.hidden = false; promptK = -3; setTimeout(() => { if (promptK === -3) { prompt.hidden = true; promptK = -2; } }, 1200); }
+}
+hornBtn.addEventListener('click', honk);
+const openNear = () => { if (drive.active && drive.nearSpot >= 0 && !card.isOpen()) focusSpot(drive.nearSpot); };
+prompt.addEventListener('click', openNear);
+function readKeys() {
+  const i = drive.input, d = k => keys.has(k);
+  if (!joy.on) { i.throttle = (d('w') || d('arrowup') ? 1 : 0) - (d('s') || d('arrowdown') ? 1 : 0); i.steer = (d('a') || d('arrowleft') ? 1 : 0) - (d('d') || d('arrowright') ? 1 : 0); }
+  i.brake = d(' ');
+}
+const DRIVE_KEYS = ['w', 'a', 's', 'd', 'arrowup', 'arrowdown', 'arrowleft', ' '];
 addEventListener('keydown', e => {
-  if (e.key === 'Escape') { if (!closeModals() && card.isOpen()) { card.close(); unfocus(); } return; }
+  if (e.key === 'Escape') { if (!closeModals() && card.isOpen()) { card.close(); unfocus(); } else if (drive.active) setDrive(false); return; }
   const a = document.activeElement; if (a && (a.tagName === 'INPUT' || a.tagName === 'TEXTAREA' || a.isContentEditable)) return;
-  if (state.mode === 'city' && e.key === 'ArrowRight' && !document.querySelector('.modal:not([hidden])')) $('#next').click();
+  const modal = !!document.querySelector('.modal:not([hidden])'), k = e.key.toLowerCase();
+  if (state.mode === 'city' && !modal && !e.ctrlKey && !e.metaKey && !e.altKey) {
+    if (k === 'h' && !e.repeat) { honk(); return; }
+    if (drive.active && !card.isOpen()) {
+      if ((k === 'e' || (k === 'enter' && (!a || a === document.body))) && !e.repeat) { openNear(); e.preventDefault(); return; }
+      if (DRIVE_KEYS.includes(k) || k === 'arrowright') { keys.add(k); readKeys(); e.preventDefault(); return; }
+    } else if (!drive.active && !card.isOpen() && DRIVE_KEYS.includes(k) && k !== ' ') {
+      setDrive(true); if (drive.active) { keys.add(k); readKeys(); e.preventDefault(); } return;
+    }
+  }
+  if (state.mode === 'city' && !drive.active && e.key === 'ArrowRight' && !modal) $('#next').click();
 });
+addEventListener('keyup', e => { keys.delete(e.key.toLowerCase()); readKeys(); });
+addEventListener('blur', () => { keys.clear(); readKeys(); });
+
+/* touch joystick (shown only with a coarse pointer, via CSS) */
+const joy = { on: false, id: null, el: $('#joy') }, knob = joy.el.querySelector('i');
+function joyMove(e) {
+  const r = joy.el.getBoundingClientRect(), R = r.width / 2; let dx = e.clientX - (r.left + R), dy = e.clientY - (r.top + R); const m = Math.hypot(dx, dy); if (m > R * .8) { dx *= R * .8 / m; dy *= R * .8 / m; }
+  knob.style.transform = `translate(${dx}px,${dy}px)`; const dz = v => Math.abs(v) < .12 ? 0 : v;
+  drive.input.steer = dz(-dx / (R * .8)); drive.input.throttle = dz(-dy / (R * .8));
+}
+joy.el.addEventListener('pointerdown', e => { joy.on = true; joy.id = e.pointerId; joy.el.setPointerCapture(e.pointerId); joyMove(e); e.preventDefault(); });
+joy.el.addEventListener('pointermove', e => { if (joy.on && e.pointerId === joy.id) joyMove(e); });
+const joyEnd = e => { if (e.pointerId !== joy.id) return; joy.on = false; knob.style.transform = ''; drive.input.steer = drive.input.throttle = 0; };
+joy.el.addEventListener('pointerup', joyEnd); joy.el.addEventListener('pointercancel', joyEnd);
 
 function resize() { const w = innerWidth, h = innerHeight; renderer.setSize(w, h, false); globe.resize(w, h); city.resize(w, h); post.resize(w, h); }
 addEventListener('resize', resize); resize();
+
+function driveHud() {
+  $('#speedN').textContent = String(Math.round(Math.abs(drive.speed) * 3.6));
+  const k = card.isOpen() ? -1 : drive.nearSpot; if (k === promptK || promptK === -3) return; promptK = k;
+  if (k < 0) { prompt.hidden = true; return; }
+  prompt.textContent = `${matchMedia('(pointer: coarse)').matches ? 'Tap to open' : 'Press E to open'} — ${STOPS[state.cityIdx].spots[k].t}`; prompt.hidden = false;
+}
 
 /* loop */
 let last = performance.now(), T = 0, frames = 0;
@@ -172,6 +237,7 @@ function frame(now) {
   const dt = Math.min(.05, (now - last) / 1000); last = now; T += dt; const W = innerWidth, H = innerHeight;
   if (state.mode === 'city' && city.C) {
     city.update(dt, T, W, H);
+    if (drive.active) driveHud();
     post.render(city.C.scene, city.cam, { bloom: city.C.cfg?.bloom > 0 ? city.C.cfg.bloom : 0, tilt: !SMALL });
   } else { globe.update(dt, T, W, H); renderer.render(globe.scene, globe.cam); }
   if (++frames === 30) window.__ready = true;
@@ -181,4 +247,5 @@ updateChips(); renderPassport(state.stamped, state.missions);
 requestAnimationFrame(frame);
 
 // Test hooks for the lead / screenshot tool.
-window.__app = { state, travelTo, focusSpot, search, ask: runAsk, openModal };
+window.__app = { state, drive, exitCity, travelTo, focusSpot, search, ask: runAsk, openModal, enterCity: async i => { begin(); await enterCity(i); } };
+window.__drive = { get active() { return drive.active; }, get x() { return drive.x; }, get z() { return drive.z; }, get speed() { return drive.speed; }, get nearSpot() { return drive.nearSpot; }, get hits() { return drive.hits; } };

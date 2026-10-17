@@ -38,7 +38,12 @@
 <div id="travel" aria-live="polite"><div class="k" id="travelK"></div><div class="t" id="travelT"></div></div>
 <div id="pins"></div>
 
-<div id="ctitle"><div class="stop" id="cStop"></div><h2 id="cName"></h2><div class="meta" id="cMeta"></div></div>
+<div id="ctitle"><div class="stop" id="cStop"></div><h2 id="cName"></h2><div class="meta" id="cMeta"></div><div class="credit" id="cCredit"></div><button type="button" class="chip drivebtn" id="driveBtn" aria-pressed="false">Drive</button></div>
+<div id="speedo" aria-hidden="true"><b id="speedN">0</b><span>km/h</span></div>
+<button type="button" id="drivePrompt" hidden></button>
+<div id="driveHint" aria-hidden="true">WASD / arrows to drive · H horn · E open a spot · Esc back to orbit</div>
+<div id="joy" aria-label="Driving joystick"><i></i></div>
+<button type="button" id="hornBtn" aria-label="Horn">Horn</button>
 
 <aside id="card" aria-live="polite" aria-labelledby="kTitle">
   <button class="x" id="cardX" type="button" aria-label="Close">×</button>
@@ -100,6 +105,7 @@
     <li><b>A real Earth.</b> Coastlines come from Natural Earth's public-domain land data, packed into a 32 KB bit mask. Mountains, biomes and clouds are generated.</li>
     <li><b>Demos run in your browser.</b> The missions do their work on your device; "Show your work" lists each step they actually ran. Anything scripted says so.</li>
     <li><b>The co-pilot is search, not a chatbot.</b> It ranks every story on the trip with BM25 plus a small synonym list, and shows you the match and its score.</li>
+    <li><b>Drive mode and real streets.</b> The yellow car is arcade physics against box colliders derived from the scene; Bangalore's streets and buildings are OpenStreetMap data baked offline into a small JSON file (© OpenStreetMap contributors), with approximate building heights.</li>
     <li><b>No paid services.</b> No APIs, no tracking, no paid assets. Sound is synthesised live with WebAudio. It's a static site on free hosting.</li>
   </ul>
   <div class="contact"><a class="btn small" id="howRepo" href="#" rel="noopener" target="_blank">Code: repo (coming public)</a><button class="btn" type="button" data-close data-autofocus>Back to the trip</button></div>

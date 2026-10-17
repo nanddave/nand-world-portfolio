@@ -1,0 +1,13 @@
+{
+  "blr": {
+    "_note": "Anchor = geographic point mapped to the scene origin. rotDeg (applied after equirectangular projection, x'=x cos-z sin, z'=x sin+z cos) is the bearing fit of Doctor B R Ambedkar Veedhi (-46.94 deg in raw east/north-up frame) so it runs along +x. Anchor was solved so the road centre line sits on z=0 and the real Vidhana Soudha relation bbox centre sits at x=48. The real building is ~158 m behind the road (hand-made one is at z=-100), so the real centroid lands near (48,-158); the hand-made group replaces it.",
+    "lat": 12.978430,
+    "lon": 77.591401,
+    "rotDeg": 46.94,
+    "radius": 650,
+    "clearRadius": 0,
+    "exclude": ["Vidhana Soudha"],
+    "landmarkAt": { "name": "Vidhana Soudha", "x": 48, "z": -100 },
+    "rawCentre": { "lat": 12.97935, "lon": 77.59070 }
+  }
+}
