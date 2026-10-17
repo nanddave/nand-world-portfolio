@@ -190,3 +190,33 @@ body.driving:not(.cardopen) #speedo{display:flex}
 #ctitle .wxcredit{font-size:11px;font-weight:500;opacity:.75;margin-left:6px}
 #ctitle .livebtn{pointer-events:auto;margin-top:8px;margin-right:8px;min-height:32px;font-size:13px}
 body.focus #ctitle .livebtn{pointer-events:none}
+
+/* ---- trailer mode (Phase 3.1): all regular chrome hidden; letterbox, captions, mission panel, end card are driven from JS ---- */
+body.trailer{background:#000;cursor:none}
+body.trailer #top,body.trailer #intro,body.trailer #travel,body.trailer #pins,body.trailer #ctitle,body.trailer #speedo,body.trailer #drivePrompt,
+body.trailer #driveHint,body.trailer #joy,body.trailer #hornBtn,body.trailer #card,body.trailer #pilot,body.trailer #bar,body.trailer #fade,body.trailer .modal{display:none!important}
+#trailerUI{position:fixed;inset:0;z-index:30;pointer-events:none;font-family:var(--display),'Big Shoulders Display',Impact,sans-serif}
+#tLb .tbar{position:fixed;left:0;right:0;height:9%;background:#000;z-index:34}
+#tLb .tbar.t{top:0}#tLb .tbar.b{bottom:0}
+#tFade{position:fixed;inset:0;background:#000;opacity:1;z-index:33}
+#tLoad{position:fixed;left:0;right:0;top:50%;z-index:36;text-align:center;color:#C9C6E0;font:18px var(--body,sans-serif);letter-spacing:.04em}
+#tCap{position:fixed;left:5.2vw;bottom:calc(9% + 5.5vh);z-index:31;max-width:52vw;opacity:0;will-change:opacity,transform}
+#tCap b{display:block;font-weight:900;font-size:clamp(40px,5.6vw,140px);line-height:.88;letter-spacing:.01em;color:#fff;text-transform:uppercase;text-shadow:0 4px 30px rgba(0,0,0,.55),0 1px 3px rgba(0,0,0,.6)}
+#tCap span{display:block;margin-top:.9vw;font-weight:700;font-size:clamp(18px,2.15vw,56px);letter-spacing:.06em;color:var(--sun,#FFC93C);text-transform:uppercase;text-shadow:0 2px 16px rgba(0,0,0,.7)}
+#tPanel{position:fixed;left:0;top:0;z-index:32;transform-origin:0 0;visibility:hidden;opacity:0;will-change:transform,opacity}
+#tPanel .tp-in{width:440px;box-sizing:border-box;padding:18px;background:var(--paper-2,#F5EEDF);border-radius:22px;box-shadow:0 24px 70px rgba(0,0,0,.5),0 4px 14px rgba(0,0,0,.3);overflow:hidden}
+#tEnd{position:fixed;inset:0;z-index:31;display:none;text-align:center}
+#tEnd .tv{position:absolute;inset:0;background:radial-gradient(ellipse at center,rgba(8,10,28,.55) 0%,rgba(4,6,18,.88) 100%);opacity:0}
+#tEnd .tb{position:absolute;left:0;right:0;top:50%;transform:translateY(-52%);display:flex;flex-direction:column;align-items:center;gap:1.2vw}
+#tEnd .n{font-weight:900;font-size:clamp(60px,11vw,260px);line-height:.85;text-transform:uppercase;color:#fff;letter-spacing:.01em;text-shadow:0 6px 40px rgba(0,0,0,.5)}
+#tEnd .l{font-weight:700;font-size:clamp(20px,2.6vw,70px);letter-spacing:.14em;text-transform:uppercase;color:var(--sun,#FFC93C)}
+#tEnd .c{margin-top:1.6vw;padding:.7vw 2.2vw;border-radius:99px;background:var(--sun,#FFC93C);color:var(--sun-ink,#16192E);font-weight:800;font-size:clamp(18px,2.1vw,56px);letter-spacing:.06em;text-transform:uppercase}
+#tEnd .u{font-weight:700;font-size:clamp(16px,1.8vw,48px);letter-spacing:.1em;color:#E9E4F6}
+/* vertical 1080x1920 cut: captions centred, lower */
+body.trailer-v #tCap{left:5vw;right:5vw;max-width:none;text-align:center}
+body.trailer-v #tCap b{font-size:clamp(40px,12.5vw,260px)}
+body.trailer-v #tCap span{font-size:clamp(18px,4.2vw,90px);margin-top:1.6vw}
+body.trailer-v #tEnd .n{font-size:clamp(60px,22vw,420px)}
+body.trailer-v #tEnd .l{font-size:clamp(20px,4.6vw,100px);padding:0 6vw}
+body.trailer-v #tEnd .c{font-size:clamp(18px,4vw,90px);padding:1.4vw 5vw;margin-top:4vw}
+body.trailer-v #tEnd .u{font-size:clamp(16px,3.4vw,80px)}

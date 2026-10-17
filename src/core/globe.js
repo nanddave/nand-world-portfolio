@@ -137,11 +137,16 @@ export function createGlobe({ small = false, reduce = false, pinsEl, onPin }) {
     scene, cam, stopU, LTOT,
     u: 0, target: 0, tripLen: 0, arrivedAt: -1, view: 'intro', // 'intro' | 'travel' | 'orbit' | 'hidden'
     orbitA: india.a, orbitE: .3, dragging: false, onArrive: null,
+    tw: null, spin: 1, trailer: false, fov: null, // trailer hooks: timed travel, spin multiplier, centred intro framing, FOV override
     camPos: V(0, 10, 70), look: V(0, 0, 0), up: V(0, 1, 0), lastF: null, lastFT: null,
     /** Index of the stop nearest the traveller. */
     curStop() { let best = 0, bd = 1e9; stopU.forEach((u, i) => { const d = Math.abs(u - G.u); if (d < bd) { bd = d; best = i; } }); return best; },
     /** Start travelling to stop i. If already there, no arrival event fires (the caller handles it). */
-    setTarget(i) { G.target = i; G.view = 'travel'; G.tripLen = Math.abs(stopU[i] - G.u); G.arrivedAt = Math.abs(stopU[i] - G.u) < .01 ? i : -1; },
+    setTarget(i, dur) {
+      G.target = i; G.view = 'travel'; G.tripLen = Math.abs(stopU[i] - G.u); G.arrivedAt = Math.abs(stopU[i] - G.u) < .01 ? i : -1;
+      // Trailer: fly the whole leg in exactly `dur` seconds on an ease-in-out profile instead of the usual constant speed.
+      G.tw = dur > 0 && G.arrivedAt < 0 ? { u0: G.u, u1: stopU[i], t: 0, dur } : null;
+    },
     /** Info for the travel caption: total km along the legs and whether any leg flies. */
     legInfo(from, to) { const a = Math.min(from, to), b = Math.max(from, to); let fly = false, dist = 0; for (let q = a; q < b; q++) { const [x, y, t] = LEGS[q]; if (t === 'f') fly = true; dist += km(STOPS[x], STOPS[y]); } return { fly, km: Math.round(dist / 10) * 10 }; },
     faceIndia() { G.orbitA = india.a; G.orbitE = .3; },
@@ -155,8 +160,13 @@ export function createGlobe({ small = false, reduce = false, pinsEl, onPin }) {
     clouds.rotation.y += dt * .006;
     if (G.view === 'travel' && G.arrivedAt !== G.target) {
       const tu = stopU[G.target], dd = tu - G.u, ty = routeAt(G.u, P, U);
-      const sp = Math.max(ty === 'f' ? 18 : 7, G.tripLen / 7) * (Math.abs(dd) < 2 ? Math.max(.3, Math.abs(dd) / 2) : 1);
-      G.u += reduce ? dd : Math.sign(dd) * Math.min(Math.abs(dd), sp * dt);
+      if (G.tw) {
+        const w = G.tw; w.t += dt; const x = clamp(w.t / w.dur, 0, 1), e = x * x * x * (x * (x * 6 - 15) + 10); G.u = w.u0 + (w.u1 - w.u0) * e;
+        if (x >= 1) { G.u = tu; G.tw = null; }
+      } else {
+        const sp = Math.max(ty === 'f' ? 18 : 7, G.tripLen / 7) * (Math.abs(dd) < 2 ? Math.max(.3, Math.abs(dd) / 2) : 1);
+        G.u += reduce ? dd : Math.sign(dd) * Math.min(Math.abs(dd), sp * dt);
+      }
       if (Math.abs(tu - G.u) < .01) { G.u = tu; G.arrivedAt = G.target; G.onArrive?.(G.target); }
     }
     const ty = routeAt(G.u, P, U); routeAt(G.u - .1, A); routeAt(G.u + .1, B); Fw.copy(B).sub(A);
@@ -169,11 +179,11 @@ export function createGlobe({ small = false, reduce = false, pinsEl, onPin }) {
     const k = reduce ? 1 : 1 - Math.exp(-dt * 1.8);
     const free = G.view === 'intro' || G.view === 'orbit';
     if (free) {
-      if (!G.dragging && G.view === 'intro' && !reduce) G.orbitA += dt * .02;
+      if (!G.dragging && G.view === 'intro' && !reduce) G.orbitA += dt * .02 * G.spin;
       const dist = W < 700 ? 92 : 76;
       desired.set(Math.sin(G.orbitA) * Math.cos(G.orbitE), Math.sin(G.orbitE), Math.cos(G.orbitA) * Math.cos(G.orbitE)).multiplyScalar(dist); look.set(0, 0, 0);
-      if (G.view === 'intro' && W > 860) { Sx.set(Math.cos(G.orbitA), 0, -Math.sin(G.orbitA)); look.addScaledVector(Sx, -17); }
-      if (G.view === 'intro' && W <= 860) look.y -= 10;
+      if (G.view === 'intro' && W > 860 && !G.trailer) { Sx.set(Math.cos(G.orbitA), 0, -Math.sin(G.orbitA)); look.addScaledVector(Sx, -17); }
+      if (G.view === 'intro' && W <= 860 && !G.trailer) look.y -= 10;
       G.up.lerp(V(0, 1, 0), k);
     } else {
       const near = Math.abs(stopU[G.target] - G.u) < 1.5 && G.arrivedAt === G.target, alt = near ? 3.2 : (flying ? 13 : 8.5), back = near ? 2.6 : (flying ? 9 : 6.5);
@@ -191,6 +201,6 @@ export function createGlobe({ small = false, reduce = false, pinsEl, onPin }) {
       if (!off) p.style.transform = `translate(${(pr.x * .5 + .5) * W}px,${(-pr.y * .5 + .5) * H}px) translate(-50%,-100%)`;
     });
   };
-  G.resize = (w, h) => { cam.aspect = w / h; cam.fov = w < 700 ? 55 : 42; cam.updateProjectionMatrix(); };
+  G.resize = (w, h) => { cam.aspect = w / h; cam.fov = G.fov ?? (w < 700 ? 55 : 42); cam.updateProjectionMatrix(); };
   return G;
 }

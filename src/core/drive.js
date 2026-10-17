@@ -4,11 +4,15 @@ import { THREE, V, clamp } from '../kit/kit.js';
 import { autoColliders, makeGrid, resolveCircle } from '../kit/collide.js';
 import { Sound } from './sound.js';
 
-const MAXF = 16, MAXR = MAXF / 3, R = 1.6, NEAR = 12, ACC = 11;
-const baseFov = () => innerWidth < 700 ? 55 : 40;
+const MAXF0 = 16, R = 1.6, NEAR = 12, ACC0 = 11;
+let camRef = null;
+const baseFov = () => camRef?.userData.baseFov ?? (innerWidth < 700 ? 55 : 40);
 
 export function createDrive({ cam, reduce = false }) {
+  camRef = cam;
   const D = {
+    // trailer hooks: top-speed/accel multiplier and a chase-camera override { back, up, ahead }
+    boost: 1, chase: null,
     active: false, C: null, car: null, x: 0, z: 0, h: 0, speed: 0, nearSpot: -1, hits: 0, shake: 0, _cool: 0,
     input: { throttle: 0, steer: 0, brake: false }, look: V(), pos: V(),
     /** Take over C.heroCar (spawning one if absent), build colliders once, start the chase camera. */
@@ -35,6 +39,7 @@ export function createDrive({ cam, reduce = false }) {
     sync() { D.car.position.x = D.x; D.car.position.z = D.z; D.car.rotation.y = D.h; },
     /** dt seconds; paused = a card is open (input ignored, car coasts to a stop). Returns { speed, nearSpot }. */
     update(dt, paused = false) {
+      const MAXF = MAXF0 * D.boost, MAXR = MAXF0 / 3, ACC = ACC0 * D.boost;
       const C = D.C, car = D.car, inp = paused ? { throttle: 0, steer: 0, brake: true } : D.input;
       let sp = D.speed;
       const th = clamp(inp.throttle, -1, 1);
@@ -68,8 +73,9 @@ export function createDrive({ cam, reduce = false }) {
       D.nearSpot = near;
       // chase camera: 9 m behind, 4 m up, damped; look 6 m ahead; FOV kick with speed
       const k = 1 - Math.exp(-dt * (reduce ? 9 : 4)), f = Math.abs(sp) / MAXF;
-      D.pos.set(x - fx * 9, 4.2, z - fz * 9); cam.position.lerp(D.pos, k);
-      D.look.lerp(V(x + fx * 6, 1.2, z + fz * 6), k);
+      const ch = D.chase || { back: 9, up: 4.2, ahead: 6 };
+      D.pos.set(x - fx * ch.back, ch.up, z - fz * ch.back); cam.position.lerp(D.pos, k);
+      D.look.lerp(V(x + fx * ch.ahead, 1.2, z + fz * ch.ahead), k);
       if (D.shake > .002 && !reduce) { cam.position.x += (Math.random() - .5) * D.shake; cam.position.y += (Math.random() - .5) * D.shake; D.shake *= Math.exp(-dt * 9); } else D.shake = 0;
       cam.lookAt(D.look);
       const fov = baseFov() + (reduce ? 0 : 6 * f); if (Math.abs(cam.fov - fov) > .05) { cam.fov += (fov - cam.fov) * (1 - Math.exp(-dt * 5)); cam.updateProjectionMatrix(); }

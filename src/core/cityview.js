@@ -10,6 +10,7 @@ export function createCityView({ reduce = false, spotsEl, onSpot }) {
   const V_ = {
     cam, C: null, ci: -1, spot: -1, yaw: 0, pitch: .38, tpitch: .38, dist: 95, tdist: 62, look: V(), spotDir: null,
     dragging: false, lastInteract: 0, els: [], seen: {}, drive: null, otgt: null, near: -1,
+    cine: null, fov: null, // trailer: scripted camera { c: Vector3 centre, yaw, pitch, dist } (overrides orbit/spot logic); FOV override
     /** Build (or reuse) a city. Never throws: a broken city becomes a placeholder scene. */
     async load(ci) {
       const id = STOPS[ci].id; if (cache.has(id)) return cache.get(id);
@@ -18,12 +19,12 @@ export function createCityView({ reduce = false, spotsEl, onSpot }) {
     },
     /** Swap in a loaded city (call while the screen is faded). */
     show(ci, C) {
-      V_.drive?.exit(); V_.otgt = null; V_.near = -1; V_.C = C; V_.ci = ci; V_.spot = -1; V_.spotDir = null;
+      V_.drive?.exit(); V_.otgt = null; V_.cine = null; V_.near = -1; V_.C = C; V_.ci = ci; V_.spot = -1; V_.spotDir = null;
       V_.yaw = C.yaw ?? C.cfg?.yaw ?? -.6; V_.dist = 95; V_.pitch = .62; V_.tdist = C.dist || 62; V_.tpitch = C.pitch || .38;
       cam.position.set(Math.sin(V_.yaw) * 120, 90, Math.cos(V_.yaw) * 120); V_.look.set(0, 0, 0);
       V_.drive?.reset(C); buildSpots(ci, C); try { C.onEnter?.(); } catch (e) { console.error(e); }
     },
-    hide() { V_.drive?.exit(); V_.els.forEach(e => e.remove()); V_.els = []; V_.C = null; V_.ci = -1; V_.spot = -1; },
+    hide() { V_.drive?.exit(); V_.cine = null; V_.els.forEach(e => e.remove()); V_.els = []; V_.C = null; V_.ci = -1; V_.spot = -1; },
     focus(k) { V_.spot = k; V_.spotDir = null; (V_.seen[V_.ci] = V_.seen[V_.ci] || new Set()).add(k); V_.els[k]?.classList.add('seen'); },
     unfocus() { V_.spot = -1; V_.lastInteract = performance.now(); },
     /** Start driving the city's hero car (chase camera eases in from the current view). */
@@ -37,7 +38,7 @@ export function createCityView({ reduce = false, spotsEl, onSpot }) {
     },
     drag(dx, dy) { if (V_.spot >= 0 || V_.drive?.active) return; V_.yaw -= dx * .005; V_.tpitch = clamp(V_.tpitch + dy * .003, .12, 1.1); V_.lastInteract = performance.now(); },
     wheel(dy) { if (V_.spot >= 0 || V_.drive?.active) return; V_.tdist = clamp(V_.tdist + dy * .05, 30, 110); V_.lastInteract = performance.now(); },
-    resize(w, h) { cam.aspect = w / h; cam.fov = w < 700 ? 55 : 40; cam.updateProjectionMatrix(); },
+    resize(w, h) { cam.aspect = w / h; cam.fov = V_.fov ?? (w < 700 ? 55 : 40); cam.userData.baseFov = V_.fov; cam.updateProjectionMatrix(); },
   };
 
   function buildSpots(ci, C) {
@@ -58,8 +59,13 @@ export function createCityView({ reduce = false, spotsEl, onSpot }) {
     try { C.update(T, dt); } catch (e) { /* a city tick error must not freeze the app */ if (!C._warned) { console.error(e); C._warned = true; } }
     const k = reduce ? 1 : 1 - Math.exp(-dt * 1.5);
     const D = V_.drive, driving = !!D?.active;
-    const sp = !driving && V_.spot >= 0 ? (C.spots[V_.spot] || C.spots[C.spots.length - 1]) : null;
+    const cine = !driving ? V_.cine : null;
+    const sp = !driving && !cine && V_.spot >= 0 ? (C.spots[V_.spot] || C.spots[C.spots.length - 1]) : null;
     if (driving) { V_.near = D.update(dt, V_.spot >= 0).nearSpot; V_.look.copy(D.look); }
+    else if (cine) {
+      const cp = Math.cos(cine.pitch); cam.position.set(cine.c.x + Math.sin(cine.yaw) * cp * cine.dist, cine.c.y + Math.sin(cine.pitch) * cine.dist, cine.c.z + Math.cos(cine.yaw) * cp * cine.dist);
+      V_.look.copy(cine.c); cam.lookAt(V_.look);
+    }
     else if (sp) {
       // Approach from the side the camera is already on, so we don't swing through the city.
       if (!V_.spotDir) { V_.spotDir = V(cam.position.x - sp.p.x, 0, cam.position.z - sp.p.z); if (V_.spotDir.lengthSq() < 1e-4) V_.spotDir.set(0, 0, 1); V_.spotDir.normalize(); }
@@ -72,11 +78,11 @@ export function createCityView({ reduce = false, spotsEl, onSpot }) {
       const tgt = V_.otgt || C.target || V(0, 2, 0);
       desired.set(Math.sin(V_.yaw) * Math.cos(V_.pitch), Math.sin(V_.pitch), Math.cos(V_.yaw) * Math.cos(V_.pitch)).multiplyScalar(V_.dist).add(tgt); look.copy(tgt);
     }
-    const remain = driving ? 0 : Math.hypot(desired.x - cam.position.x, desired.z - cam.position.z);
-    if (!driving) cam.position.lerp(desired, k);
+    const remain = driving || cine ? 0 : Math.hypot(desired.x - cam.position.x, desired.z - cam.position.z);
+    if (!driving && !cine) cam.position.lerp(desired, k);
     // Stay high while far from the destination: an arc over the rooftops instead of a straight line through them.
     if (sp) cam.position.y = Math.max(cam.position.y, desired.y + Math.min(30, remain * .35));
-    if (!driving) { V_.look.lerp(look, k); cam.lookAt(V_.look); } cam.updateMatrixWorld();
+    if (!driving && !cine) { V_.look.lerp(look, k); cam.lookAt(V_.look); } cam.updateMatrixWorld();
     if (!driving) V_.near = -1;
     V_.els.forEach((el, i) => {
       const s = C.spots[i]; const off = !s || V_.spot >= 0; if (s) { pr.copy(s.p); pr.y += 1.2; pr.project(cam); }

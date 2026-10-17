@@ -1,4 +1,5 @@
 // App shell: globe travel, city scenes, story cards with live missions, passport, co-pilot, sound.
+import { FIXED_FPS } from './core/vtime.js'; // first: installs the virtual clock when recording (&fixed=30)
 import './styles/tokens.css';
 import './styles/app.css';
 import { THREE } from './kit/kit.js';
@@ -10,6 +11,7 @@ import { createDrive } from './core/drive.js';
 import { liveFor } from './core/live.js';
 import { createPost } from './core/post.js';
 import { Sound } from './core/sound.js';
+import { createTrailer } from './core/trailer.js';
 import { ask, search, SUGGESTIONS } from './core/copilot.js';
 import { createCard } from './ui/card.js';
 import { setupModals, openModal, closeModals, renderPassport } from './ui/modals.js';
@@ -36,6 +38,8 @@ const globe = createGlobe({ small: SMALL, reduce: REDUCE, pinsEl: $('#pins'), on
 const city = createCityView({ reduce: REDUCE, spotsEl: $('#pins'), onSpot: k => focusSpot(k) });
 city.drive = createDrive({ cam: city.cam, reduce: REDUCE });
 const drive = city.drive;
+const app = { state, globe, city, drive, renderer, skipRender: false, resize: () => resize() };
+const trailer = createTrailer(app); // Phase 3.1: scripted demo video (?trailer=1, or the intro button)
 const card = createCard({
   reduce: REDUCE,
   onNext: (ci, k) => { const n = STOPS[ci].spots.length; if (k < n - 1) focusSpot(k + 1); else if (ci < LAST) travelTo(ci + 1); else finish(); },
@@ -84,7 +88,12 @@ function begin() { if (state.mode !== 'intro') return; state.mode = 'globe'; doc
 $('#startBtn').addEventListener('click', () => { Sound.set(true); begin(); globe.u = 0; travelTo(0); });
 $('#soundBtn').addEventListener('click', () => Sound.set(!Sound.on));
 Sound.onChange = on => { const b = $('#soundBtn'); b.textContent = on ? 'Sound on' : 'Sound off'; b.setAttribute('aria-pressed', String(on)); };
-$('#home').addEventListener('click', async e => { e.preventDefault(); if (state.mode === 'city') await exitCity(); state.mode = 'intro'; globe.view = 'intro'; globe.faceIndia(); document.body.classList.remove('on'); $('#travel').classList.remove('show'); updateChips(); });
+async function toIntro() { if (state.mode === 'city') await exitCity(); state.mode = 'intro'; globe.view = 'intro'; globe.faceIndia(); document.body.classList.remove('on'); $('#travel').classList.remove('show'); updateChips(); }
+$('#home').addEventListener('click', e => { e.preventDefault(); toIntro(); });
+/* trailer entry points: the intro button, or ?trailer=1 (autoplay). Esc stops it and returns to the intro. */
+trailer.onStop = () => { state.mode = 'intro'; state.cityIdx = -1; state.transit = false; globe.view = 'intro'; globe.u = 0; globe.faceIndia(); document.body.classList.remove('on', 'incity'); $('#travel').classList.remove('show'); Sound.set(false); Sound.play('globe'); updateChips(); };
+$('#trailerBtn').addEventListener('click', () => { if (state.mode === 'intro') trailer.start(); });
+if (QS.has('trailer')) trailer.start({ sound: true });
 
 /** Go to stop i (and optionally open spot k there). Works from intro, globe or another city. */
 async function travelTo(i, k) {
@@ -102,7 +111,7 @@ async function travelTo(i, k) {
   $('#travelK').textContent = `${fly ? 'Flying' : 'Driving'}, ${km.toLocaleString('en-US')} km`;
   $('#travelT').textContent = `${STOPS[from].name} → ${STOPS[i].name}`; $('#travel').classList.add('show');
 }
-globe.onArrive = i => onArrive(i);
+globe.onArrive = i => { if (!trailer.active) onArrive(i); };
 async function onArrive(i) { $('#travel').classList.remove('show'); await wait(900); if (globe.target === i && state.mode === 'globe') enterCity(i); }
 
 async function enterCity(i) {
@@ -131,6 +140,7 @@ async function finish() {
   await exitCity(); globe.view = 'orbit'; pilotSay(VISITOR.company ? `That's the whole trip. Over to you, ${VISITOR.company}: open the passport for Nand's contact.` : 'That\'s the whole trip. Spin the earth, or open the passport for Nand\'s contact.');
 }
 $('#next').addEventListener('click', () => { const i = state.cityIdx; if (i < LAST) travelTo(i + 1); else finish(); });
+$('#shareBtn').addEventListener('click', async () => { closeModals(); const { openPostcardDialog } = await import('./ui/postcard.js'); openPostcardDialog({ stamped: state.stamped, missions: state.missions, company: VISITOR.company }); });
 
 function nextLabel(ci, k) {
   if (k < STOPS[ci].spots.length - 1) return 'Next spot';
@@ -177,14 +187,14 @@ if (innerWidth < 800) setPilotMin(true);
 
 /* input */
 let drag = null;
-canvas.addEventListener('pointerdown', e => { drag = { x: e.clientX, y: e.clientY }; globe.dragging = city.dragging = true; city.lastInteract = performance.now(); });
+canvas.addEventListener('pointerdown', e => { if (trailer.active) return; drag = { x: e.clientX, y: e.clientY }; globe.dragging = city.dragging = true; city.lastInteract = performance.now(); });
 addEventListener('pointerup', () => { drag = null; globe.dragging = city.dragging = false; });
 addEventListener('pointercancel', () => { drag = null; globe.dragging = city.dragging = false; });
 addEventListener('pointermove', e => {
   if (!drag) return; const dx = e.clientX - drag.x, dy = e.clientY - drag.y; drag = { x: e.clientX, y: e.clientY };
   if (state.mode === 'city') city.drag(dx, dy); else if (globe.view === 'intro' || globe.view === 'orbit') globe.drag(dx, dy);
 });
-canvas.addEventListener('wheel', e => { e.preventDefault(); if (state.mode === 'city') city.wheel(e.deltaY); }, { passive: false });
+canvas.addEventListener('wheel', e => { e.preventDefault(); if (trailer.active) return; if (state.mode === 'city') city.wheel(e.deltaY); }, { passive: false });
 /* drive mode: keyboard, joystick, HUD */
 const keys = new Set(), hint = $('#driveHint'), prompt = $('#drivePrompt'), hornBtn = $('#hornBtn');
 let hintShown = false, promptK = -2;
@@ -217,6 +227,7 @@ function readKeys() {
 }
 const DRIVE_KEYS = ['w', 'a', 's', 'd', 'arrowup', 'arrowdown', 'arrowleft', ' '];
 addEventListener('keydown', e => {
+  if (trailer.active) return;
   if (e.key === 'Escape') { if (!closeModals() && card.isOpen()) { card.close(); unfocus(); } else if (drive.active) setDrive(false); return; }
   const a = document.activeElement; if (a && (a.tagName === 'INPUT' || a.tagName === 'TEXTAREA' || a.isContentEditable)) return;
   const modal = !!document.querySelector('.modal:not([hidden])'), k = e.key.toLowerCase();
@@ -259,12 +270,13 @@ function driveHud() {
 /* loop */
 let last = performance.now(), T = 0, frames = 0;
 function frame(now) {
-  const dt = Math.min(.05, (now - last) / 1000); last = now; T += dt; const W = innerWidth, H = innerHeight;
+  const raw = (now - last) / 1000, dt = FIXED_FPS ? 1 / FIXED_FPS : Math.min(.05, raw); last = now; T += dt;
+  if (trailer.active) trailer.update(raw); const W = innerWidth, H = innerHeight;
   if (state.mode === 'city' && city.C) {
     city.update(dt, T, W, H);
     if (drive.active) driveHud();
-    post.render(city.C.scene, city.cam, { bloom: city.C.cfg?.bloom > 0 ? city.C.cfg.bloom : 0, tilt: !SMALL });
-  } else { globe.update(dt, T, W, H); renderer.render(globe.scene, globe.cam); }
+    if (!app.skipRender) post.render(city.C.scene, city.cam, { bloom: city.C.cfg?.bloom > 0 ? city.C.cfg.bloom : 0, tilt: !SMALL });
+  } else { globe.update(dt, T, W, H); if (!app.skipRender) renderer.render(globe.scene, globe.cam); }
   if (++frames === 30) window.__ready = true;
   requestAnimationFrame(frame);
 }
@@ -272,5 +284,6 @@ updateChips(); renderPassport(state.stamped, state.missions);
 requestAnimationFrame(frame);
 
 // Test hooks for the lead / screenshot tool.
+window.__trailer = trailer;
 window.__app = { state, drive, exitCity, travelTo, focusSpot, search, ask: runAsk, openModal, enterCity: async i => { begin(); await enterCity(i); } };
 window.__drive = { get active() { return drive.active; }, get x() { return drive.x; }, get z() { return drive.z; }, get speed() { return drive.speed; }, get nearSpot() { return drive.nearSpot; }, get hits() { return drive.hits; } };
