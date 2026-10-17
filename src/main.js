@@ -7,6 +7,7 @@ import { VISITOR } from './core/visitor.js';
 import { createGlobe } from './core/globe.js';
 import { createCityView } from './core/cityview.js';
 import { createDrive } from './core/drive.js';
+import { liveFor } from './core/live.js';
 import { createPost } from './core/post.js';
 import { Sound } from './core/sound.js';
 import { ask, search, SUGGESTIONS } from './core/copilot.js';
@@ -52,6 +53,30 @@ function updateChips() {
   globe.setPinsDone(state.stamped); $('#passN').textContent = `${state.stamped.size}/${STOPS.length}`;
 }
 
+/* live time + weather (optional; the designed look is the fallback) */
+const QS = new URLSearchParams(location.search), FORCE_DESIGNED = QS.get('mood') === 'designed';
+const moodPref = { get() { try { return localStorage.getItem('nw.mood'); } catch { return null; } }, set(v) { try { localStorage.setItem('nw.mood', v); } catch { /* ignore */ } } };
+let liveMood = null; // { C, w, hour, live }
+const wxText = w => { const k = w.rain || w.snow; return w.label === 'rain' || w.label === 'snow' ? (k <= .5 ? 'light ' : k >= 1 ? 'heavy ' : '') + w.label : w.label; };
+function applyMood(live) {
+  const m = liveMood; if (!m) return; m.live = live;
+  if (live && m.w) m.C.setMood({ hour: m.hour, isDay: m.w.isDay, cloud: m.w.cloud, rain: m.w.rain, snow: m.w.snow, fog: m.w.fog, temp: m.w.temp }); else m.C.resetMood?.();
+  const b = $('#moodBtn'); b.textContent = live ? 'Live' : 'Designed'; b.setAttribute('aria-pressed', String(live)); b.title = live ? 'Showing live weather. Switch to the designed look.' : 'Showing the designed look. Switch to live weather.';
+}
+async function setupLive(i, C) {
+  liveMood = null; $('#cLive').hidden = true; $('#moodBtn').hidden = true; $('#cWxCredit').hidden = true;
+  const s = STOPS[i]; let r; try { r = await liveFor(s); } catch { return; }
+  if (state.cityIdx !== i || state.mode !== 'city') return;
+  const place = s.name.split(/ &|,/)[0].trim(), w = r.weather;
+  $('#cLiveT').textContent = w ? `It's ${r.timeText} · ${w.temp}°C · ${wxText(w)} in ${place} right now` : `It's ${r.timeText} in ${place} right now`;
+  $('#cLive').hidden = false; $('#cWxCredit').hidden = !w;
+  liveMood = { C, w, hour: r.hour, live: false };
+  if (!w) return;
+  $('#moodBtn').hidden = false;
+  applyMood(!FORCE_DESIGNED && moodPref.get() !== 'designed');
+}
+$('#moodBtn').addEventListener('click', () => { if (!liveMood) return; applyMood(!liveMood.live); moodPref.set(liveMood.live ? 'live' : 'designed'); });
+
 /* flow */
 const fade = on => $('#fade').classList.toggle('on', on);
 const wait = ms => new Promise(r => setTimeout(r, REDUCE ? 0 : ms));
@@ -86,7 +111,7 @@ async function enterCity(i) {
   const s = STOPS[i]; state.mode = 'city'; state.cityIdx = i; state.spot = -1;
   globe.view = 'hidden'; globe.hidePins(); city.show(i, C);
   document.body.classList.add('incity');
-  $('#cStop').textContent = `Stop ${i + 1} of ${STOPS.length}`; $('#cName').textContent = s.name; $('#cMeta').innerHTML = `${s.region}<br>${s.coord}<br>${s.mood}`; $('#cCredit').textContent = C.credit || ''; setDriveUI(); $('#ctitle').classList.add('show');
+  $('#cStop').textContent = `Stop ${i + 1} of ${STOPS.length}`; $('#cName').textContent = s.name; $('#cMeta').innerHTML = `${s.region}<br>${s.coord}<br>${s.mood}`; $('#cCredit').textContent = C.credit || ''; setDriveUI(); $('#ctitle').classList.add('show'); setupLive(i, C);
   $('#next').textContent = i < LAST ? `Continue to ${short(STOPS[i + 1])}` : (VISITOR.company ? `Finish: next stop, ${VISITOR.company}` : 'Finish the trip');
   Sound.play(C.cfg?.sound || s.id); updateChips(); fade(false); state.transit = false;
   if (state.pending !== null) { const p = state.pending; state.pending = null; setTimeout(() => state.cityIdx === i && focusSpot(p), REDUCE ? 0 : 1300); }
@@ -95,7 +120,7 @@ async function enterCity(i) {
 }
 async function exitCity() {
   if (state.transit || state.mode !== 'city') return; state.transit = true; card.close(); fade(true); await wait(600);
-  setDrive(false); state.mode = 'globe'; city.hide(); globe.view = 'travel'; document.body.classList.remove('incity', 'focus'); $('#ctitle').classList.remove('show');
+  setDrive(false); state.mode = 'globe'; city.hide(); globe.view = 'travel'; document.body.classList.remove('incity', 'focus'); $('#ctitle').classList.remove('show'); liveMood?.C.resetMood?.(); liveMood = null;
   Sound.play('globe'); fade(false); state.transit = false; state.cityIdx = -1; updateChips();
 }
 /** Last stop's continue: with a company, take them to the empty lot first; then back to the globe to roam. */

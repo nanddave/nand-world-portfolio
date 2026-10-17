@@ -12,8 +12,8 @@ import { THREE, V, mat, box, ball, place, rnd, person, SKIN, heroCar } from './k
 export function newCity(cfg) {
   const sc = new THREE.Scene();
   sc.fog = new THREE.Fog(cfg.fog, cfg.fn || 60, cfg.ff || 210);
-  sc.add(skyDome(cfg.top, cfg.hor, cfg.bot, cfg.sunPos, cfg.sunGlow || cfg.sun));
-  sc.add(new THREE.HemisphereLight(cfg.hs, cfg.hg, cfg.hi));
+  const sky = skyDome(cfg.top, cfg.hor, cfg.bot, cfg.sunPos, cfg.sunGlow || cfg.sun); sc.add(sky);
+  const hemi = new THREE.HemisphereLight(cfg.hs, cfg.hg, cfg.hi); sc.add(hemi);
   const sun = new THREE.DirectionalLight(cfg.sun, cfg.si);
   sun.position.fromArray(cfg.sunPos).setLength(90); sun.castShadow = true; sun.shadow.mapSize.set(2048, 2048);
   Object.assign(sun.shadow.camera, { left: -70, right: 70, top: 70, bottom: -70, near: 10, far: 240 });
@@ -46,9 +46,9 @@ export function newCity(cfg) {
     const obj = type === 'rain'
       ? new THREE.LineSegments(g, new THREE.LineBasicMaterial({ color: 0xC9D6E2, transparent: true, opacity: .55 }))
       : new THREE.Points(g, new THREE.PointsMaterial({ color: type === 'snow' ? 0xFFFFFF : type === 'fireflies' ? 0xFFE58A : 0xFFE9B0, size: type === 'snow' ? .45 : .25, transparent: true, opacity: type === 'snow' ? .95 : .6, depthWrite: false }));
-    sc.add(obj);
+    sc.add(obj); obj.userData.ptype = type; obj.userData.max = count;
     const vy = { rain: 40, snow: 2.2, dust: .25, fireflies: 0 }[type];
-    C.tick.push((t, dt) => {
+    const tk = (t, dt) => {
       const a = g.attributes.position.array;
       for (let i = 0; i < a.length; i += per) {
         a[i + 1] -= vy * dt; if (type === 'rain') a[i + 4] -= vy * dt;
@@ -57,12 +57,56 @@ export function newCity(cfg) {
         if (a[i + 1] < 0) { a[i + 1] += 50; if (type === 'rain') a[i + 4] += 50; }
       }
       g.attributes.position.needsUpdate = true;
-    });
+    };
+    obj.userData.tick = tk; C.tick.push(tk);
     return obj;
   };
+  /** Remove a particle system made by C.particles (used by setMood). */
+  C.removeParticles = obj => { const i = C.tick.indexOf(obj.userData.tick); if (i >= 0) C.tick.splice(i, 1); sc.remove(obj); obj.geometry.dispose(); obj.material.dispose(); };
   C.steam = (x, y, z) => {
     const puffs = []; for (let i = 0; i < 10; i++) { const b = ball(.25, mat('#FFFFFF', { transparent: true, opacity: .5 }), x, y, z, 0); b.castShadow = false; b.userData.o = i / 10; sc.add(b); puffs.push(b); }
     C.tick.push(t => puffs.forEach(b => { const k = (t * .35 + b.userData.o) % 1; b.position.set(x + Math.sin(k * 6) * .2, y + k * 2.5, z); b.scale.setScalar(.6 + k * 1.6); }));
+  };
+  /* ---- Live mood: the designed cfg is the default look; setMood blends from it, resetMood restores it exactly. ---- */
+  const D = { top: sky.material.uniforms.top.value.clone(), hor: sky.material.uniforms.hor.value.clone(), bot: sky.material.uniforms.bot.value.clone(), sc: sky.material.uniforms.sc.value.clone(), fog: sc.fog.color.clone(), fn: sc.fog.near, ff: sc.fog.far, hs: hemi.color.clone(), hg: hemi.groundColor.clone(), hi: hemi.intensity, sun: sun.color.clone(), si: sun.intensity, bloom: cfg.bloom };
+  const NIGHT = { top: '#070B1C', hor: '#1B2440', bot: '#0A0D18', fog: '#2A3556', hs: '#6272B8', hg: '#1C2030', sun: '#9DB0EA', hi: 1.15, si: .7 };
+  const DAY = { top: '#4F86CC', hor: '#BCD3E8', bot: '#6B7A86', fog: '#A9BCCB', hs: '#BBD0E8', hg: '#5A5A50', sun: '#FFF1D6', hi: .95, si: 1.1 };
+  const tmp2 = new THREE.Color(), hsl = {};
+  let mooded = false; const wx = { rain: null, snow: null };
+  const mix = (out, from, toHex, w) => out.copy(from).lerp(tmp2.set(toHex), w);
+  const grey = (c, k) => { c.getHSL(hsl); return c.setHSL(hsl.h, hsl.s * (1 - k), hsl.l); };
+  C.setMood = m => {
+    const hour = m.hour ?? 12, isDay = m.isDay !== false, cloud = m.cloud || 0, rain = m.rain || 0, snow = m.snow || 0, fog = m.fog || 0;
+    const night = !isDay || hour < 6 || hour >= 19, twi = !night && ((hour >= 18 && hour < 19) || (hour >= 6 && hour < 7));
+    const designedNight = !!cfg.night; mooded = true;
+    // w: 0 keeps the designed palette, else blend toward the night or day palette
+    const w = night === designedNight ? 0 : (twi ? .5 : 1), P = night ? NIGHT : DAY;
+    const u = sky.material.uniforms, g = Math.min(.6, cloud * .5 + rain * .2 + snow * .15 + fog * .3);
+    mix(u.top.value, D.top, P.top, w); mix(u.hor.value, D.hor, P.hor, w); mix(u.bot.value, D.bot, P.bot, w);
+    grey(u.top.value, g); grey(u.hor.value, g * .6); u.sc.value.copy(D.sc).multiplyScalar(1 - Math.min(1, cloud * .8 + rain + snow) * .85 - (night && !designedNight ? .1 : 0));
+    mix(sc.fog.color, D.fog, P.fog, w); grey(sc.fog.color, g);
+    mix(hemi.color, D.hs, P.hs, w); mix(hemi.groundColor, D.hg, P.hg, w);
+    hemi.intensity = D.hi + (P.hi - D.hi) * w;
+    mix(sun.color, D.sun, P.sun, w); sun.intensity = (D.si + (P.si - D.si) * w) * (1 - Math.min(.7, cloud * .5 + rain * .3 + snow * .3 + fog * .3));
+    const fm = Math.max(.4, 1 - fog * .6 - cloud * .1 - rain * .15 - snow * .15);
+    sc.fog.near = D.fn * Math.max(.5, fm); sc.fog.far = D.ff * fm;
+    cfg.bloom = night && !designedNight ? Math.max(D.bloom || 0, .45) : !night && designedNight ? Math.min(D.bloom || 0, .12) : D.bloom;
+    // weather particles: hide the designed rain/snow, show our own (built once, intensity via drawRange)
+    C._pcs ??= sc.children.filter(o => o.userData?.ptype === 'rain' || o.userData?.ptype === 'snow');
+    C._pcs.forEach(o => { o.visible = false; });
+    ['rain', 'snow'].forEach(t => {
+      const k = t === 'rain' ? rain : snow;
+      if (k > .05 && !wx[t]) wx[t] = C.particles(t, 2200);
+      if (wx[t]) { wx[t].visible = k > .05; const n = Math.round(300 + 1900 * Math.min(1, k)); wx[t].geometry.setDrawRange(0, t === 'rain' ? n * 2 : n); }
+    });
+  };
+  C.resetMood = () => {
+    if (!mooded) return; mooded = false;
+    const u = sky.material.uniforms; u.top.value.copy(D.top); u.hor.value.copy(D.hor); u.bot.value.copy(D.bot); u.sc.value.copy(D.sc);
+    sc.fog.color.copy(D.fog); sc.fog.near = D.fn; sc.fog.far = D.ff; hemi.color.copy(D.hs); hemi.groundColor.copy(D.hg); hemi.intensity = D.hi;
+    sun.color.copy(D.sun); sun.intensity = D.si; cfg.bloom = D.bloom;
+    (C._pcs || []).forEach(o => { o.visible = true; });
+    ['rain', 'snow'].forEach(t => { if (wx[t]) { C.removeParticles(wx[t]); wx[t] = null; } });
   };
   C.hero = (x, z, ry = 0) => { const c = heroCar(!!cfg.night); C.add(c, x, z, ry); C.heroCar = c; return c; };
   C.crowd = pts => pts.forEach(([x, z, ry]) => C.add(person(SKIN[Math.floor(rnd() * SKIN.length)]), x, z, ry ?? rnd() * 6));
