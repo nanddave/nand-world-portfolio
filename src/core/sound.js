@@ -1,0 +1,45 @@
+// WebAudio ambience, synthesised live (no audio files). One soundscape per city id plus 'globe'.
+// Off until the visitor presses Start; a toggle in the top bar switches it.
+export const Sound = {
+  ctx: null, master: null, on: false, nodes: [], timers: [], noiseBuf: null, current: null, _last: null, onChange: null,
+  init() {
+    if (this.ctx) return;
+    try {
+      const AC = window.AudioContext || window.webkitAudioContext; this.ctx = new AC(); this.master = this.ctx.createGain(); this.master.gain.value = 0; this.master.connect(this.ctx.destination);
+      const n = this.ctx.sampleRate * 2, b = this.ctx.createBuffer(1, n, this.ctx.sampleRate), d = b.getChannelData(0); for (let i = 0; i < n; i++) d[i] = Math.random() * 2 - 1; this.noiseBuf = b;
+    } catch (e) { this.ctx = null; }
+  },
+  set(on) {
+    this.init(); this.on = on; this.onChange?.(on); if (!this.ctx) return;
+    if (this.ctx.state === 'suspended') this.ctx.resume();
+    this.master.gain.setTargetAtTime(on ? .55 : 0, this.ctx.currentTime, .3);
+    if (on && this.current) this.play(this.current, true); else if (!on) { this.stop(); this._last = null; }
+  },
+  noise(type, f, q, g) {
+    const c = this.ctx, s = c.createBufferSource(); s.buffer = this.noiseBuf; s.loop = true; const fl = c.createBiquadFilter(); fl.type = type; fl.frequency.value = f; fl.Q.value = q || 1; const gn = c.createGain(); gn.gain.value = 0;
+    s.connect(fl); fl.connect(gn); gn.connect(this.master); s.start(); gn.gain.setTargetAtTime(g, c.currentTime, 1); this.nodes.push({ s, gn }); return { s, fl, gn };
+  },
+  tone(type, f, dur, g, slide) {
+    const c = this.ctx, o = c.createOscillator(), gn = c.createGain(); o.type = type; o.frequency.setValueAtTime(f, c.currentTime); if (slide) o.frequency.exponentialRampToValueAtTime(slide, c.currentTime + dur * .8);
+    gn.gain.setValueAtTime(0, c.currentTime); gn.gain.linearRampToValueAtTime(g, c.currentTime + .02); gn.gain.exponentialRampToValueAtTime(.0001, c.currentTime + dur); o.connect(gn); gn.connect(this.master); o.start(); o.stop(c.currentTime + dur + .05);
+  },
+  every(min, max, fn) { const go = () => { fn(); this.timers.push(setTimeout(go, (min + Math.random() * (max - min)) * 1000)); }; this.timers.push(setTimeout(go, min * 500)); },
+  stop() { const c = this.ctx; if (!c) return; this.timers.forEach(clearTimeout); this.timers = []; this.nodes.forEach(n => { try { n.gn.gain.setTargetAtTime(0, c.currentTime, .4); n.s.stop(c.currentTime + 1.5); } catch (e) { /* already stopped */ } }); this.nodes = []; },
+  play(name, force) {
+    this.current = name; if (!this.ctx || !this.on) return; if (!force && this._last === name) return; this._last = name; this.stop(); const S = this;
+    const scapes = {
+      globe() { S.noise('lowpass', 420, 1, .12); S.noise('bandpass', 900, 3, .02); },
+      nadiad() { S.noise('lowpass', 900, 1, .05); S.every(.4, 2.2, () => { const f = 2400 + Math.random() * 1400; S.tone('sine', f, .18, .05, f * 1.35); setTimeout(() => S.on && S.tone('sine', f * 1.1, .12, .04, f * 1.5), 140); }); S.every(8, 13, () => { S.tone('sine', 523, 3.2, .06); S.tone('sine', 785, 2.6, .03); }); },
+      blr() { S.noise('lowpass', 320, 1, .16); S.noise('bandpass', 1100, 1, .025); S.every(1.5, 4, () => { const f = [392, 440, 494][Math.floor(Math.random() * 3)]; S.tone('square', f, .22, .025); if (Math.random() < .4) setTimeout(() => S.on && S.tone('square', f, .18, .025), 280); }); },
+      boston() { const w = S.noise('bandpass', 380, 2.5, .13); const l = S.ctx.createOscillator(), lg = S.ctx.createGain(); l.frequency.value = .13; lg.gain.value = 160; l.connect(lg); lg.connect(w.fl.frequency); l.start(); S.nodes.push({ s: l, gn: lg }); S.every(12, 20, () => { S.tone('sine', 1320, 1.4, .05); setTimeout(() => S.on && S.tone('sine', 1320, 1.2, .04), 260); }); },
+      irving() {
+        const o = S.ctx.createOscillator(), am = S.ctx.createOscillator(), g = S.ctx.createGain(), amg = S.ctx.createGain(); o.frequency.value = 4700; am.frequency.value = 38; amg.gain.value = .018; g.gain.value = 0; am.connect(amg); amg.connect(g.gain); o.connect(g); g.connect(S.master); o.start(); am.start(); S.nodes.push({ s: o, gn: g }, { s: am, gn: amg });
+        const hw = S.noise('lowpass', 650, 1, .07); S.every(2.5, 5, () => { const t = S.ctx.currentTime; hw.gn.gain.cancelScheduledValues(t); hw.gn.gain.setTargetAtTime(.2, t, .6); hw.gn.gain.setTargetAtTime(.07, t + 1.6, .8); });
+      },
+      seattle() { S.noise('highpass', 1400, .7, .16); S.noise('lowpass', 380, 1, .07); S.every(.2, .9, () => S.tone('sine', 1500 + Math.random() * 1500, .06, .02)); },
+      sf() { S.noise('lowpass', 500, 1, .1); S.every(10, 16, () => { S.tone('sawtooth', 92, 2.4, .07); setTimeout(() => S.on && S.tone('sawtooth', 78, 2.6, .07), 2500); }); S.every(9, 15, () => { S.tone('triangle', 1600, .5, .03); setTimeout(() => S.on && S.tone('triangle', 1600, .5, .03), 220); }); },
+      brokai() { S.noise('lowpass', 260, 1, .1); S.every(.6, 1.6, () => { for (let k = 0; k < 3; k++) setTimeout(() => S.on && S.tone('sine', 4300, .05, .015), k * 70); }); S.every(4, 9, () => S.tone('square', 440, .2, .018)); },
+    };
+    (scapes[name] || scapes[name === 'bellevue' ? 'seattle' : 'globe'])();
+  },
+};

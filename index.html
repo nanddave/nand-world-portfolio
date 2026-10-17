@@ -1,1 +1,110 @@
-<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><title>Nand's World</title></head><body><canvas id="scene"></canvas><script type="module" src="/src/main.js"></script></body></html>
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Nand's World</title>
+<meta name="description" content="Nand Dave's portfolio as a trip: a real Earth, a street-level scene for each city, and live demos of the work.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@700;800;900&family=Schibsted+Grotesk:wght@400;500;600;700&family=Kalam:wght@400;700&display=swap">
+</head>
+<body>
+<canvas id="scene" aria-label="A 3D journey: a globe with Nand's cities, and a street-level scene for each city"></canvas>
+<div id="fade" aria-hidden="true"></div>
+
+<header id="top">
+  <a class="mark" href="#" id="home" aria-label="Nand Dave, back to the start">Nand Dave</a>
+  <div class="tools">
+    <button class="chip" id="soundBtn" type="button" aria-pressed="false">Sound off</button>
+    <button class="chip" id="skillsBtn" type="button">Skills</button>
+    <button class="chip" id="passBtn" type="button">Passport <span class="n" id="passN">0/7</span></button>
+    <button class="chip hide-sm" id="quickBtn" type="button">30-second version</button>
+    <button class="chip hide-sm" id="howBtn" type="button">How this was built</button>
+  </div>
+</header>
+
+<section id="intro" aria-labelledby="introT">
+  <h1 id="introT">Nand Dave</h1>
+  <p id="introFor" class="for" hidden></p>
+  <p>I grew up in Nadiad, studied in Bangalore and Boston, worked in Texas, Seattle and San Francisco, and came back to build in Bangalore. Take the trip with me.</p>
+  <div class="row">
+    <button class="btn primary" id="startBtn" type="button">Start the journey</button>
+    <button class="btn ghost" id="quickBtn2" type="button">The 30-second version</button>
+  </div>
+  <div class="hint">sound comes on when you start · drag to spin the earth</div>
+</section>
+
+<div id="travel" aria-live="polite"><div class="k" id="travelK"></div><div class="t" id="travelT"></div></div>
+<div id="pins"></div>
+
+<div id="ctitle"><div class="stop" id="cStop"></div><h2 id="cName"></h2><div class="meta" id="cMeta"></div></div>
+
+<aside id="card" aria-live="polite" aria-labelledby="kTitle">
+  <button class="x" id="cardX" type="button" aria-label="Close">×</button>
+  <p class="kick" id="kKick"></p>
+  <h3 id="kTitle"></h3>
+  <p class="meta" id="kMeta"></p>
+  <div id="kBody"></div>
+  <section id="kMission" class="try" hidden aria-label="Live demo"></section>
+  <button class="workbtn" id="workBtn" type="button" aria-expanded="false" aria-controls="workPanel" hidden><span class="lbl">Show your work</span> <span class="n" id="workN">0</span></button>
+  <section id="workPanel" class="workpanel" hidden aria-label="What the demo actually ran">
+    <p class="cap">Every step the demo really ran in your browser, with timings.</p>
+    <ol class="worklog" id="workList"></ol>
+  </section>
+  <div class="cardnav"><button class="btn small" id="kBack" type="button">Back to the street</button><button class="btn small primary" id="kNext" type="button">Next spot</button></div>
+</aside>
+
+<aside id="pilot" aria-label="Co-pilot">
+  <div class="bubble">
+    <button id="pilotMin" type="button" aria-label="Minimise co-pilot" aria-expanded="true">–</button>
+    <div class="who2"><span class="dot" aria-hidden="true"></span>Co-pilot</div>
+    <span id="pilotText" aria-live="polite">I'm riding along. Ask me anything about Nand and I'll take you to the answer.</span>
+    <small id="pilotMatch">Searches the stories on this trip, right here in your browser.</small>
+  </div>
+  <div class="sugg" id="sugg"></div>
+  <form id="ask" autocomplete="off"><label for="askIn" class="sr">Ask the co-pilot</label><input id="askIn" placeholder="Ask the co-pilot…"><button type="submit" aria-label="Ask"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></button></form>
+</aside>
+
+<nav id="bar" aria-label="Journey">
+  <button class="btn primary" id="next" type="button">Continue</button>
+  <div class="stops" id="stops"></div>
+</nav>
+
+<div class="modal" id="quick" hidden><div class="sheet" role="dialog" aria-modal="true" aria-labelledby="qT">
+  <h2 id="qT">Nand Dave, in 30 seconds</h2>
+  <ul id="quickList" class="facts"></ul>
+  <div id="quickContact"></div>
+  <div class="contact"><button class="btn" type="button" data-close data-autofocus>Back to the trip</button></div>
+</div></div>
+
+<div class="modal" id="pass" hidden><div class="sheet" role="dialog" aria-modal="true" aria-labelledby="pT">
+  <h2 id="pT">Your passport</h2>
+  <p id="passLine"></p>
+  <div class="stamps" id="stampGrid"></div>
+  <div id="passDone" hidden><p>You've seen the whole trip. Send Nand a note:</p><div class="c"></div></div>
+  <div class="contact"><button class="btn" type="button" data-close data-autofocus>Back to the trip</button></div>
+</div></div>
+
+<div class="modal" id="skills" hidden><div class="sheet" role="dialog" aria-modal="true" aria-labelledby="sT">
+  <h2 id="sT">Skills, and where to see them</h2>
+  <p>Pick one and I'll take you there. "Try it" means there's a live demo.</p>
+  <ul id="skillList" class="skills"></ul>
+  <div class="contact"><button class="btn" type="button" data-close data-autofocus>Back to the trip</button></div>
+</div></div>
+
+<div class="modal" id="how" hidden><div class="sheet" role="dialog" aria-modal="true" aria-labelledby="hT">
+  <h2 id="hT">How this was built</h2>
+  <ul>
+    <li><b>Procedural three.js.</b> Every building, car and kite is built from code: boxes, lathes and extrusions. No downloaded models.</li>
+    <li><b>A real Earth.</b> Coastlines come from Natural Earth's public-domain land data, packed into a 32 KB bit mask. Mountains, biomes and clouds are generated.</li>
+    <li><b>Demos run in your browser.</b> The missions do their work on your device; "Show your work" lists each step they actually ran. Anything scripted says so.</li>
+    <li><b>The co-pilot is search, not a chatbot.</b> It ranks every story on the trip with BM25 plus a small synonym list, and shows you the match and its score.</li>
+    <li><b>No paid services.</b> No APIs, no tracking, no paid assets. Sound is synthesised live with WebAudio. It's a static site on free hosting.</li>
+  </ul>
+  <div class="contact"><a class="btn small" id="howRepo" href="#" rel="noopener" target="_blank">Code: repo (coming public)</a><button class="btn" type="button" data-close data-autofocus>Back to the trip</button></div>
+</div></div>
+
+<script type="module" src="/src/main.js"></script>
+</body>
+</html>
