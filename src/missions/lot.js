@@ -32,7 +32,7 @@ export function mount(el, ctx) {
     const shortName = (VISITOR.company || typed || words.slice(0, 2).map(w => w[0].toUpperCase() + w.slice(1)).join(' ') || 'Your Co').replace(/[^\p{L}\p{N} &.\-]/gu, '').slice(0, 18);
     const ind = INDUSTRIES.find(([, re]) => re.test(text)); const chans = CHANNELS.filter(([, re]) => re.test(text)).map(c => c[0]);
     const [key, , arrives, ai, decides] = ind || ['general', null, 'emails, calls and requests from customers and colleagues', 'sort and route incoming work, extract the details, draft first replies', 'anything with money, risk or a relationship on the line'];
-    const arrivesTxt = chans.length ? `${chans.join(', ')} (you mentioned ${chans.length > 1 ? 'these' : 'this'}), plus ${arrives}` : arrives;
+    const arrivesTxt = chans.length ? `${chans.join(', ').replace(/, ([^,]*)$/, ' and $1')}, as you mentioned, plus whatever lands in someone's inbox today` : arrives;
     ctx.work.step('Read your sentence', `input: "${text}"\nkeywords: [${words.slice(0, 10).join(', ')}]\nmatched sector: ${key}\nchannels mentioned: ${chans.join(', ') || 'none'}`, { ms: ms(T) });
     let ok = false; try { ctx.scene?.raiseLot?.(shortName); ok = !!ctx.scene?.raiseLot; } catch (e) { ctx.work.step('raiseLot failed', String(e)); }
     ctx.work.step('scene.raiseLot', `name: "${shortName}"${VISITOR.company ? ' (from your link)' : typed ? ' (typed)' : ' (from your sentence)'}\n${ok ? 'building raised in the city' : 'no scene attached here (harness), skipped'}`);
