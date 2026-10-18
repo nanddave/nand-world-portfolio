@@ -3,6 +3,7 @@
 import './missions.css';
 import { esc, now, ms, tokens } from './_util.js';
 import { VISITOR } from '../core/visitor.js';
+import { isReal } from '../content/stops.js';
 
 const INDUSTRIES = [
   ['health', /clinic|hospital|dental|dentist|doctor|patient|health|pharma|care/i, 'patient calls, WhatsApp messages and appointment requests', 'answer routine questions, book and reschedule appointments, send reminders', 'diagnosis, anything clinical, and unhappy patients'],
@@ -41,8 +42,8 @@ export function mount(el, ctx) {
       <div class="ms-sk"><b>1. Where work arrives</b>${esc(arrivesTxt[0].toUpperCase() + arrivesTxt.slice(1))}.</div>
       <div class="ms-sk"><b>2. What AI handles</b>${esc(ai[0].toUpperCase() + ai.slice(1))}. Every step logged so your team can check it.</div>
       <div class="ms-sk"><b>3. What your team decides</b>${esc(decides[0].toUpperCase() + decides.slice(1))}. The AI hands these over with the context ready.</div></div>
-      <div class="ms-panel"><span class="ms-label">Want the real version? Write to me</span><div class="ms-email"><span data-r="em">${esc(email)}</span><button type="button" class="ms-btn ms-small" data-copy>Copy</button><span data-r="cp" class="ms-mono"></span></div></div>`;
-    el.querySelector('[data-copy]').addEventListener('click', async () => {
+      ${isReal(email) ? `<div class="ms-panel"><span class="ms-label">Want the real version? Write to me</span><div class="ms-email"><span data-r="em">${esc(email)}</span><button type="button" class="ms-btn ms-small" data-copy>Copy</button><span data-r="cp" class="ms-mono"></span></div></div>` : ''}`;
+    el.querySelector('[data-copy]')?.addEventListener('click', async () => {
       let done = false; try { await navigator.clipboard.writeText(email); done = true; } catch { /* clipboard blocked */ }
       if (!done) { try { const r = document.createRange(); r.selectNodeContents($('em')); const s = getSelection(); s.removeAllRanges(); s.addRange(r); } catch { /* ignore */ } }
       $('cp').textContent = done ? 'Copied' : 'Selected: press Ctrl/Cmd+C'; ctx.work.step('Copy email', done ? 'copied to clipboard' : 'clipboard unavailable, text selected instead');

@@ -14,11 +14,12 @@
 //   horn    {}                                         city horn
 //   lot     { name }                                   Brokai lot rises with the given name
 //   end     { dur }                                    end card (name, role line, link) — values from TRAILER_END
+import { CONTACT } from './stops.js';
 export const TRAILER_END = {
   name: 'Nand Dave',
   line: 'Applied AI engineer and founder',
   cta: 'Drive through it yourself',
-  link: '[your link]', // placeholder until Nand confirms the public URL
+  link: CONTACT.site, // placeholder until Nand confirms the public URL; the end card hides it while it is one
 };
 
 export const SHOTS = [
@@ -78,7 +79,7 @@ export const SHOTS = [
   { at: 44.4, do: 'caption', text: 'Bangalore, again', sub: 'Founder, Brokai Labs', dur: 2.8 },
   { at: 47.4, do: 'spot', k: 1, dur: 3.2 },
   { at: 47.4, do: 'mission', id: 'voice', dur: 3.2 },
-  { at: 47.6, do: 'caption', text: 'Voice AI for a real salon', sub: 'Scripted demo of the call flow', dur: 3.0 },
+  { at: 47.6, do: 'caption', text: 'Voice AI for a US salon', sub: 'Scripted demo of the call flow', dur: 3.0 },
   { at: 50.8, do: 'spot', k: 2, dur: 3.2 },
   { at: 51.2, do: 'lot', name: 'Your company' },
   { at: 51.4, do: 'caption', text: 'Next stop', sub: 'Your company here', dur: 2.6 },

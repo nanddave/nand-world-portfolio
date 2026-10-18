@@ -16,12 +16,14 @@
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@700;800;900&family=Schibsted+Grotesk:wght@400;500;600;700&family=Kalam:wght@400;700&display=swap">
 </head>
 <body>
+<noscript><p style="position:fixed;inset:0;z-index:99;margin:0;padding:24px;background:#0B1026;color:#F6EEDC;font:18px/1.5 system-ui,sans-serif">This 3D trip needs JavaScript. <a href="cv.html" style="color:#FFD166">Read the plain résumé instead</a>.</p></noscript>
 <canvas id="scene" aria-label="A 3D journey: a globe with Nand's cities, and a street-level scene for each city"></canvas>
 <div id="fade" aria-hidden="true"></div>
 
 <header id="top">
   <a class="mark" href="#" id="home" aria-label="Nand Dave, back to the start">Nand Dave</a>
   <div class="tools">
+    <a class="chip hide-sm" id="cvLink" href="cv.html">Plain résumé</a>
     <button class="chip" id="soundBtn" type="button" aria-pressed="false">Sound off</button>
     <button class="chip" id="skillsBtn" type="button">Skills</button>
     <button class="chip" id="passBtn" type="button">Passport <span class="n" id="passN">0/7</span></button>
@@ -127,7 +129,7 @@
     <li><b>Drive mode and real streets.</b> The yellow car is arcade physics against box colliders derived from the scene; Bangalore's streets and buildings are OpenStreetMap data baked offline into a small JSON file (© OpenStreetMap contributors), with approximate building heights.</li>
     <li><b>Live local time and weather.</b> The time in each city comes from your browser's clock and that city's time zone. If you are online, current weather comes from Open-Meteo.com (free, no key) and tints the sky and adds rain or snow; offline, or with the "Designed" toggle, you get the hand-designed look.</li>
     <li><b>Voice is the browser's own.</b> The mic button and the spoken answers use your browser's built-in speech features (speech recognition and speech synthesis). This site never records or stores audio; where your browser sends speech for recognition is up to the browser.</li>
-    <li><b>Your own city.</b> If you type where you are, one lookup goes to OpenStreetMap's Nominatim and one to Overpass, straight from your browser, to draw your streets. If either is slow or blocked you get a designed street instead.</li>
+    <li><b>Your own city.</b> If you type where you are, one lookup goes to a free geocoder (Photon, or OpenStreetMap's Nominatim as a fallback) and one to OpenStreetMap's Overpass, straight from your browser, to draw your streets. If either is slow or blocked you get a designed street instead.</li>
     <li><b>No paid services.</b> No APIs, no tracking, no paid assets. Sound is synthesised live with WebAudio. It's a static site on free hosting.</li>
   </ul>
   <div class="contact"><a class="btn small" id="howRepo" href="#" rel="noopener" target="_blank">Code: repo (coming public)</a><button class="btn" type="button" data-close data-autofocus>Back to the trip</button></div>

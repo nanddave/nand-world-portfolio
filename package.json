@@ -4,9 +4,10 @@
   "version": "0.3.0",
   "type": "module",
   "scripts": {
+    "prebuild": "node tools/build-cv.mjs",
     "dev": "vite",
     "build": "vite build",
-    "build:single": "SINGLE=1 vite build --outDir dist-single",
+    "build:single": "node tools/build-cv.mjs && SINGLE=1 vite build --outDir dist-single",
     "shot": "node tools/shot.mjs"
   },
   "dependencies": {

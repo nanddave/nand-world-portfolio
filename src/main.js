@@ -27,10 +27,19 @@ const short = s => (s.short && /again/i.test(s.name) ? s.short : s.name).replace
 
 /* renderer */
 const canvas = $('#scene');
-const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
+let renderer = null;
+try { renderer = new THREE.WebGLRenderer({ canvas, antialias: true }); } catch (e) { console.error('WebGL unavailable', e); }
+if (!renderer) {
+  const o = document.createElement('div'); o.id = 'noGL'; o.setAttribute('role', 'alert');
+  o.style.cssText = 'position:fixed;inset:0;z-index:99;display:grid;place-items:center;padding:24px;background:#0B1026;color:#F6EEDC;text-align:center;font:18px/1.5 system-ui,sans-serif';
+  o.innerHTML = '<div style="max-width:30em"><h1 style="font-size:34px;margin:0 0 12px">This 3D trip needs WebGL</h1><p>Your browser or device could not start it. The same story is here as a plain page.</p><p><a href="cv.html" style="color:#FFD166;font-weight:700">Read the plain résumé</a></p></div>';
+  document.body.appendChild(o); throw new Error('WebGL unavailable: showing the plain résumé link');
+}
 renderer.setPixelRatio(Math.min(devicePixelRatio, SMALL ? 1.5 : 1.75));
 renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFSoftShadowMap; renderer.setClearColor(0x0B1026);
 const post = createPost(renderer, !SMALL);
+
+if (new URLSearchParams(location.search).get('draft') === '1') document.body.classList.add('draft'); // shows the unfinished .todo paragraphs
 
 /* state */
 const state = { mode: 'intro', cityIdx: -1, spot: -1, stamped: new Set(), missions: new Set(), pending: null, transit: false };
@@ -363,15 +372,30 @@ function driveHud() {
   prompt.textContent = `${matchMedia('(pointer: coarse)').matches ? 'Tap to open' : 'Press E to open'} — ${(state.custom ? state.custom.spots : STOPS[state.cityIdx].spots)[k].t}`; prompt.hidden = false;
 }
 
+/* adaptive quality: after ~3 s in a city, if frames average > 28 ms drop to pixel ratio 1; if the next 3 s are still slow, drop shadows and bloom. Never in the trailer or fixed-fps recording. ?noadapt=1 turns it off. */
+const Q = { stage: 0, t: 0, n: 0, sum: 0, done: QS.has('trailer') || QS.has('noadapt') || !!FIXED_FPS, noBloom: false };
+function adaptQuality(raw) {
+  if (Q.done || state.mode !== 'city' || state.transit || trailer.active || !(raw > 0) || raw > .5) return;
+  Q.t += raw; Q.n++; Q.sum += raw; if (Q.t < 3) return;
+  const avg = Q.sum / Q.n * 1000; Q.t = Q.n = Q.sum = 0;
+  if (avg <= 28) { Q.done = true; return; }
+  if (Q.stage === 0) { Q.stage = 1; renderer.setPixelRatio(1); post.setPixelRatio(1); resize(); console.info('quality: pixel ratio 1 (avg ' + avg.toFixed(1) + ' ms)'); }
+  else {
+    Q.done = true; Q.noBloom = true; renderer.shadowMap.enabled = false;
+    city.C?.scene.traverse(o => { const m = o.material; if (m) (Array.isArray(m) ? m : [m]).forEach(x => { x.needsUpdate = true; }); });
+    console.info('quality: shadows and bloom off (avg ' + avg.toFixed(1) + ' ms)');
+  }
+}
+
 /* loop */
 let last = performance.now(), T = 0, frames = 0;
 function frame(now) {
   const raw = (now - last) / 1000, dt = FIXED_FPS ? 1 / FIXED_FPS : Math.min(.05, raw); last = now; T += dt;
-  if (trailer.active) trailer.update(raw); const W = innerWidth, H = innerHeight;
+  if (trailer.active) trailer.update(raw); adaptQuality(raw); const W = innerWidth, H = innerHeight;
   if (state.mode === 'city' && city.C) {
     city.update(dt, T, W, H);
     if (drive.active) driveHud();
-    if (!app.skipRender) post.render(city.C.scene, city.cam, { bloom: city.C.cfg?.bloom > 0 ? city.C.cfg.bloom : 0, tilt: !SMALL });
+    if (!app.skipRender) post.render(city.C.scene, city.cam, { bloom: !Q.noBloom && city.C.cfg?.bloom > 0 ? city.C.cfg.bloom : 0, tilt: !SMALL });
   } else { globe.update(dt, T, W, H); if (!app.skipRender) renderer.render(globe.scene, globe.cam); }
   if (++frames === 30) window.__ready = true;
   requestAnimationFrame(frame);
@@ -382,7 +406,18 @@ requestAnimationFrame(frame);
 /* ?yours=<city> jumps straight to the visitor-city stop (for testing) */
 if (QS.get('yours')) { yours.offered = true; setTimeout(() => goYours(QS.get('yours').slice(0, 60)), 300); }
 
+/* deep links for posts: ?stop=<id>[&spot=<k>][&drive=1] goes straight into that city (a short fade, no globe flight). */
+{
+  const ci = QS.get('stop') ? STOPS.findIndex(s => s.id === QS.get('stop')) : -1;
+  if (ci >= 0 && !QS.has('trailer') && !QS.get('yours')) (async () => {
+    const k = QS.has('spot') ? Math.max(0, Math.min(+QS.get('spot') || 0, STOPS[ci].spots.length - 1)) : null;
+    begin(); globe.u = globe.stopU[ci]; globe.setTarget(ci); updateChips();
+    state.pending = k; await enterCity(ci);
+    if (QS.get('drive') === '1' && k === null) setDrive(true);
+  })();
+}
+
 // Test hooks for the lead / screenshot tool.
 window.__trailer = trailer;
-window.__app = { state, drive, exitCity, travelTo, focusSpot, search, ask: runAsk, openModal, enterCity: async i => { begin(); await enterCity(i); } };
+window.__app = { state, city, drive, exitCity, travelTo, focusSpot, search, ask: runAsk, openModal, enterCity: async i => { begin(); await enterCity(i); } };
 window.__drive = { get active() { return drive.active; }, get x() { return drive.x; }, get z() { return drive.z; }, get speed() { return drive.speed; }, get nearSpot() { return drive.nearSpot; }, get hits() { return drive.hits; } };

@@ -7,7 +7,7 @@ import { MISSION_SKILLS } from './skills.js';
 
 const STOP = new Set('a an the is are was were be been do does did done has have had he his him nand nand\'s i me my you your of to in on at for and or what which who whom where when how why did can could would should tell show about any some there this that it its with from by as into me please'.split(' '));
 const SYN = {
-  voice: ['salon', 'receptionist', 'call', 'calls'], call: ['voice', 'receptionist'], phone: ['voice', 'receptionist', 'call'], receptionist: ['voice', 'salon'],
+  voice: ['salon', 'receptionist', 'call', 'calls'], us: ['salon', 'client'], client: ['salon', 'voice', 'receptionist'], call: ['voice', 'receptionist'], phone: ['voice', 'receptionist', 'call'], receptionist: ['voice', 'salon'],
   study: ['bachelor', 'master', 'college', 'university', 'degree'], studi: ['bachelor', 'master', 'college', 'university', 'degree'], education: ['bachelor', 'master', 'college', 'university', 'degree'], school: ['college', 'university'], degree: ['bachelor', 'master'], university: ['northeastern', 'college'],
   data: ['etl', 'pyspark', '7eleven', 'clustering', 'pipelines'], pipeline: ['etl', 'pyspark'], spark: ['pyspark', 'etl'], analytic: ['etl', 'kpi', 'data'], scientist: ['data', '7eleven'],
   research: ['paper', 'icdm', 'neurips', 'workshop', 'pii', 'legalwiz'], paper: ['research', 'icdm', 'neurips', 'workshop'], publication: ['paper', 'icdm', 'neurips', 'workshop'], publish: ['paper', 'icdm', 'neurips'],
@@ -19,7 +19,7 @@ const SYN = {
   home: ['nadiad', 'lane', 'grew'], grow: ['nadiad', 'lane', 'grew'], grew: ['nadiad', 'lane'], family: ['farm', 'dairy'], farm: ['dairy', 'family'], dairy: ['farm'], kite: ['uttarayan', 'kites'], temple: ['mandir', 'santram'],
   hobby: ['badminton', 'off', 'hours'], hobbi: ['badminton'], sport: ['badminton'], fun: ['badminton', 'uttarayan'],
   ambition: ['ambitions', 'goal', 'founders'], goal: ['ambitions', 'steps'], plan: ['steps', 'ambitions'],
-  ml: ['machine', 'learning', 'clustering', 'ai'], ai: ['ai'], usa: ['boston', 'irving', 'bellevue', 'francisco'], america: ['boston', 'irving', 'bellevue', 'francisco'], seattle: ['bellevue', 'centific'], bay: ['francisco', 'oaklet'], sf: ['francisco', 'oaklet'], texas: ['irving', '7eleven'],
+  ml: ['machine', 'learning', 'clustering', 'ai'], ai: ['ai'], usa: ['boston', 'irving', 'bellevue', 'francisco', 'salon'], america: ['boston', 'irving', 'bellevue', 'francisco', 'salon'], seattle: ['bellevue', 'centific'], bay: ['francisco', 'oaklet'], sf: ['francisco', 'oaklet'], texas: ['irving', '7eleven'],
 };
 const norm = s => s.toLowerCase().replace(/7[\s-]?eleven/g, '7eleven').replace(/’/g, "'").replace(/'s\b/g, '').replace(/₹/g, ' ');
 const stem = w => w.length > 4 ? w.replace(/(ing|ed|es|s)$/, '') : w;

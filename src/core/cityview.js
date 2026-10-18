@@ -58,6 +58,7 @@ export function createCityView({ reduce = false, spotsEl, onSpot }) {
   }
 
   const desired = V(), look = V(), side = V(), pr = V();
+  let sheetH = 0, sheetAt = -1e9;
   V_.update = (dt, T, W, H) => {
     const C = V_.C; if (!C) return;
     try { C.update(T, dt); } catch (e) { /* a city tick error must not freeze the app */ if (!C._warned) { console.error(e); C._warned = true; } }
@@ -75,7 +76,15 @@ export function createCityView({ reduce = false, spotsEl, onSpot }) {
       if (!V_.spotDir) { V_.spotDir = V(cam.position.x - sp.p.x, 0, cam.position.z - sp.p.z); if (V_.spotDir.lengthSq() < 1e-4) V_.spotDir.set(0, 0, 1); V_.spotDir.normalize(); }
       const dist = Math.max(22, sp.p.y * 1.4 + 14);
       desired.copy(sp.p).addScaledVector(V_.spotDir, dist); desired.y = sp.p.y * .6 + dist * .45; look.copy(sp.p); look.y = sp.p.y * .7;
-      if (W > 860) { side.set(V_.spotDir.z, 0, -V_.spotDir.x); look.addScaledVector(side, dist * .28); } else look.y -= dist * .15;
+      if (W > 860) { side.set(V_.spotDir.z, 0, -V_.spotDir.x); look.addScaledVector(side, dist * .28); } else {
+        // Phone bottom sheet: put the spot ~45% down the strip of screen that stays visible above the sheet.
+        const nowMs = performance.now();
+        if (nowMs - sheetAt > 200) { sheetAt = nowMs; const c = document.getElementById('card'); sheetH = c ? c.offsetHeight : H * .5; }
+        const visible = Math.max(80, H - sheetH), ndc = 1 - 2 * (visible * .45) / H;
+        const dx = desired.x - look.x, dy = desired.y - look.y, dz = desired.z - look.z, dl = Math.hypot(dx, dy, dz) || 1;
+        const cosP = Math.max(.35, Math.hypot(dx, dz) / dl);
+        look.y -= ndc * dl * Math.tan(cam.fov * Math.PI / 360) / cosP;
+      }
     } else {
       if (!V_.dragging && performance.now() - V_.lastInteract > 4000 && !reduce) V_.yaw += dt * .04;
       V_.dist = lerp(V_.dist, V_.tdist, k); V_.pitch = lerp(V_.pitch, V_.tpitch, k);

@@ -5,7 +5,7 @@
 // clock and written as inline styles each frame, never CSS transitions, so a fixed-timestep recording (&fixed=30)
 // is frame-exact. See tools/record-trailer.mjs.
 import { THREE, V, clamp, lerp } from '../kit/kit.js';
-import { STOPS } from '../content/stops.js';
+import { STOPS, isReal } from '../content/stops.js';
 import { SHOTS, TRAILER_END, TRAILER_LENGTH } from '../content/trailer.js';
 import { MISSIONS, mountMission } from '../missions/index.js';
 import { WorkLog } from '../ui/worklog.js';
@@ -61,7 +61,7 @@ export function createTrailer(app) {
     document.body.appendChild(d);
     const q = s => d.querySelector(s);
     els = { root: d, fade: q('#tFade'), cap: q('#tCap'), capB: q('#tCap b'), capS: q('#tCap span'), panel: q('#tPanel'), pin: q('.tp-in'), host: q('.tp-host'), end: q('#tEnd'), endV: q('#tEnd .tv'), endN: q('#tEnd .n'), endL: q('#tEnd .l'), endC: q('#tEnd .c'), endU: q('#tEnd .u'), load: q('#tLoad') };
-    els.endN.textContent = TRAILER_END.name; els.endL.textContent = TRAILER_END.line; els.endC.textContent = TRAILER_END.cta; els.endU.textContent = TRAILER_END.link;
+    els.endN.textContent = TRAILER_END.name; els.endL.textContent = TRAILER_END.line; els.endC.textContent = TRAILER_END.cta; els.endU.textContent = TRAILER_END.link; if (!isReal(TRAILER_END.link)) els.endU.hidden = true;
     els.fade.style.opacity = '1';
   }
 

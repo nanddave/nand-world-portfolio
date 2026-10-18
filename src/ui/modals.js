@@ -1,5 +1,5 @@
 // Modals: passport, 30-second version, skills index, how this was built.
-import { STOPS, CONTACT } from '../content/stops.js';
+import { STOPS, CONTACT, isReal } from '../content/stops.js';
 import { skillIndex } from '../core/skills.js';
 import { esc } from './worklog.js';
 
@@ -15,17 +15,16 @@ export function closeModals() { let any = false; document.querySelectorAll('.mod
 const spotIdx = (id, t) => { const ci = STOPS.findIndex(s => s.id === id); return [ci, Math.max(0, STOPS[ci].spots.findIndex(sp => sp.t === t))]; };
 
 function contactHtml() {
-  const isLink = h => h && h !== '#';
-  return `<div class="contact"><code>${esc(CONTACT.email)}</code><button class="btn small" type="button" data-copy>Copy email</button>`
-    + (isLink(CONTACT.resume) ? `<a class="btn small" href="${esc(CONTACT.resume)}">Résumé</a>` : '<span class="btn small ph" aria-disabled="true">Résumé [link]</span>')
-    + (isLink(CONTACT.linkedin) ? `<a class="btn small" href="${esc(CONTACT.linkedin)}" rel="noopener" target="_blank">LinkedIn</a>` : '<span class="btn small ph" aria-disabled="true">LinkedIn [link]</span>')
-    + (isLink(CONTACT.github) ? `<a class="btn small" href="${esc(CONTACT.github)}" rel="noopener" target="_blank">GitHub</a>` : '') + '</div>';
+  const a = (h, label, ext) => isReal(h) ? `<a class="btn small" href="${esc(h)}"${ext ? ' rel="noopener" target="_blank"' : ''}>${label}</a>` : '';
+  const mail = isReal(CONTACT.email) ? `<code>${esc(CONTACT.email)}</code><button class="btn small" type="button" data-copy>Copy email</button>` : '';
+  const html = mail + a(CONTACT.resume, 'Résumé') + a(CONTACT.linkedin, 'LinkedIn', 1) + a(CONTACT.github, 'GitHub', 1) + a(CONTACT.site, 'Website', 1);
+  return html ? `<div class="contact">${html}</div>` : '';
 }
 
 export function setupModals({ onGo }) {
   // 30-second version: every line is taken from src/content/stops.js.
   const facts = [
-    ['brokai', 'Brokai Labs', 'Founder, Brokai Labs (Nov 2025–now), an AI and automation agency in Bangalore. Builds include a voice receptionist for a salon (about 300 calls and 240 confirmed bookings in a typical month) and Jarvis, an agent that turns a Slack request into a Linear ticket.'],
+    ['brokai', 'Brokai Labs', 'Founder, Brokai Labs (Nov 2025–now), an AI and automation agency in Bangalore. Builds include a voice receptionist for a salon client in the US (about 300 calls and 240 confirmed bookings in a typical month) and Jarvis, an agent that turns a Slack request into a Linear ticket.'],
     ['sf', 'Oaklet', 'Oaklet, San Francisco (Sep–Oct 2025).'],
     ['seattle', 'Centific', 'Centific, Bellevue (May 2024–Aug 2025): first full-time role after the master\'s, across three AI teams.'],
     ['seattle', 'Catch the leak', 'Two 2025 workshop papers: Scalable Multilingual PII Annotation for Responsible AI in LLMs (IEEE ICDM Workshops) and LegalWiz, multi-agent contradiction detection in legal documents (NeurIPS GenProCC, co-author).'],
@@ -41,7 +40,7 @@ export function setupModals({ onGo }) {
   const sk = skillIndex();
   $('#skillList').innerHTML = sk.map(r => `<li><button type="button" data-go="${r.ci}:${r.k}"><b>${esc(r.skill)}</b><span>${esc(r.where)}</span>${r.mission ? '<em>try it</em>' : ''}</button></li>`).join('');
 
-  $('#howRepo').href = REPO;
+  if (isReal(REPO)) $('#howRepo').href = REPO; else $('#howRepo').hidden = true;
 
   document.querySelectorAll('.modal').forEach(m => m.addEventListener('click', e => {
     if (e.target === m || e.target.closest('[data-close]')) { closeModals(); return; }
@@ -51,7 +50,7 @@ export function setupModals({ onGo }) {
 }
 
 export function copyMail(b) {
-  const t = CONTACT.email; (navigator.clipboard ? navigator.clipboard.writeText(t) : Promise.reject()).then(() => { b.textContent = 'Copied'; }).catch(() => { b.textContent = 'Select it to copy'; });
+  const t = CONTACT.email; if (!isReal(t)) return; (navigator.clipboard ? navigator.clipboard.writeText(t) : Promise.reject()).then(() => { b.textContent = 'Copied'; }).catch(() => { b.textContent = 'Select it to copy'; });
 }
 
 /** stamped: Set<ci>; missions: Set<"ci:k"> of completed missions. */
@@ -63,5 +62,5 @@ export function renderPassport(stamped, missions) {
     return `<div class="stamp${got ? ' got' : ''}" style="--c:${s.stamp};--r:${(i * 37) % 17 - 8}deg" aria-label="${esc(s.name)}: ${got ? 'stamped' : 'not yet'}${star ? ', mission done' : ''}">${esc((s.short || s.name).replace(', again', ''))}<small>${esc(sub)}</small>${star ? '<span class="star">★ mission</span>' : ''}</div>`;
   }).join('');
   $('#passLine').textContent = stamped.size ? `${stamped.size} of ${total} stamps · ${missions.size} mission${missions.size === 1 ? '' : 's'} done.` : 'Visit a city and open one of its spots to get its stamp. Finish a demo to add a mission mark.';
-  const done = stamped.size === total; $('#passDone').hidden = !done; if (done) $('#passDone .c').innerHTML = contactHtml();
+  const done = stamped.size === total; $('#passDone').hidden = !done; const ch = contactHtml(); if (done) $('#passDone .c').innerHTML = ch; $('#passDone').hidden = !done || !ch;
 }

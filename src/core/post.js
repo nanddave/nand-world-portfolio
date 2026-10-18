@@ -25,6 +25,7 @@ export function createPost(renderer, enabled) {
       if (!composer || (!b && !t)) { renderer.render(scene, cam); return; }
       rp.scene = scene; rp.camera = cam; bloom.enabled = b > 0; bloom.strength = b; th.enabled = tv.enabled = t; composer.render();
     },
+    setPixelRatio(r) { composer?.setPixelRatio?.(r); },
     resize(w, h) { if (!composer) return; composer.setSize(w, h); th.uniforms.h.value = 1.6 / w; tv.uniforms.v.value = 1.6 / h; th.uniforms.r.value = tv.uniforms.r.value = .52; },
   };
 }

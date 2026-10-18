@@ -47,8 +47,8 @@ export const STOPS = [
     region: 'Washington, USA', coord: '47.61° N, 122.20° W', mood: 'Rain, and Mount Rainier somewhere behind the clouds',
     spots: [
       { t: 'Centific', m: 'AI, May 2024–Aug 2025', b: '<p>My first full-time role after my master\'s, in Bellevue. I worked across three AI teams and learned how AI systems are actually built, tested and shipped.</p>' },
-      { t: 'Catch the leak', m: 'Research: multilingual PII annotation', mission: 'pii', b: '<p><b>Scalable Multilingual PII Annotation for Responsible AI in LLMs</b>, IEEE ICDM Workshops 2025.</p>' },
-      { t: 'Agents that argue', m: 'Research: LegalWiz', mission: 'agents', b: '<p><b>LegalWiz</b>: a multi-agent framework for contradiction detection in legal documents, NeurIPS 2025 GenProCC workshop (co-author).</p>' },
+      { t: 'Catch the leak', m: 'Research: multilingual PII annotation', mission: 'pii', b: '<p><b>Scalable Multilingual PII Annotation for Responsible AI in LLMs</b>, IEEE ICDM Workshops 2025. Published while at Centific.</p>' },
+      { t: 'Agents that argue', m: 'Research: LegalWiz', mission: 'agents', b: '<p><b>LegalWiz</b>: a multi-agent framework for contradiction detection in legal documents, NeurIPS 2025 GenProCC workshop (co-author). Published while at Centific.</p>' },
       { t: 'The badminton court', m: 'Off hours', b: '<p>Badminton, whenever I get the chance.</p><p class="todo">Your story: the people you played with.</p>' },
     ],
   },
@@ -65,7 +65,7 @@ export const STOPS = [
     region: 'Karnataka, India', coord: '12.93° N, 77.62° E', mood: 'Late night, the tech parks still lit',
     spots: [
       { t: 'Brokai Labs', m: 'Founder, Nov 2025–now', mission: 'jarvis', b: '<p>I came back to India to build for Indian businesses, and founded Brokai Labs, an AI and automation agency.</p><p>One of our builds is <b>Jarvis</b>, an agent that turns a request in Slack into a ticket in Linear.</p>' },
-      { t: 'The salon', m: 'Voice AI for a real salon', mission: 'voice', b: '<p>We built a voice receptionist for a salon. In a typical month it handles about 300 calls and 240 confirmed bookings.</p>' },
+      { t: 'The salon (US client)', m: 'Voice AI for a salon in the US', mission: 'voice', b: '<p>Brokai built a voice receptionist for a salon client in the US. In a typical month it handles about 300 calls and 240 confirmed bookings.</p>' },
       { t: 'Your company here', m: 'The next stop', mission: 'lot', b: '<p>This plot is empty on purpose. Tell me what your team builds and I\'ll put up a first sketch of where I\'d start.</p>' },
     ],
   },
@@ -74,4 +74,6 @@ export const STOPS = [
 // Travel legs: 'd' drive, 'f' fly.
 export const LEGS = [[0, 1, 'd'], [1, 2, 'f'], [2, 3, 'd'], [3, 4, 'd'], [4, 5, 'd'], [5, 6, 'f']];
 
-export const CONTACT = { email: '[your email]', resume: '#', linkedin: '#', github: 'https://github.com/nanddave' };
+export const CONTACT = { email: '[your email]', site: '[your link]', resume: '#', linkedin: '#', github: 'https://github.com/nanddave' };
+/** False for placeholders ('', '#', or '[...]'): such values must never render to a visitor. */
+export const isReal = v => typeof v === 'string' && v.trim() !== '' && v.trim() !== '#' && !v.trim().startsWith('[');

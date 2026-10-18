@@ -3,7 +3,7 @@
 //   openPostcardDialog(state) -> { close() }   state: same shape as above (name optional)
 // Truth: shows only what the visitor did (stamps, missions) and the visitor-typed name/company. Nothing about Nand except "Nand" in the title.
 import './postcard.css';
-import { STOPS, LEGS } from '../content/stops.js';
+import { STOPS, LEGS, CONTACT, isReal } from '../content/stops.js';
 import { LAND_MASK_B64 } from '../core/landmask.js';
 
 const W = 1080, H = 1350;
@@ -112,7 +112,7 @@ export async function makePostcard({ name, stamped, missions, company } = {}) {
   // ---- footer ----
   g.strokeStyle = 'rgba(22,25,46,.35)'; g.lineWidth = 1.5; g.beginPath(); g.moveTo(84, H - 128); g.lineTo(W - 84, H - 128); g.stroke();
   g.fillStyle = SOFT; g.font = `400 21px ${BODY}`; g.textAlign = 'left'; g.fillText('Made with three.js and free data · zero paid tools', 84, H - 88);
-  g.fillStyle = INK; g.font = `600 24px ${BODY}`; g.textAlign = 'right'; g.fillText('[your link]', W - 84, H - 88);
+  g.fillStyle = INK; g.font = `600 24px ${BODY}`; g.textAlign = 'right'; { const foot = isReal(CONTACT.site) ? CONTACT.site : isReal(CONTACT.email) ? CONTACT.email : ''; if (foot) g.fillText(foot, W - 84, H - 88); }
 
   return new Promise((res, rej) => c.toBlob(b => b ? res(b) : rej(new Error('toBlob failed')), 'image/png'));
 }
