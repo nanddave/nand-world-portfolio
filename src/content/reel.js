@@ -61,6 +61,7 @@ export const REEL = [
   { at: 18.6, do: 'whip', dur: 0.35 },
   { at: 18.7, do: 'yours', text: 'Mumbai', dur: 6.6 },
   { at: 18.8, do: 'chip', text: 'Type your city…', dur: 2.2 },
+  { at: 21.0, do: 'title', style: 'big', text: 'MUMBAI', dur: 1.5 },
   { at: 21.2, do: 'chip', text: '…it builds your real street.', dur: 2.0 },
   { at: 23.3, do: 'chip', text: 'And a building for your company.', dur: 2.0 },
 

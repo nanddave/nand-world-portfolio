@@ -142,12 +142,27 @@ export function createGlobe({ small = false, reduce = false, pinsEl, onPin }) {
   const LTOT = CUM[CUM.length - 1];
   const idxAt = u => { let lo = 0, hi = CUM.length - 1; while (hi - lo > 1) { const m = (lo + hi) >> 1; if (CUM[m] <= u) lo = m; else hi = m; } return lo; };
   function routeAt(u, out, up) { u = clamp(u, 0, LTOT); const i = idxAt(u), j = Math.min(i + 1, RP.length - 1), seg = (CUM[j] - CUM[i]) || 1, t = (u - CUM[i]) / seg; out.copy(RP[i]).lerp(RP[j], t); if (up) up.copy(RU[i]).lerp(RU[j], t).normalize(); return RT[Math.min(i, RT.length - 1)]; }
+  const legPts = [], legObjs = [];
   LEGS.forEach(([a, b, ty]) => {
     const pts = [], tmp = V(), u0 = stopU[a], u1 = stopU[b];
     for (let i = 0; i <= 160; i++) { routeAt(u0 + (u1 - u0) * i / 160, tmp); pts.push(tmp.clone().multiplyScalar(ty === 'd' ? 1.0005 : 1)); }
-    if (ty === 'd') scene.add(new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts), 200, .045, 5, false), glow('#FFC93C', .9)));
-    else { const l = new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts), new THREE.LineDashedMaterial({ color: 0xFFFFFF, dashSize: .35, gapSize: .25, transparent: true, opacity: .9 })); l.computeLineDistances(); scene.add(l); }
+    legPts.push({ pts, u0, u1, ty });
+    if (ty === 'd') { const m = new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts), 200, .045, 5, false), glow('#FFC93C', .9)); scene.add(m); legObjs.push(m); }
+    else { const l = new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts), new THREE.LineDashedMaterial({ color: 0xFFFFFF, dashSize: .35, gapSize: .25, transparent: true, opacity: .9 })); l.computeLineDistances(); scene.add(l); legObjs.push(l); }
   });
+  // Reel hook (G.setRoute): a bolder glowing copy of the route that can be drawn progressively, with a bright head. Built on first use.
+  let reelRoute = null;
+  const buildReelRoute = () => {
+    const g = new THREE.Group(), tubes = legPts.map(({ pts, ty }) => {
+      const m = new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts), 200, ty === 'd' ? .075 : .06, 6, false), glow('#FFC93C', 1.9)); m.geometry.setDrawRange(0, 0); g.add(m); return m;
+    });
+    const cv = document.createElement('canvas'); cv.width = cv.height = 64; const cx = cv.getContext('2d'), gr = cx.createRadialGradient(32, 32, 0, 32, 32, 32);
+    gr.addColorStop(0, 'rgba(255,244,200,1)'); gr.addColorStop(.25, 'rgba(255,201,60,.55)'); gr.addColorStop(1, 'rgba(255,201,60,0)'); cx.fillStyle = gr; cx.fillRect(0, 0, 64, 64);
+    const halo = new THREE.Sprite(new THREE.SpriteMaterial({ map: new THREE.CanvasTexture(cv), blending: THREE.AdditiveBlending, depthWrite: false, transparent: true })); halo.scale.setScalar(2.6);
+    const core = ball(.2, glow('#FFFFFF', 3), 0, 0, 0, 1);
+    const head = new THREE.Group(); head.add(halo, core); head.visible = false; g.add(head); scene.add(g);
+    return { g, tubes, head };
+  };
 
   // travellers
   const gCar = grp(box(.5, .14, .24, '#FFC93C', 0, .03), box(.28, .12, .21, '#BFD6E6', -.03, .17));
@@ -187,6 +202,18 @@ export function createGlobe({ small = false, reduce = false, pinsEl, onPin }) {
     drag(dx, dy) { G.orbitA -= dx * .005; G.orbitE = clamp(G.orbitE + dy * .004, -1.2, 1.2); },
     setPinsDone(set) { pins.forEach((p, i) => p && p.classList.toggle('done', set.has(i) || S.some(s => s.dupOf === i && set.has(s.i)))); },
     hidePins() { pins.forEach(p => p && p.classList.add('off')); },
+    /** Reel hook: p in 0..1 draws the route progressively with a glowing head (G.routeHead = its position); p = null restores the normal route. */
+    routeHead: V(),
+    setRoute(p) {
+      if (p == null) { if (reelRoute) reelRoute.g.visible = false; legObjs.forEach(o => { o.visible = true; }); return; }
+      if (!reelRoute) reelRoute = buildReelRoute();
+      reelRoute.g.visible = true; legObjs.forEach(o => { o.visible = false; });
+      const u = clamp(p, 0, 1) * LTOT;
+      legPts.forEach((L, i) => {
+        const f = clamp((u - L.u0) / (L.u1 - L.u0), 0, 1), m = reelRoute.tubes[i]; m.visible = f > 0; m.geometry.setDrawRange(0, Math.floor(f * 200) * 36);
+      });
+      routeAt(u, G.routeHead); const h = reelRoute.head; h.position.copy(G.routeHead); h.visible = p > 0 && p < .999;
+    },
   };
 
   const P = V(), U = V(), A = V(), B = V(), Fw = V(), Sx = V(), desired = V(), look = V(), pr = V(), tmp = V();

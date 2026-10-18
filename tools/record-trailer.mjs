@@ -1,6 +1,8 @@
 // Record the trailer (src/core/trailer.js). Starts its own Vite dev server and drives headless Chromium.
 //
-//   node tools/record-trailer.mjs [--vertical] [--from S] [--to S] [--fps 30] [--webm] [--keep] [--nomp4]
+//   node tools/record-trailer.mjs [--vertical] [--reel hero] [--from S] [--to S] [--fps 30] [--webm] [--keep] [--nomp4]
+//   --reel hero: render the 35-s social reel (src/content/reel.js, ?trailer=1&reel=hero) instead of the 60-s trailer. Frames go to
+//     shots/frames-reel[-v]/, output shots/reel-vertical.mp4 / reel-landscape.mp4 (H.264 yuv420p, CRF 18, +faststart, no audio).
 //
 // Default (frames mode, deterministic): the page runs on a virtual clock (&fixed=30, src/core/vtime.js). For every frame the
 //   recorder advances the clock exactly 1/30 s, lets the page render, and saves a PNG to shots/frames/ (shots/frames-v/ with
@@ -19,10 +21,13 @@ import path from 'node:path';
 const argv = process.argv.slice(2);
 const flag = n => argv.includes('--' + n);
 const val = (n, d) => { const i = argv.indexOf('--' + n); return i >= 0 && argv[i + 1] != null ? argv[i + 1] : d; };
-const VERT = flag('vertical'), FPS = +val('fps', 30), WEBM = flag('webm');
-const W = VERT ? 1080 : 1920, H = VERT ? 1920 : 1080, LEN = 60;
+import { REEL_LENGTH } from '../src/content/reel.js';
+const VERT = flag('vertical'), FPS = +val('fps', 30), WEBM = flag('webm'), REEL = val('reel', '');
+const W = VERT ? 1080 : 1920, H = VERT ? 1920 : 1080, LEN = REEL ? REEL_LENGTH : 60;
+const QREEL = REEL ? `&reel=${REEL}` : '';
 const from = +val('from', 0), to = +val('to', LEN), ranged = from > 0 || to < LEN;
 const suffix = VERT ? '-vertical' : '';
+const outName = REEL ? `shots/reel-${VERT ? 'vertical' : 'landscape'}` : `shots/trailer${suffix}`;
 fs.mkdirSync('shots', { recursive: true });
 
 const server = await createServer({ server: { port: 0, host: '127.0.0.1' }, logLevel: 'error' }); await server.listen();
@@ -40,16 +45,16 @@ try {
     const ctx = await browser.newContext({ viewport: { width: W, height: H }, recordVideo: { dir, size: { width: W, height: H } } });
     const page = await ctx.newPage(); hook(page);
     const t0 = Date.now();
-    await page.goto(`http://127.0.0.1:${port}/?trailer=1${VERT ? '&v=1' : ''}`);
+    await page.goto(`http://127.0.0.1:${port}/?trailer=1${QREEL}${VERT ? '&v=1' : ''}`);
     await waitFlag(page, '__trailerReady', 180000);
     const lead = (Date.now() - t0) / 1000; console.log(`trailer started ${lead.toFixed(1)} s into the recording (loading screen; trim with ffmpeg -ss)`);
     await waitFlag(page, '__trailerDone', 120000); await page.waitForTimeout(500);
-    const video = page.video(); await ctx.close(); const out = `shots/trailer${suffix}.webm`; await video.saveAs(out); fs.rmSync(dir, { recursive: true, force: true });
+    const video = page.video(); await ctx.close(); const out = `${outName}.webm`; await video.saveAs(out); fs.rmSync(dir, { recursive: true, force: true });
     console.log('saved', out);
   } else {
-    const dir = `shots/frames${VERT ? '-v' : ''}`; if (!flag('keep')) fs.rmSync(dir, { recursive: true, force: true }); fs.mkdirSync(dir, { recursive: true });
+    const dir = `shots/frames${REEL ? '-reel' : ''}${VERT ? '-v' : ''}`; if (!flag('keep')) fs.rmSync(dir, { recursive: true, force: true }); fs.mkdirSync(dir, { recursive: true });
     const page = await browser.newPage({ viewport: { width: W, height: H } }); hook(page);
-    await page.goto(`http://127.0.0.1:${port}/?trailer=1&fixed=${FPS}${VERT ? '&v=1' : ''}`);
+    await page.goto(`http://127.0.0.1:${port}/?trailer=1&fixed=${FPS}${QREEL}${VERT ? '&v=1' : ''}`);
     await waitFlag(page, '__trailerReady', 240000);
     if (val('at', '')) {
       let cur = 0; // frames simulated so far
@@ -65,14 +70,16 @@ try {
     t0 = Date.now();
     for (let n = f0; n < f1; n++) {
       await page.evaluate(() => window.__vt.step());
-      await page.screenshot({ path: `${dir}/frame_${String(n).padStart(5, '0')}.png`, type: 'png' });
+      for (let tr = 0; ; tr++) { // software GL occasionally stalls a screenshot; the virtual clock is paused, so just ask again
+        try { await page.screenshot({ path: `${dir}/frame_${String(n).padStart(5, '0')}.png`, type: 'png', timeout: 120000 }); break; } catch (e) { if (tr >= 3) throw e; console.log(`screenshot retry ${tr + 1} at frame ${n}`); }
+      }
       if ((n - f0 + 1) % 30 === 0) { const done = n - f0 + 1, el = (Date.now() - t0) / 1000; console.log(`${(n + 1) / FPS} s  (${done} frames, ${(done / el).toFixed(2)} fps, eta ${(((f1 - f0 - done) / (done / el)) / 60).toFixed(1)} min)`); }
     }
     const el = (Date.now() - t0) / 1000; console.log(`rendered ${f1 - f0} frames in ${el.toFixed(0)} s = ${((f1 - f0) / el).toFixed(2)} frames/s`);
     const has = spawnSync('which', ['ffmpeg']).status === 0;
     if (has && !flag('nomp4')) {
-      const out = ranged ? `shots/trailer${suffix}-${from}-${to}.mp4` : `shots/trailer${suffix}.mp4`;
-      const r = spawnSync('ffmpeg', ['-y', '-loglevel', 'error', '-framerate', String(FPS), '-start_number', String(f0), '-i', `${dir}/frame_%05d.png`, '-frames:v', String(f1 - f0), '-c:v', 'libx264', '-pix_fmt', 'yuv420p', '-crf', '16', '-preset', 'medium', out], { stdio: 'inherit' });
+      const out = ranged ? `${outName}-${from}-${to}.mp4` : `${outName}.mp4`;
+      const r = spawnSync('ffmpeg', ['-y', '-loglevel', 'error', '-framerate', String(FPS), '-start_number', String(f0), '-i', `${dir}/frame_%05d.png`, '-frames:v', String(f1 - f0), '-c:v', 'libx264', '-pix_fmt', 'yuv420p', '-crf', REEL ? '18' : '16', '-preset', 'medium', '-movflags', '+faststart', '-an', out], { stdio: 'inherit' });
       console.log(r.status === 0 ? `saved ${out} (${FPS} fps, no audio)` : 'ffmpeg failed; PNG frames kept in ' + dir);
     } else console.log(has ? 'frames kept in ' + dir : 'no ffmpeg: PNG frames kept in ' + dir);
   }
