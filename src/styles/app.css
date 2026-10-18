@@ -236,3 +236,85 @@ body.trailer-v #tEnd .l{font-size:clamp(20px,4.6vw,100px);padding:0 6vw}
 body.trailer-v #tEnd .c{font-size:clamp(18px,4vw,90px);padding:1.4vw 5vw;margin-top:4vw}
 body.trailer-v #tEnd .u{font-size:clamp(16px,3.4vw,80px)}
 body.live-mood .designed-mood{display:none}
+
+/* ---- recruiter + founder fast paths ---- */
+.chip.talk{gap:0;background:var(--sun);color:var(--sun-ink);box-shadow:0 3px 12px rgba(0,0,0,.25)}
+.chip .prog{font-size:12px;font-weight:600;opacity:.8}
+.chip .prog:empty{display:none}
+#passBtn .n{display:none}
+.linkbtn{border:0;background:none;padding:0;min-height:32px;font:inherit;font-weight:600;color:inherit;text-decoration:underline;text-underline-offset:4px;text-decoration-thickness:1.5px;cursor:pointer}
+.linkbtn.dark{color:var(--ink)}
+a.linkbtn{display:inline}
+#intro{max-width:580px}
+#intro p.pos{font-family:var(--display);font-weight:800;font-size:clamp(22px,2.2vw,30px);line-height:1.1;letter-spacing:.3px;color:var(--paper);margin:18px 0 0;max-width:none;text-wrap:balance;text-shadow:0 1px 3px rgba(0,0,0,.45),0 2px 22px rgba(0,0,0,.5)}
+#intro p.hook,#intro p.founders,#intro .hint{text-shadow:0 1px 3px rgba(0,0,0,.4),0 2px 14px rgba(0,0,0,.4)}
+#intro p.hook{margin:12px 0 22px;font-size:18px}
+#intro p.founders{margin:16px 0 0;font-size:15px}
+#intro p.founders .linkbtn{color:#F3EEDF}
+#intro .row .btn{min-height:46px}
+#intro .btn.ghost:hover,#intro .btn.ghost:focus-visible{background:rgba(255,251,243,.14)}
+
+/* card: result bullets and links */
+#card ul{font-size:15px;line-height:1.5;padding-left:20px}
+#card li{margin-bottom:6px}
+#card a{color:var(--ink);font-weight:700;text-underline-offset:3px}
+#card .go{font-size:14px}
+
+/* sheets */
+.modal .sheet{position:relative}
+.modal .sheet.wide{max-width:760px}
+.modal .sx{position:absolute;top:10px;right:10px;width:44px;height:44px;border-radius:22px;border:0;background:var(--paper-2);color:var(--ink);font-size:24px;line-height:1}
+.modal h2{padding-right:44px}
+.modal h3{font-family:var(--display);font-weight:800;font-size:20px;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-soft);margin:20px 0 6px}
+.modal .lead{font-family:var(--display);font-weight:800;font-size:26px;line-height:1.1;margin:0 0 8px;color:var(--ink)}
+.modal .sheet a:not(.btn){color:var(--ink);font-weight:600;text-underline-offset:3px}
+.roles{list-style:none;padding:0;margin:0}
+.roles li{display:flex;justify-content:space-between;gap:4px 14px;flex-wrap:wrap;padding:7px 0;border-top:1px solid var(--line);line-height:1.4}
+.roles small,.plain small{color:var(--ink-soft);font-size:13px}
+.roles .when{color:var(--ink-soft);font-size:14px;white-space:nowrap}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:0 24px}
+.plain{list-style:none;padding:0;margin:0}
+.plain li{margin-bottom:8px;line-height:1.4}
+.plain small{display:block}
+.best{font-size:17px;margin:0 0 14px}
+.actions{list-style:none;padding:0;margin:0 0 12px;display:grid;gap:10px}
+.actions li{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.modal .small{font-size:14px;margin:6px 0 0}
+.offers{list-style:none;padding:0;margin:14px 0 4px;display:grid;gap:10px}
+.offers li{display:flex;gap:14px;align-items:center;justify-content:space-between;padding:14px 16px;border:1.5px solid var(--ink);border-radius:8px;background:#fff}
+.offers b{display:block;font-size:17px;margin-bottom:2px}
+.offers span{display:block;font-size:14px;line-height:1.45;color:var(--ink-soft)}
+.offers .btn{flex:none}
+
+/* post-mission nudge */
+#toast{position:fixed;left:max(16px,env(safe-area-inset-left,0px));top:calc(66px + env(safe-area-inset-top,0px));z-index:9;display:flex;align-items:center;gap:10px;flex-wrap:wrap;max-width:min(400px,calc(100% - 32px));padding:12px 44px 12px 14px;border-radius:12px;background:var(--paper);color:var(--ink);font-size:14px;font-weight:600;line-height:1.35;box-shadow:0 10px 30px rgba(0,0,0,.35);animation:toastin .4s ease-out}
+#toast .tx{position:absolute;top:4px;right:4px;width:40px;height:40px;border:0;border-radius:20px;background:none;color:var(--ink);font-size:22px;line-height:1}
+@keyframes toastin{from{opacity:0;transform:translateY(-8px)}}
+body.trailer #toast{display:none!important}
+
+@media (min-width:701px){#passBtn .n{display:none}}
+@media (max-width:700px){#passBtn .prog{display:none}#passBtn .n{display:inline-grid}}
+@media (max-width:860px){
+  #intro{max-width:none}
+  #intro p.pos{font-size:24px;margin-top:10px}
+  #intro p.hook{font-size:15px;margin:8px 0 14px}
+  #intro p.founders{margin-top:12px}
+  #intro .hint{display:none}
+  #intro .row{gap:8px}
+  #intro .row .btn{min-height:44px;padding:0 14px}
+  #intro h1{font-size:76px}
+  #toast{right:max(16px,env(safe-area-inset-right,0px));max-width:none}
+}
+@media (max-width:640px){
+  .two{grid-template-columns:1fr}
+  .modal .lead{font-size:22px}
+  .roles .when{white-space:normal}
+  .offers li{flex-direction:column;align-items:flex-start}
+}
+@media (max-width:520px){
+  .hide-xs{display:none}
+  #top{padding-left:max(12px,env(safe-area-inset-left,0px));padding-right:max(12px,env(safe-area-inset-right,0px))}
+  .mark{font-size:18px}
+  .tools{gap:5px}
+  .chip{padding:0 9px;font-size:12.5px;gap:5px;min-height:40px}
+}

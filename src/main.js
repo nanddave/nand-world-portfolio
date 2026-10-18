@@ -3,7 +3,7 @@ import { FIXED_FPS } from './core/vtime.js'; // first: installs the virtual cloc
 import './styles/tokens.css';
 import './styles/app.css';
 import { THREE } from './kit/kit.js';
-import { STOPS } from './content/stops.js';
+import { STOPS, MISSION_TEASE } from './content/stops.js';
 import { VISITOR } from './core/visitor.js';
 import { createGlobe, km, nadiadTime } from './core/globe.js';
 import { createCityView } from './core/cityview.js';
@@ -14,7 +14,7 @@ import { Sound } from './core/sound.js';
 import { createTrailer } from './core/trailer.js';
 import { ask, search, SUGGESTIONS } from './core/copilot.js';
 import { createCard } from './ui/card.js';
-import { setupModals, openModal, closeModals, renderPassport } from './ui/modals.js';
+import { setupModals, openModal, closeModals, renderPassport, setProgress } from './ui/modals.js';
 
 // Missions' stylesheet, if the missions agent has added one.
 import.meta.glob('./missions/*.css', { eager: true });
@@ -53,7 +53,7 @@ const card = createCard({
   reduce: REDUCE,
   onNext: (ci, k) => { if (ci < 0) { card.close(); unfocus(); finish(); return; } const n = STOPS[ci].spots.length; if (k < n - 1) focusSpot(k + 1); else if (ci < LAST) travelTo(ci + 1); else finish(); },
   onClose: () => unfocus(),
-  onComplete: (ci, k) => { state.missions.add(ci + ':' + k); stamp(ci); updateChips(); pilotSay(`Mission done: ${STOPS[ci].spots[k].t}. That's a star on your ${short(STOPS[ci])} stamp.`); },
+  onComplete: (ci, k) => { state.missions.add(ci + ':' + k); stamp(ci); updateChips(); pilotSay(`Mission done: ${STOPS[ci].spots[k].t}. That's a star on your ${short(STOPS[ci])} stamp.`); maybeToast(); },
 });
 
 /* intro personalisation */
@@ -63,7 +63,7 @@ if (VISITOR.company) { const f = $('#introFor'); f.hidden = false; f.textContent
 const chips = STOPS.map((s, i) => { const b = document.createElement('button'); b.type = 'button'; b.className = 'stopb'; b.innerHTML = `<b>${i + 1}</b>${s.name}`; b.setAttribute('aria-label', `Stop ${i + 1}: ${s.name}`); b.addEventListener('click', () => travelTo(i)); $('#stops').appendChild(b); return b; });
 function updateChips() {
   chips.forEach((c, i) => { const on = state.mode === 'city' ? i === state.cityIdx : i === globe.target && state.mode !== 'intro'; c.classList.toggle('on', on); c.classList.toggle('stamped', state.stamped.has(i)); if (on) c.setAttribute('aria-current', 'step'); else c.removeAttribute('aria-current'); });
-  globe.setPinsDone(state.stamped); $('#passN').textContent = `${state.stamped.size}/${STOPS.length}`;
+  globe.setPinsDone(state.stamped); setProgress(state.stamped, state.missions);
 }
 
 /* live time + weather (optional; the designed look is the fallback) */
@@ -138,7 +138,7 @@ async function enterCity(i) {
   globe.view = 'hidden'; globe.hidePins(); city.show(i, C);
   document.body.classList.add('incity');
   $('#cStop').textContent = `Stop ${i + 1} of ${STOPS.length}`; $('#cName').textContent = s.name; $('#cMeta').innerHTML = `${s.region}<br>${s.coord}<br><span class="designed-mood">${s.mood}</span>`; $('#cCredit').textContent = C.credit || ''; setDriveUI(); $('#ctitle').classList.add('show'); setupLive(i, C);
-  $('#next').textContent = i < LAST ? `Continue to ${short(STOPS[i + 1])}` : (VISITOR.company ? `Finish: next stop, ${VISITOR.company}` : 'Finish the trip');
+  refreshNext();
   Sound.play(C.cfg?.sound || s.id); updateChips(); fade(false); state.transit = false;
   if (state.pending !== null) { const p = state.pending; state.pending = null; setTimeout(() => state.cityIdx === i && focusSpot(p), REDUCE ? 0 : 1300); }
   else pilotSay(`Welcome to ${s.name}. Tap a yellow marker to explore, or ask me something.`);
@@ -207,9 +207,19 @@ function showDistance({ name, lat, lon }) {
 }
 $('#shareBtn').addEventListener('click', async () => { closeModals(); const { openPostcardDialog } = await import('./ui/postcard.js'); openPostcardDialog({ stamped: state.stamped, missions: state.missions, company: VISITOR.company }); });
 
+/** Curiosity loop: once a city is finished, the Continue button teases the next stop's mission. */
+const cityDone = ci => (city.seen[ci]?.size || 0) >= STOPS[ci].spots.length;
+function continueLabel(ci) {
+  const n = STOPS[ci + 1], sp = n.spots.find(x => x.mission), tz = sp && MISSION_TEASE[sp.mission];
+  return cityDone(ci) && tz ? `Next: ${short(n)} — ${tz}` : `Continue to ${short(n)}`;
+}
+function refreshNext() {
+  const i = state.cityIdx; if (state.custom || i < 0) return;
+  $('#next').textContent = i < LAST ? continueLabel(i) : (VISITOR.company ? `Finish: next stop, ${VISITOR.company}` : 'Finish the trip');
+}
 function nextLabel(ci, k) {
   if (k < STOPS[ci].spots.length - 1) return 'Next spot';
-  if (ci < LAST) return `Continue to ${short(STOPS[ci + 1])}`;
+  if (ci < LAST) return continueLabel(ci);
   return VISITOR.company ? `Finish: over to ${VISITOR.company}` : 'Finish the trip';
 }
 function focusSpot(k) {
@@ -221,7 +231,7 @@ function focusSpot(k) {
   }
   const ci = state.cityIdx; k =Math.max(0, Math.min(k, STOPS[ci].spots.length - 1));
   state.spot = k; city.focus(k); document.body.classList.add('focus');
-  card.open(ci, k, { scene: city.C, nextLabel: nextLabel(ci, k) }); stamp(ci);
+  card.open(ci, k, { scene: city.C, nextLabel: nextLabel(ci, k) }); stamp(ci); refreshNext();
 }
 function unfocus() { state.spot = -1; city.unfocus(); document.body.classList.remove('focus'); }
 function stamp(i) {
@@ -230,9 +240,26 @@ function stamp(i) {
 }
 
 /* modals */
-setupModals({ onGo: (ci, k) => travelTo(ci, k) });
+setupModals({ onGo: (ci, k) => travelTo(ci, k), onTrip: () => { if (state.mode === 'intro') $('#startBtn').click(); } });
 $('#quickBtn').addEventListener('click', () => openModal('#quick'));
 $('#quickBtn2').addEventListener('click', () => openModal('#quick'));
+$('#talkBtn').addEventListener('click', () => openModal('#talk'));
+$('#foundersLink').addEventListener('click', () => openModal('#build'));
+$('#kBody').addEventListener('click', e => { if (e.target.closest('[data-founders]')) openModal('#build'); }); // "What I can build for you" inside the Brokai card
+
+/* soft nudge after a mission: once per session, non-blocking */
+const toastEl = $('#toast'); let toastDone = false, toastTimer = 0;
+try { toastDone = sessionStorage.getItem('nw.toast') === '1'; } catch { /* ignore */ }
+function hideToast() { toastEl.hidden = true; clearTimeout(toastTimer); }
+function maybeToast() {
+  if (toastDone || trailer.active) return; toastDone = true; try { sessionStorage.setItem('nw.toast', '1'); } catch { /* ignore */ }
+  setTimeout(() => { toastEl.hidden = false; toastTimer = setTimeout(hideToast, 14000); }, 1200);
+}
+$('#toastX').addEventListener('click', hideToast);
+$('#toastTalk').addEventListener('click', () => { hideToast(); openModal('#talk'); });
+
+/* fast paths: ?role=recruiter opens the 30-second version, ?role=founder the founders sheet. The trip stays one click away. */
+{ const role = (QS.get('role') || '').toLowerCase(); if (!QS.has('trailer')) { if (role === 'recruiter') openModal('#quick'); else if (role === 'founder') openModal('#build'); } }
 $('#howBtn').addEventListener('click', () => openModal('#how'));
 $('#skillsBtn').addEventListener('click', () => openModal('#skills'));
 $('#passBtn').addEventListener('click', () => { renderPassport(state.stamped, state.missions); openModal('#pass'); });

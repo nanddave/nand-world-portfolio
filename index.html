@@ -25,22 +25,26 @@
   <div class="tools">
     <a class="chip hide-sm" id="cvLink" href="cv.html">Plain résumé</a>
     <button class="chip" id="soundBtn" type="button" aria-pressed="false">Sound off</button>
-    <button class="chip" id="skillsBtn" type="button">Skills</button>
-    <button class="chip" id="passBtn" type="button">Passport <span class="n" id="passN">0/7</span></button>
+    <button class="chip hide-xs" id="skillsBtn" type="button">Skills</button>
+    <button class="chip" id="passBtn" type="button" aria-label="Passport">Passport <span class="prog" id="passProg"></span> <span class="n" id="passN">0/7</span></button>
     <button class="chip hide-sm" id="quickBtn" type="button">30-second version</button>
     <button class="chip hide-sm" id="howBtn" type="button">How this was built</button>
+    <button class="chip talk" id="talkBtn" type="button" aria-haspopup="dialog">Talk<span class="hide-xs">&nbsp;to&nbsp;Nand</span></button>
   </div>
 </header>
 
 <section id="intro" aria-labelledby="introT">
   <h1 id="introT">Nand Dave</h1>
+  <p class="pos" id="introPos">Applied AI Engineer | Voice Agents | Customer Delivery</p>
   <p id="introFor" class="for" hidden></p>
-  <p>I grew up in Nadiad, studied in Bangalore and Boston, worked in Texas, Seattle and San Francisco, and came back to build in Bangalore. Take the trip with me.</p>
+  <p class="hook">A trip from Nadiad to Bangalore, with live demos of the voice agents, data pipelines and research behind the résumé.</p>
   <div class="row">
     <button class="btn primary" id="startBtn" type="button">Start the journey</button>
+    <button class="btn ghost" id="quickBtn2" type="button">Hiring? 30-second version</button>
+    <a class="btn ghost" id="resumeBtn" href="./Nand_Dave_Resume.pdf" target="_blank" rel="noopener">Résumé</a>
     <button class="btn ghost" id="trailerBtn" type="button">Watch the 60-s trailer</button>
-    <button class="btn ghost" id="quickBtn2" type="button">The 30-second version</button>
   </div>
+  <p class="founders"><button class="linkbtn" id="foundersLink" type="button" aria-haspopup="dialog">Founders: what I can build for you</button></p>
   <div class="hint">sound comes on when you start · drag to spin the earth</div>
 </section>
 
@@ -86,11 +90,41 @@
   <div class="stops" id="stops"></div>
 </nav>
 
-<div class="modal" id="quick" hidden><div class="sheet" role="dialog" aria-modal="true" aria-labelledby="qT">
+<div class="modal" id="quick" hidden><div class="sheet wide" role="dialog" aria-modal="true" aria-labelledby="qT">
+  <button class="sx" type="button" data-close aria-label="Close">×</button>
   <h2 id="qT">Nand Dave, in 30 seconds</h2>
+  <p class="lead" id="quickHead"></p>
+  <p id="quickSum"></p>
+  <h3>Results</h3>
   <ul id="quickList" class="facts"></ul>
-  <div id="quickContact"></div>
-  <div class="contact"><button class="btn" type="button" data-close data-autofocus>Back to the trip</button></div>
+  <h3>Roles</h3>
+  <ul id="quickRoles" class="roles"></ul>
+  <div class="two">
+    <div><h3>Papers</h3><ul id="quickPapers" class="plain"></ul></div>
+    <div><h3>Education</h3><ul id="quickEdu" class="plain"></ul></div>
+  </div>
+  <div id="quickContact" class="contact"></div>
+  <div class="contact"><button class="btn primary" type="button" id="quickTrip">Or take the trip →</button><button class="linkbtn dark" type="button" data-founders>What I can build for you</button></div>
+</div></div>
+
+<div class="modal" id="talk" hidden><div class="sheet" role="dialog" aria-modal="true" aria-labelledby="tkT">
+  <button class="sx" type="button" data-close aria-label="Close">×</button>
+  <h2 id="tkT">Talk to Nand</h2>
+  <p class="best"><b>Best for:</b> <span id="talkBest"></span>.</p>
+  <ul class="actions">
+    <li><a class="btn primary" id="talkMail" href="#" data-autofocus>Email nand@brokailabs.com</a><button class="btn small" type="button" data-copy>Copy email</button></li>
+    <li><a class="btn" id="talkLi" href="#" target="_blank" rel="noopener">LinkedIn</a></li>
+    <li><a class="btn" id="talkCv" href="#" target="_blank" rel="noopener">Résumé (PDF)</a></li>
+  </ul>
+  <p class="small"><button class="linkbtn dark" type="button" data-founders>What I can build for you</button> · <button class="linkbtn dark" type="button" data-quick>The 30-second version</button> · <a class="linkbtn dark" id="talkGh" href="#" target="_blank" rel="noopener">GitHub</a></p>
+</div></div>
+
+<div class="modal" id="build" hidden><div class="sheet wide" role="dialog" aria-modal="true" aria-labelledby="bdT">
+  <button class="sx" type="button" data-close aria-label="Close">×</button>
+  <h2 id="bdT">What I can build for you</h2>
+  <p>Three things I have already delivered, each one you can poke at on this trip.</p>
+  <ul id="offerList" class="offers"></ul>
+  <div class="contact"><a class="btn primary" id="callBtn" href="#" data-autofocus>Book a 20-min call</a><button class="btn ghost-dark" type="button" id="buildTrip">Or take the trip →</button></div>
 </div></div>
 
 <div class="modal" id="pass" hidden><div class="sheet" role="dialog" aria-modal="true" aria-labelledby="pT">
@@ -98,7 +132,7 @@
   <p id="passLine"></p>
   <div class="stamps" id="stampGrid"></div>
   <div id="passDone" hidden><p>You've seen the whole trip. Send Nand a note:</p><div class="c"></div></div>
-  <div class="contact"><button class="btn small" type="button" id="shareBtn">Share my passport</button><button class="btn" type="button" data-close data-autofocus>Back to the trip</button></div>
+  <div class="contact"><button class="btn small" type="button" id="shareBtn">Share my passport</button><button class="btn small" type="button" data-skills>Skills index</button><button class="btn" type="button" data-close data-autofocus>Back to the trip</button></div>
 </div></div>
 
 <div class="modal" id="yours" hidden><div class="sheet" role="dialog" aria-modal="true" aria-labelledby="yT">
@@ -134,6 +168,8 @@
   </ul>
   <div class="contact"><a class="btn small" id="howRepo" href="#" rel="noopener" target="_blank">Code: repo (coming public)</a><button class="btn" type="button" data-close data-autofocus>Back to the trip</button></div>
 </div></div>
+
+<div id="toast" role="status" aria-live="polite" hidden><span>That's real code. Want this for your team?</span> <button class="btn small primary" type="button" id="toastTalk">Talk to Nand</button><button class="tx" type="button" id="toastX" aria-label="Dismiss">×</button></div>
 
 <script type="module" src="/src/main.js"></script>
 </body>

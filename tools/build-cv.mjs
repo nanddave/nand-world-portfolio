@@ -1,32 +1,38 @@
 // Writes public/cv.html: a static, semantic, printable one-page resume built from src/content/stops.js.
 // Usage: node tools/build-cv.mjs   (runs automatically before `npm run build` and in build:single)
 import { writeFileSync, mkdirSync } from 'node:fs';
-import { STOPS, CONTACT, isReal } from '../src/content/stops.js';
+import { STOPS, CONTACT, isReal, HEADLINE, SUMMARY, PAPERS, EDU, ROLES, PROJECTS } from '../src/content/stops.js';
 
 const esc = s => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 const decode = s => s.replace(/&nbsp;/g, ' ').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"').replace(/&#39;/g, "'").replace(/&amp;/g, '&');
-/** Body HTML -> plain paragraphs. Drops .todo and .city (colour about the place, not Nand) paragraphs, strips every tag. */
-function paras(html) {
-  const out = [];
+/** Body HTML -> { ps, li }. Drops .todo and .city (colour about the place, not Nand) paragraphs, link-only and button paragraphs; strips every tag. */
+function parts(html) {
+  const clean = h => decode(h.replace(/<[^>]*>/g, '')).replace(/\s+/g, ' ').trim();
+  const ps = [], li = [];
   for (const m of html.matchAll(/<p\b([^>]*)>([\s\S]*?)<\/p>/g)) {
-    if (/class="[^"]*\btodo\b/.test(m[1]) || /class="[^"]*\bcity\b/.test(m[1])) continue;
-    const t = decode(m[2].replace(/<[^>]*>/g, '')).replace(/\s+/g, ' ').trim(); if (t) out.push(t);
+    if (/class="[^"]*\b(todo|city)\b/.test(m[1]) || /<(button|a)\b/.test(m[2])) continue;
+    const t = clean(m[2]); if (t) ps.push(t);
   }
-  return out;
+  for (const m of html.matchAll(/<li>([\s\S]*?)<\/li>/g)) { const t = clean(m[1]); if (t) li.push(t); }
+  return { ps, li };
 }
+const spotOf = (id, t) => STOPS.find(s => s.id === id)?.spots.find(sp => sp.t === t);
 const link = (h, label) => isReal(h) ? `<a href="${esc(h)}">${esc(label)}</a>` : '';
 
-// Newest first, like a resume. A stop's role/dates come from its meta line when it has one; the passages are the content paragraphs.
-const jobs = [], papers = [];
-for (const s of [...STOPS].reverse()) {
-  const items = [];
-  for (const sp of s.spots) {
-    if (sp.mission === 'lot') continue; // the interactive empty plot only makes sense in 3D
-    const ps = paras(sp.b); if (!ps.length) continue;
-    if (/^Research:/.test(sp.m)) { papers.push({ title: sp.t, meta: sp.m.replace(/^Research:\s*/, ''), ps }); continue; }
-    items.push({ t: sp.t, m: sp.m, ps });
-  }
-  if (items.length) jobs.push({ place: s.name.replace(', again', ' (again)'), region: s.region, items });
+// Experience: ROLES (newest first), each pulling its story and result bullets from the matching spot(s).
+const EXTRA = { 'Brokai Labs': ['The salon (US client)'], '7-Eleven': ['The store counter'] };
+const used = new Set();
+const jobs = ROLES.map(r => {
+  const titles = [r.where[1], ...(EXTRA[r.org] || [])], ps = [], li = [];
+  titles.forEach(t => { const sp = spotOf(r.where[0], t); if (!sp) return; used.add(sp); const x = parts(sp.b); ps.push(...x.ps); li.push(...x.li); });
+  return { ...r, ps, li };
+});
+const roleSpots = new Set(jobs.length ? used : []);
+// Background: remaining spots that carry real (non-placeholder) text about Nand, skipping research (listed under Papers) and the empty plot.
+const background = [];
+for (const s of STOPS) for (const sp of s.spots) {
+  if (roleSpots.has(sp) || /^(PES|Northeastern) University$/.test(sp.t) || sp.mission === 'lot' || /^Research:/.test(sp.m)) continue;
+  const x = parts(sp.b); if (x.ps.length || x.li.length) background.push({ t: sp.t, m: sp.m, place: s.name.replace(', again', ' (again)'), ...x });
 }
 
 const contact = [
@@ -45,6 +51,8 @@ main{max-width:760px;margin:0 auto;padding:32px 20px 48px}
 h1{font-size:34px;line-height:1.1;margin:0}
 .role{margin:4px 0 8px;font-size:18px;color:#444a66}
 .contact{margin:0 0 6px;font-size:15px}
+.sum{margin:0 0 10px;max-width:60ch}
+ul{margin:4px 0;padding-left:20px}li{margin:2px 0}
 a{color:#1d4ed8}
 .trip{display:inline-block;margin:10px 0 4px;padding:8px 14px;border-radius:6px;background:#1a1c2c;color:#fff;text-decoration:none;font-weight:600}
 h2{font-size:13px;letter-spacing:.12em;text-transform:uppercase;color:#555b78;border-bottom:1px solid #d8dae6;padding-bottom:4px;margin:28px 0 10px}
@@ -61,16 +69,21 @@ footer{margin-top:28px;font-size:13px;color:#555b78}
 <body><main>
 <header>
 <h1>Nand Dave</h1>
-<p class="role">Applied AI engineer and founder, Brokai Labs (Bangalore)</p>
+<p class="role">${esc(HEADLINE)}</p>
+<p class="sum">${esc(SUMMARY)}</p>
 ${contact ? `<p class="contact">${contact}</p>` : ''}
 <a class="trip noprint" href="./">Take the 3D trip</a>
 </header>
-<h2>Experience and education</h2>
-${jobs.map(j => `<section class="stop"><h3>${esc(j.place)} <small>${esc(j.region)}</small></h3>
-${j.items.map(i => `<article><h4>${esc(i.t)}</h4><p class="m">${esc(i.m)}</p>${i.ps.map(p => `<p>${esc(p)}</p>`).join('')}</article>`).join('\n')}
-</section>`).join('\n')}
-${papers.length ? `<h2>Papers</h2>
-${papers.map(p => `<article><h4>${esc(p.title)}</h4><p class="m">${esc(p.meta)}</p>${p.ps.map(x => `<p>${esc(x)}</p>`).join('')}</article>`).join('\n')}` : ''}
+<h2>Experience</h2>
+${jobs.map(j => `<article><h4>${esc(j.role)}, ${esc(j.org)} <small>${esc(j.place)}</small></h4><p class="m">${esc(j.when)}</p>${j.ps.map(p => `<p>${esc(p)}</p>`).join('')}${j.li.length ? `<ul>${j.li.map(x => `<li>${esc(x)}</li>`).join('')}</ul>` : ''}</article>`).join('\n')}
+<h2>Projects</h2>
+${PROJECTS.map(p => `<article><h4>${esc(p.name)}</h4><p>${esc(p.text)}</p></article>`).join('\n')}
+<h2>Papers</h2>
+${PAPERS.map(p => `<article><h4><a href="${esc(p.url)}">${esc(p.title)}</a></h4><p class="m">${esc(p.venue)}. Published while at Centific.</p></article>`).join('\n')}
+<h2>Education</h2>
+${EDU.map(e => `<article><h4>${esc(e.school)}</h4><p class="m">${esc(e.what)}</p></article>`).join('\n')}
+${background.length ? `<h2>Background</h2>
+${background.map(b => `<article><h4>${esc(b.t)} <small>${esc(b.place)}</small></h4><p class="m">${esc(b.m)}</p>${b.ps.map(x => `<p>${esc(x)}</p>`).join('')}${b.li.length ? `<ul>${b.li.map(x => `<li>${esc(x)}</li>`).join('')}</ul>` : ''}</article>`).join('\n')}` : ''}
 <footer>Generated from the same content as the 3D site. Figures and dates are as stated there.</footer>
 </main></body></html>
 `;
