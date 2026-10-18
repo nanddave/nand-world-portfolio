@@ -39,9 +39,16 @@ export function createCard({ reduce, onNext, onClose, onComplete }) {
       }
     }
   }
+  /** Card for an ad-hoc spot that is not in STOPS (the visitor's own city). `body` is trusted HTML written in code, not user input. */
+  function openCustom({ kick, title, meta, body: html, nextLabel, onOpen }) {
+    unmount(); cur = { ci: -2, k: 0 };
+    $('#kKick').textContent = kick; $('#kTitle').textContent = title; $('#kMeta').textContent = meta; body.innerHTML = html; $('#kNext').textContent = nextLabel;
+    el.scrollTop = 0; el.classList.add('open'); document.body.classList.add('cardopen');
+    try { onOpen?.(); } catch (e) { console.error(e); }
+  }
   function close() { unmount(); cur = null; el.classList.remove('open'); document.body.classList.remove('cardopen'); }
   $('#cardX').addEventListener('click', () => { close(); onClose?.(); });
   $('#kBack').addEventListener('click', () => { close(); onClose?.(); });
   $('#kNext').addEventListener('click', () => cur && onNext?.(cur.ci, cur.k));
-  return { open, close, get current() { return cur; }, isOpen: () => el.classList.contains('open') };
+  return { open, openCustom, close, get current() { return cur; }, isOpen: () => el.classList.contains('open') };
 }

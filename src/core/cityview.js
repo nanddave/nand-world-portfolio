@@ -18,13 +18,17 @@ export function createCityView({ reduce = false, spotsEl, onSpot }) {
       return pending.get(id);
     },
     /** Swap in a loaded city (call while the screen is faded). */
-    show(ci, C) {
+    show(ci, C, customSpots) {
       V_.drive?.exit(); V_.otgt = null; V_.cine = null; V_.near = -1; V_.C = C; V_.ci = ci; V_.spot = -1; V_.spotDir = null;
       V_.yaw = C.yaw ?? C.cfg?.yaw ?? -.6; V_.dist = 95; V_.pitch = .62; V_.tdist = C.dist || 62; V_.tpitch = C.pitch || .38;
       cam.position.set(Math.sin(V_.yaw) * 120, 90, Math.cos(V_.yaw) * 120); V_.look.set(0, 0, 0);
-      V_.drive?.reset(C); buildSpots(ci, C); try { C.onEnter?.(); } catch (e) { console.error(e); }
+      V_.custom = null; V_.drive?.reset(C); buildSpots(ci, C, customSpots); try { C.onEnter?.(); } catch (e) { console.error(e); }
     },
-    hide() { V_.drive?.exit(); V_.cine = null; V_.els.forEach(e => e.remove()); V_.els = []; V_.C = null; V_.ci = -1; V_.spot = -1; },
+    /** Show an ad-hoc city (not one of STOPS) with its own spot list: { name, spots: [{ t, m, b }] }. Same markers, drive and orbit as show(). */
+    showCustom(C, cfg) {
+      V_.show(-2, C, cfg.spots); V_.custom = cfg;
+    },
+    hide() { V_.custom = null; V_.drive?.exit(); V_.cine = null; V_.els.forEach(e => e.remove()); V_.els = []; V_.C = null; V_.ci = -1; V_.spot = -1; },
     focus(k) { V_.spot = k; V_.spotDir = null; (V_.seen[V_.ci] = V_.seen[V_.ci] || new Set()).add(k); V_.els[k]?.classList.add('seen'); },
     unfocus() { V_.spot = -1; V_.lastInteract = performance.now(); },
     /** Start driving the city's hero car (chase camera eases in from the current view). */
@@ -41,16 +45,16 @@ export function createCityView({ reduce = false, spotsEl, onSpot }) {
     resize(w, h) { cam.aspect = w / h; cam.fov = V_.fov ?? (w < 700 ? 55 : 40); cam.userData.baseFov = V_.fov; cam.updateProjectionMatrix(); },
   };
 
-  function buildSpots(ci, C) {
+  function buildSpots(ci, C, customSpots) {
     V_.els.forEach(e => e.remove());
-    const spots = STOPS[ci].spots, seen = V_.seen[ci] || new Set();
+    const spots = customSpots || STOPS[ci].spots, seen = V_.seen[ci] || new Set(), label = customSpots ? 'your city' : STOPS[ci].id;
     V_.els = spots.map((sp, k) => {
       const b = document.createElement('button'); b.type = 'button'; b.className = 'spot off' + (seen.has(k) ? ' seen' : '') + (sp.mission ? ' has-mission' : '');
       b.dataset.spot = k; b.setAttribute('aria-label', `Open spot ${k + 1}: ${sp.t}`);
       b.innerHTML = `<span class="ring">${k + 1}</span><span class="lab">${sp.t}${sp.mission ? '<i>try it</i>' : ''}</span>`;
       b.addEventListener('click', () => onSpot?.(k)); spotsEl.appendChild(b); return b;
     });
-    if (C.spots.length !== spots.length) console.warn(`city ${STOPS[ci].id}: ${C.spots.length} C.spot() calls vs ${spots.length} spots in content`);
+    if (C.spots.length !== spots.length) console.warn(`city ${label}:${C.spots.length} C.spot() calls vs ${spots.length} spots in content`);
   }
 
   const desired = V(), look = V(), side = V(), pr = V();

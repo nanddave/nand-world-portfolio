@@ -36,6 +36,7 @@
   <div class="hint">sound comes on when you start · drag to spin the earth</div>
 </section>
 
+<div id="daycap" aria-live="polite"></div>
 <div id="travel" aria-live="polite"><div class="k" id="travelK"></div><div class="t" id="travelT"></div></div>
 <div id="pins"></div>
 
@@ -92,6 +93,17 @@
   <div class="contact"><button class="btn small" type="button" id="shareBtn">Share my passport</button><button class="btn" type="button" data-close data-autofocus>Back to the trip</button></div>
 </div></div>
 
+<div class="modal" id="yours" hidden><div class="sheet" role="dialog" aria-modal="true" aria-labelledby="yT">
+  <h2 id="yT">Where are you reading this from?</h2>
+  <form id="yoursForm" autocomplete="off">
+    <p>One bonus stop. Type your city and I'll fetch its real streets from OpenStreetMap and leave an empty lot for you.</p>
+    <label for="yoursIn" class="sr">Your city</label>
+    <input id="yoursIn" class="field" maxlength="60" placeholder="e.g. Pune, Berlin, Austin" data-autofocus>
+    <div class="contact"><button class="btn primary" type="submit">Take me there</button><button class="btn ghost-dark" type="button" id="yoursSkip">Skip</button></div>
+  </form>
+  <p id="yoursLoad" class="loadline" hidden role="status"></p>
+</div></div>
+
 <div class="modal" id="skills" hidden><div class="sheet" role="dialog" aria-modal="true" aria-labelledby="sT">
   <h2 id="sT">Skills, and where to see them</h2>
   <p>Pick one and I'll take you there. "Try it" means there's a live demo.</p>
@@ -108,6 +120,8 @@
     <li><b>The co-pilot is search, not a chatbot.</b> It ranks every story on the trip with BM25 plus a small synonym list, and shows you the match and its score.</li>
     <li><b>Drive mode and real streets.</b> The yellow car is arcade physics against box colliders derived from the scene; Bangalore's streets and buildings are OpenStreetMap data baked offline into a small JSON file (© OpenStreetMap contributors), with approximate building heights.</li>
     <li><b>Live local time and weather.</b> The time in each city comes from your browser's clock and that city's time zone. If you are online, current weather comes from Open-Meteo.com (free, no key) and tints the sky and adds rain or snow; offline, or with the "Designed" toggle, you get the hand-designed look.</li>
+    <li><b>Voice is the browser's own.</b> The mic button and the spoken answers use your browser's built-in speech features (speech recognition and speech synthesis). This site never records or stores audio; where your browser sends speech for recognition is up to the browser.</li>
+    <li><b>Your own city.</b> If you type where you are, one lookup goes to OpenStreetMap's Nominatim and one to Overpass, straight from your browser, to draw your streets. If either is slow or blocked you get a designed street instead.</li>
     <li><b>No paid services.</b> No APIs, no tracking, no paid assets. Sound is synthesised live with WebAudio. It's a static site on free hosting.</li>
   </ul>
   <div class="contact"><a class="btn small" id="howRepo" href="#" rel="noopener" target="_blank">Code: repo (coming public)</a><button class="btn" type="button" data-close data-autofocus>Back to the trip</button></div>

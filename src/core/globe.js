@@ -42,9 +42,30 @@ export function km(a, b) { const R = 6371, la1 = a.lat * D, la2 = b.lat * D, dl 
 /** Camera orbit angles (a, e) that look straight at lat/lon from outside. */
 function facing(lat, lon) { const d = ll(lat, lon); return { a: Math.atan2(d.x, d.z), e: Math.asin(d.y) }; }
 
+/** Subsolar point (lat, lon in degrees) for a Date: simple declination + hour-angle formula, good to about a degree. */
+export function subsolar(d = new Date()) {
+  const doy = (Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate()) - Date.UTC(d.getUTCFullYear(), 0, 0)) / 864e5;
+  const lat = -23.44 * Math.cos(2 * Math.PI / 365 * (doy + 10));
+  const h = d.getUTCHours() + d.getUTCMinutes() / 60 + d.getUTCSeconds() / 3600;
+  return { lat, lon: ((12 - h) * 15 + 540) % 360 - 180 };
+}
+/** Time in Nadiad (Asia/Kolkata) as text, e.g. "9:14 pm". */
+export function nadiadTime(d = new Date()) { try { return new Intl.DateTimeFormat('en-US', { timeZone: 'Asia/Kolkata', hour: 'numeric', minute: '2-digit' }).format(d).replace(/\s?([AP])M/, (_, a) => ' ' + a.toLowerCase() + 'm'); } catch { return ''; } }
+
 export function createGlobe({ small = false, reduce = false, pinsEl, onPin }) {
   const rnd = makeRng(11);
   const scene = new THREE.Scene();
+  // Day/night: one shared uniform set patched into the earth, ocean and cloud materials (a soft terminator, cool night tint).
+  const DN = { uSun: { value: V(1, 0, 0) }, uAmt: { value: 0 } };
+  const dayNight = m => {
+    m.onBeforeCompile = sh => {
+      sh.uniforms.uSun = DN.uSun; sh.uniforms.uAmt = DN.uAmt;
+      sh.vertexShader = sh.vertexShader.replace('#include <common>', '#include <common>\nvarying vec3 vSN;').replace('#include <begin_vertex>', '#include <begin_vertex>\nvSN = normalize((modelMatrix * vec4(position, 1.)).xyz);');
+      sh.fragmentShader = sh.fragmentShader.replace('#include <common>', '#include <common>\nvarying vec3 vSN;uniform vec3 uSun;uniform float uAmt;')
+        .replace('#include <dithering_fragment>', '#include <dithering_fragment>\nfloat dn=dot(normalize(vSN),uSun);float dk=1.-smoothstep(-.1,.16,dn);gl_FragColor.rgb*=mix(vec3(1.),vec3(.26,.33,.56),dk*uAmt);gl_FragColor.rgb+=vec3(.34,.13,.02)*exp(-pow(dn/.09,2.))*uAmt*.45;');
+    };
+    return m;
+  };
   scene.add(new THREE.HemisphereLight(0xD8E6FF, 0x2A2F48, 2.0));
   const sun = new THREE.DirectionalLight(0xFFF1DC, 3.1); scene.add(sun); scene.add(sun.target);
   // stars
@@ -68,8 +89,8 @@ export function createGlobe({ small = false, reduce = false, pinsEl, onPin }) {
       for (let k = 0; k < 3; k++) { col[(i + k) * 3] = c.r; col[(i + k) * 3 + 1] = c.g; col[(i + k) * 3 + 2] = c.b; }
     }
     g.setAttribute('color', new THREE.BufferAttribute(col, 3)); g.computeVertexNormals();
-    scene.add(new THREE.Mesh(g, new THREE.MeshStandardMaterial({ vertexColors: true, flatShading: true, roughness: .95 })));
-    scene.add(new THREE.Mesh(new THREE.SphereGeometry(RG + .02, 96, 64), new THREE.MeshStandardMaterial({ color: 0x2B7FB8, transparent: true, opacity: .55, roughness: .18, metalness: .1 })));
+    scene.add(new THREE.Mesh(g, dayNight(new THREE.MeshStandardMaterial({ vertexColors: true, flatShading: true, roughness: .95 }))));
+    scene.add(new THREE.Mesh(new THREE.SphereGeometry(RG + .02, 96, 64), dayNight(new THREE.MeshStandardMaterial({ color: 0x2B7FB8, transparent: true, opacity: .55, roughness: .18, metalness: .1 }))));
     scene.add(new THREE.Mesh(new THREE.SphereGeometry(RG * 1.1, 64, 48), new THREE.ShaderMaterial({
       transparent: true, side: THREE.BackSide, depthWrite: false, blending: THREE.AdditiveBlending,
       vertexShader: 'varying vec3 n;varying vec3 vp;void main(){n=normalize(normalMatrix*normal);vec4 mv=modelViewMatrix*vec4(position,1.);vp=normalize(-mv.xyz);gl_Position=projectionMatrix*mv;}',
@@ -78,7 +99,7 @@ export function createGlobe({ small = false, reduce = false, pinsEl, onPin }) {
     const cw = small ? 256 : 512, ch = cw / 2, cv = document.createElement('canvas'); cv.width = cw; cv.height = ch; const cg = cv.getContext('2d'), img = cg.createImageData(cw, ch);
     for (let y = 0; y < ch; y++) for (let x = 0; x < cw; x++) { const p = ll(90 - y / ch * 180, x / cw * 360 - 180); let d = fbm(p.x * 3.2 + 20, p.y * 3.2, p.z * 3.2); d = clamp((d - .5) * 3.2, 0, 1); const i = (y * cw + x) * 4; img.data[i] = img.data[i + 1] = img.data[i + 2] = 255; img.data[i + 3] = d * 230; }
     cg.putImageData(img, 0, 0); const ct = new THREE.CanvasTexture(cv); ct.colorSpace = THREE.SRGBColorSpace;
-    clouds = new THREE.Mesh(new THREE.SphereGeometry(RG + .7, 96, 64), new THREE.MeshStandardMaterial({ map: ct, transparent: true, depthWrite: false, roughness: 1 }));
+    clouds = new THREE.Mesh(new THREE.SphereGeometry(RG + .7, 96, 64), dayNight(new THREE.MeshStandardMaterial({ map: ct, transparent: true, depthWrite: false, roughness: 1 })));
     clouds.rotation.y = Math.PI; scene.add(clouds);
   }
 
@@ -95,6 +116,17 @@ export function createGlobe({ small = false, reduce = false, pinsEl, onPin }) {
     ring.rotation.x = -Math.PI / 2; ring.position.y = .03; m.add(ring); s.ring = ring;
     m.position.copy(s.dir).multiplyScalar(RG + s.h); m.quaternion.setFromUnitVectors(V(0, 1, 0), s.dir); scene.add(m);
   });
+
+  // warm city lights on the night side: a small cluster of dots round each stop (fades with the day/night amount and the sun)
+  {
+    const pts = []; S.forEach(s => { if (s.dupOf >= 0) return; const t1 = V(0, 1, 0).cross(s.dir).normalize(), t2 = s.dir.clone().cross(t1).normalize(); for (let n = 0; n < 16; n++) { const a = rnd() * 6.283, d = (n === 0 ? 0 : .004 + rnd() * .03) * (n < 6 ? .5 : 1), q = s.dir.clone().addScaledVector(t1, Math.cos(a) * d).addScaledVector(t2, Math.sin(a) * d).normalize().multiplyScalar(RG + s.h + .07); pts.push(q.x, q.y, q.z); } });
+    const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(pts, 3));
+    scene.add(new THREE.Points(g, new THREE.ShaderMaterial({
+      uniforms: DN, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending,
+      vertexShader: 'uniform vec3 uSun;uniform float uAmt;varying float vA;void main(){vec4 mv=modelViewMatrix*vec4(position,1.);vA=(1.-smoothstep(-.06,.2,dot(normalize(position),uSun)))*uAmt;gl_PointSize=380./-mv.z;gl_Position=projectionMatrix*mv;}',
+      fragmentShader: 'varying float vA;void main(){float d=length(gl_PointCoord-.5)*2.;float a=smoothstep(1.,0.,d);gl_FragColor=vec4(1.,.72,.34,1.)*a*a*vA;}',
+    })));
+  }
 
   // route
   const RP = [], RU = [], RT = [], CUM = [0], stopU = new Array(STOPS.length).fill(0);
@@ -137,7 +169,7 @@ export function createGlobe({ small = false, reduce = false, pinsEl, onPin }) {
     scene, cam, stopU, LTOT,
     u: 0, target: 0, tripLen: 0, arrivedAt: -1, view: 'intro', // 'intro' | 'travel' | 'orbit' | 'hidden'
     orbitA: india.a, orbitE: .3, dragging: false, onArrive: null,
-    tw: null, spin: 1, trailer: false, fov: null, // trailer hooks: timed travel, spin multiplier, centred intro framing, FOV override
+    tw: null, sw: null, spin: 1, trailer: false, fov: null, // trailer hooks: timed travel, spin multiplier, centred intro framing, FOV override
     camPos: V(0, 10, 70), look: V(0, 0, 0), up: V(0, 1, 0), lastF: null, lastFT: null,
     /** Index of the stop nearest the traveller. */
     curStop() { let best = 0, bd = 1e9; stopU.forEach((u, i) => { const d = Math.abs(u - G.u); if (d < bd) { bd = d; best = i; } }); return best; },
@@ -149,6 +181,8 @@ export function createGlobe({ small = false, reduce = false, pinsEl, onPin }) {
     },
     /** Info for the travel caption: total km along the legs and whether any leg flies. */
     legInfo(from, to) { const a = Math.min(from, to), b = Math.max(from, to); let fly = false, dist = 0; for (let q = a; q < b; q++) { const [x, y, t] = LEGS[q]; if (t === 'f') fly = true; dist += km(STOPS[x], STOPS[y]); } return { fly, km: Math.round(dist / 10) * 10 }; },
+    /** Stylised 3 s sweep of the sun through one full day, ending at the real current position. Resolves when done (at once for reduced motion / trailer). */
+    sweep(dur = 3) { if (reduce || G.trailer) return Promise.resolve(); return new Promise(res => { G.sw = { t: 0, dur, res }; }); },
     faceIndia() { G.orbitA = india.a; G.orbitE = .3; },
     drag(dx, dy) { G.orbitA -= dx * .005; G.orbitE = clamp(G.orbitE + dy * .004, -1.2, 1.2); },
     setPinsDone(set) { pins.forEach((p, i) => p && p.classList.toggle('done', set.has(i) || S.some(s => s.dupOf === i && set.has(s.i)))); },
@@ -156,8 +190,13 @@ export function createGlobe({ small = false, reduce = false, pinsEl, onPin }) {
   };
 
   const P = V(), U = V(), A = V(), B = V(), Fw = V(), Sx = V(), desired = V(), look = V(), pr = V(), tmp = V();
+  let ssT = -99, ss = subsolar();
   G.update = (dt, T, W, H) => {
     clouds.rotation.y += dt * .006;
+    if (T - ssT > 5) { ss = subsolar(); ssT = T; }
+    let off = 0; if (G.sw) { const w = G.sw; w.t += dt; const x = clamp(w.t / w.dur, 0, 1); off = 360 * (1 - x) ** 3; if (x >= 1) { G.sw = null; w.res(); } }
+    DN.uSun.value.copy(ll(ss.lat, ss.lon + off).normalize());
+    const want = !G.trailer && (G.view === 'intro' || G.sw) ? 1 : 0; DN.uAmt.value += (want - DN.uAmt.value) * Math.min(1, dt * (want ? 4 : 1.6));
     if (G.view === 'travel' && G.arrivedAt !== G.target) {
       const tu = stopU[G.target], dd = tu - G.u, ty = routeAt(G.u, P, U);
       if (G.tw) {

@@ -5,7 +5,7 @@ import './styles/app.css';
 import { THREE } from './kit/kit.js';
 import { STOPS } from './content/stops.js';
 import { VISITOR } from './core/visitor.js';
-import { createGlobe } from './core/globe.js';
+import { createGlobe, km, nadiadTime } from './core/globe.js';
 import { createCityView } from './core/cityview.js';
 import { createDrive } from './core/drive.js';
 import { liveFor } from './core/live.js';
@@ -42,7 +42,7 @@ const app = { state, globe, city, drive, renderer, skipRender: false, resize: ()
 const trailer = createTrailer(app); // Phase 3.1: scripted demo video (?trailer=1, or the intro button)
 const card = createCard({
   reduce: REDUCE,
-  onNext: (ci, k) => { const n = STOPS[ci].spots.length; if (k < n - 1) focusSpot(k + 1); else if (ci < LAST) travelTo(ci + 1); else finish(); },
+  onNext: (ci, k) => { if (ci < 0) { card.close(); unfocus(); finish(); return; } const n = STOPS[ci].spots.length; if (k < n - 1) focusSpot(k + 1); else if (ci < LAST) travelTo(ci + 1); else finish(); },
   onClose: () => unfocus(),
   onComplete: (ci, k) => { state.missions.add(ci + ':' + k); stamp(ci); updateChips(); pilotSay(`Mission done: ${STOPS[ci].spots[k].t}. That's a star on your ${short(STOPS[ci])} stamp.`); },
 });
@@ -85,7 +85,14 @@ $('#moodBtn').addEventListener('click', () => { if (!liveMood) return; applyMood
 const fade = on => $('#fade').classList.toggle('on', on);
 const wait = ms => new Promise(r => setTimeout(r, REDUCE ? 0 : ms));
 function begin() { if (state.mode !== 'intro') return; state.mode = 'globe'; document.body.classList.add('on'); globe.view = 'travel'; Sound.play('globe'); }
-$('#startBtn').addEventListener('click', () => { Sound.set(true); begin(); globe.u = 0; travelTo(0); });
+/* day/night intro: the sun sweeps one stylised day in 3 s and lands on the real current position, then the trip starts */
+async function daySweep() {
+  if (REDUCE || trailer.active || QS.has('trailer')) return;
+  const cap = $('#daycap'), t = nadiadTime(); globe.view = 'orbit'; globe.faceIndia();
+  if (t) { cap.textContent = `Right now in Nadiad: ${t}`; cap.classList.add('show'); }
+  await globe.sweep(3); cap.classList.remove('show');
+}
+$('#startBtn').addEventListener('click', async () => { Sound.set(true); begin(); globe.u = 0; await daySweep(); if (state.mode === 'globe') travelTo(0); });
 $('#soundBtn').addEventListener('click', () => Sound.set(!Sound.on));
 Sound.onChange = on => { const b = $('#soundBtn'); b.textContent = on ? 'Sound on' : 'Sound off'; b.setAttribute('aria-pressed', String(on)); };
 async function toIntro() { if (state.mode === 'city') await exitCity(); state.mode = 'intro'; globe.view = 'intro'; globe.faceIndia(); document.body.classList.remove('on'); $('#travel').classList.remove('show'); updateChips(); }
@@ -130,16 +137,64 @@ async function enterCity(i) {
 async function exitCity() {
   if (state.transit || state.mode !== 'city') return; state.transit = true; card.close(); fade(true); await wait(600);
   setDrive(false); state.mode = 'globe'; city.hide(); globe.view = 'travel'; document.body.classList.remove('incity', 'focus'); $('#ctitle').classList.remove('show'); liveMood?.C.resetMood?.(); liveMood = null;
-  Sound.play('globe'); fade(false); state.transit = false; state.cityIdx = -1; updateChips();
+  Sound.play('globe'); fade(false); state.transit = false; state.cityIdx = -1; state.custom = null; updateChips();
 }
 /** Last stop's continue: with a company, take them to the empty lot first; then back to the globe to roam. */
 async function finish() {
+  if (state.custom) { endTrip(); return; }
   const lot = STOPS[LAST].spots.findIndex(sp => sp.mission === 'lot');
   const seen = city.seen[LAST] || new Set();
   if (state.cityIdx === LAST && lot >= 0 && !seen.has(lot)) { focusSpot(lot); return; }
-  await exitCity(); globe.view = 'orbit'; pilotSay(VISITOR.company ? `That's the whole trip. Over to you, ${VISITOR.company}: open the passport for Nand's contact.` : 'That\'s the whole trip. Spin the earth, or open the passport for Nand\'s contact.');
+  if (state.cityIdx === LAST && !yours.offered && !trailer.active) { yours.offered = true; offerYours(); return; }
+  endTrip();
 }
-$('#next').addEventListener('click', () => { const i = state.cityIdx; if (i < LAST) travelTo(i + 1); else finish(); });
+async function endTrip() {
+  const info = state.custom; await exitCity(); globe.view = 'orbit';
+  if (info && info.lat != null) showDistance(info);
+  pilotSay(VISITOR.company ? `That's the whole trip. Over to you, ${VISITOR.company}: open the passport for Nand's contact.` : 'That\'s the whole trip. Spin the earth, or open the passport for Nand\'s contact.');
+}
+$('#next').addEventListener('click', () => { const i = state.cityIdx; if (state.custom) finish(); else if (i < LAST) travelTo(i + 1); else finish(); });
+
+/* The visitor's own city: a bonus stop after Brokai. It is not in STOPS, so passport and postcard counts stay at 7. */
+const yours = { offered: false, busy: false };
+const BLR = STOPS[LAST];
+function offerYours() {
+  $('#yoursForm').hidden = false; $('#yoursLoad').hidden = true; yours.busy = false; openModal('#yours');
+}
+$('#yoursForm').addEventListener('submit', e => { e.preventDefault(); const q = $('#yoursIn').value.trim(); if (q.length >= 2) goYours(q); });
+$('#yoursSkip').addEventListener('click', () => { closeModals(); endTrip(); });
+async function goYours(typed) {
+  if (yours.busy) return; yours.busy = true;
+  $('#yoursForm').hidden = true; const L = $('#yoursLoad'); L.hidden = false; L.textContent = `Fetching real streets for ${typed} from OpenStreetMap…`;
+  let res = null;
+  try {
+    const { loadYourCity } = await import('./core/yourcity.js'), ac = new AbortController();
+    res = await Promise.race([loadYourCity(typed, { signal: ac.signal, timeoutMs: 6000 }), new Promise((_, rej) => setTimeout(() => { ac.abort(); rej(new Error('timeout')); }, 6500))]);
+  } catch (e) { console.info('your city: using the designed street', e && e.message); }
+  const { buildYours } = await import('./cities/yours.js');
+  const name = (res && res.name) || typed;
+  const C = buildYours({ name, data: res ? res.data : null, company: VISITOR.company });
+  yours.busy = false; closeModals();
+  await showYours({ name, C, real: !!res, lat: res ? res.lat : null, lon: res ? res.lon : null });
+}
+async function showYours({ name, C, real, lat, lon }) {
+  if (state.transit) return; state.transit = true; fade(true); await wait(600);
+  if (state.mode === 'intro') begin();
+  card.close(); setDrive(false); liveMood?.C.resetMood?.(); liveMood = null; $('#cLive').hidden = true; $('#moodBtn').hidden = true; $('#travel').classList.remove('show');
+  const spots = [{ t: 'Your company here', m: 'The next stop', b: `<p>This lot is yours. If you're hiring for applied AI, this is where Nand would like to build next. The passport has his contact.</p><p><small>The building that rises is a stand-in, the same for every visitor.</small></p>` }];
+  state.custom = { name, spots, lat, lon }; state.mode = 'city'; state.cityIdx = -2; state.spot = -1;
+  globe.view = 'hidden'; globe.hidePins(); city.showCustom(C, { name, spots }); document.body.classList.remove('focus'); document.body.classList.add('incity');
+  $('#cStop').textContent = 'Bonus stop'; $('#cName').textContent = name; $('#cMeta').innerHTML = real ? 'Your city<br>real streets from OpenStreetMap' : 'Your city<br>a designed street (live map data was not reachable)';
+  $('#cCredit').textContent = C.credit || ''; setDriveUI(); $('#ctitle').classList.add('show');
+  $('#next').textContent = 'Finish the trip'; Sound.play(C.cfg?.sound || 'blr'); updateChips(); window.__city = 'yours';
+  fade(false); state.transit = false;
+  pilotSay(`Welcome to ${name}. The yellow marker is the empty lot.`);
+}
+function showDistance({ name, lat, lon }) {
+  const d = Math.round(km(BLR, { lat, lon }) / 10) * 10; if (!isFinite(d)) return;
+  $('#travelK').textContent = `${d.toLocaleString('en-US')} km as the crow flies`; $('#travelT').textContent = `${short(BLR)} → ${name}`;
+  $('#travel').classList.add('show'); setTimeout(() => { if (state.mode !== 'city') $('#travel').classList.remove('show'); }, 5000);
+}
 $('#shareBtn').addEventListener('click', async () => { closeModals(); const { openPostcardDialog } = await import('./ui/postcard.js'); openPostcardDialog({ stamped: state.stamped, missions: state.missions, company: VISITOR.company }); });
 
 function nextLabel(ci, k) {
@@ -148,7 +203,13 @@ function nextLabel(ci, k) {
   return VISITOR.company ? `Finish: over to ${VISITOR.company}` : 'Finish the trip';
 }
 function focusSpot(k) {
-  if (state.mode !== 'city') return; const ci = state.cityIdx; k = Math.max(0, Math.min(k, STOPS[ci].spots.length - 1));
+  if (state.mode !== 'city') return;
+  if (state.custom) {
+    const cu = state.custom, sp = cu.spots[0]; state.spot = 0; city.focus(0); document.body.classList.add('focus');
+    card.openCustom({ kick: `${cu.name}, bonus stop`, title: sp.t, meta: sp.m, body: sp.b, nextLabel: 'Finish the trip', onOpen: () => city.C?.raiseLot?.(VISITOR.company || cu.name || 'You') });
+    return;
+  }
+  const ci = state.cityIdx; k =Math.max(0, Math.min(k, STOPS[ci].spots.length - 1));
   state.spot = k; city.focus(k); document.body.classList.add('focus');
   card.open(ci, k, { scene: city.C, nextLabel: nextLabel(ci, k) }); stamp(ci);
 }
@@ -170,14 +231,48 @@ $('#passBtn').addEventListener('click', () => { renderPassport(state.stamped, st
 const pilotEl = $('#pilot');
 function pilotSay(t, match = '') { $('#pilotText').textContent = t; $('#pilotMatch').textContent = match || 'Searches the stories on this trip, right here in your browser.'; }
 $('#sugg').innerHTML = SUGGESTIONS.map(q => `<button type="button" data-q="${q}">${q}</button>`).join('');
-async function runAsk(q) {
-  pilotSay('Searching…');
-  const r = await ask(q);
+/* voice: push-to-talk in (SpeechRecognition), spoken answer out (speechSynthesis). Both are the browser's own; nothing is recorded here. */
+const synth = 'speechSynthesis' in window ? window.speechSynthesis : null;
+function stopSpeaking() { try { synth?.cancel(); } catch { /* ignore */ } }
+function pickVoice() {
+  const vs = (synth?.getVoices?.() || []).filter(v => /^en([-_]|$)/i.test(v.lang)); if (!vs.length) return null;
+  const sc = v => (/natural|neural|enhanced|premium/i.test(v.name) ? 4 : 0) + (/google/i.test(v.name) ? 3 : 0) + (/samantha|daniel|karen|moira|serena/i.test(v.name) ? 2 : 0) + (/^en[-_](US|GB|IN)/i.test(v.lang) ? 1 : 0);
+  return vs.slice().sort((a, b) => sc(b) - sc(a))[0];
+}
+function speak(text) {
+  if (!synth || !Sound.on || !text) return; stopSpeaking();
+  try { const u = new SpeechSynthesisUtterance(text), v = pickVoice(); if (v) { u.voice = v; u.lang = v.lang; } else u.lang = 'en-US'; u.rate = 1; synth.speak(u); } catch { /* ignore */ }
+}
+const prevSoundChange = Sound.onChange; Sound.onChange = on => { prevSoundChange?.(on); if (!on) stopSpeaking(); };
+async function runAsk(q, { voice = false } = {}) {
+  stopSpeaking(); pilotSay('Searching…');
+  const r = await ask(q); if (voice) speak(r.text);
   if (r.match) {
     const s = STOPS[r.match.ci], sp = s.spots[r.match.k];
     pilotSay(r.text, `Matched: ${s.name} · ${sp.t}` + (r.match.score != null ? ` (score ${r.match.score.toFixed(2)})` : ' (remote answer)'));
     travelTo(r.match.ci, r.match.k);
   } else pilotSay(r.text, r.best ? `Closest: ${STOPS[r.best.ci].spots[r.best.k].t} (score ${r.best.score.toFixed(2)}, below the 1.60 cut-off)` : 'No words matched any story.');
+}
+{
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (SR) {
+    const mic = document.createElement('button'); mic.type = 'button'; mic.id = 'micBtn'; mic.setAttribute('aria-pressed', 'false'); mic.setAttribute('aria-label', 'Ask by voice: click to start and stop listening'); mic.title = 'Ask by voice';
+    mic.innerHTML = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg>';
+    $('#ask').insertBefore(mic, $('#ask button[type=submit]'));
+    let rec = null, heard = '';
+    const setL = on => { mic.setAttribute('aria-pressed', String(on)); if (!on) $('#askIn').placeholder = 'Ask the co-pilot…'; };
+    mic.addEventListener('click', () => {
+      if (rec) { try { rec.stop(); } catch { /* ignore */ } return; }
+      stopSpeaking(); heard = '';
+      try {
+        rec = new SR(); rec.lang = /^en/i.test(navigator.language || '') ? navigator.language : 'en-US'; rec.interimResults = true; rec.maxAlternatives = 1; rec.continuous = false;
+        rec.onresult = e => { heard = Array.from(e.results).map(r => r[0].transcript).join(' ').trim(); $('#askIn').value = heard; };
+        rec.onerror = e => { if (e.error === 'not-allowed' || e.error === 'service-not-allowed') pilotSay('The mic is blocked in this browser. You can type your question instead.'); else if (e.error === 'no-speech') pilotSay('I did not hear anything. Click the mic and try again.'); };
+        rec.onend = () => { rec = null; setL(false); const q = heard.trim(); if (q) { $('#askIn').value = ''; runAsk(q, { voice: true }); } };
+        rec.start(); setL(true); $('#askIn').placeholder = 'Listening…'; pilotSay('Listening… click the mic again when you are done.');
+      } catch { rec = null; setL(false); }
+    });
+  }
 }
 $('#ask').addEventListener('submit', e => { e.preventDefault(); const i = $('#askIn'); const q = i.value.trim(); if (q) { runAsk(q); i.value = ''; } });
 $('#sugg').addEventListener('click', e => { const b = e.target.closest('button'); if (b) runAsk(b.dataset.q); });
@@ -264,7 +359,7 @@ function driveHud() {
   $('#speedN').textContent = String(Math.round(Math.abs(drive.speed) * 3.6));
   const k = card.isOpen() ? -1 : drive.nearSpot; if (k === promptK || promptK === -3) return; promptK = k;
   if (k < 0) { prompt.hidden = true; return; }
-  prompt.textContent = `${matchMedia('(pointer: coarse)').matches ? 'Tap to open' : 'Press E to open'} — ${STOPS[state.cityIdx].spots[k].t}`; prompt.hidden = false;
+  prompt.textContent = `${matchMedia('(pointer: coarse)').matches ? 'Tap to open' : 'Press E to open'} — ${(state.custom ? state.custom.spots : STOPS[state.cityIdx].spots)[k].t}`; prompt.hidden = false;
 }
 
 /* loop */
@@ -282,6 +377,9 @@ function frame(now) {
 }
 updateChips(); renderPassport(state.stamped, state.missions);
 requestAnimationFrame(frame);
+
+/* ?yours=<city> jumps straight to the visitor-city stop (for testing) */
+if (QS.get('yours')) { yours.offered = true; setTimeout(() => goYours(QS.get('yours').slice(0, 60)), 300); }
 
 // Test hooks for the lead / screenshot tool.
 window.__trailer = trailer;
