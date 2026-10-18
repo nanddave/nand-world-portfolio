@@ -3,6 +3,7 @@
 // A deterministic stand-in for the LLM agents in LegalWiz.
 import './missions.css';
 import { esc, lifetime, now, ms, pretty, json } from './_util.js';
+import { WORLD } from '../kit/events.js';
 
 const DEFAULT = `1. This lease begins on 1 January 2026 and runs for a fixed term of 12 months.
 2. The Tenant must pay rent of ₹25,000 on or before the 1st day of each month.
@@ -96,6 +97,7 @@ export function mount(el, ctx) {
     $('res').innerHTML = `<div><span class="ms-label">Clauses</span>${clauses.map(c => `<div class="ms-clause ${hot.has(c.id) ? 'ms-conflict' : ''}"><b>§${esc(c.id)}</b>${esc(c.text)}</div>`).join('')}</div><div class="ms-result ${bad.length ? 'ms-warn' : ''}">${bad.length ? `${bad.length} contradiction${bad.length > 1 ? 's' : ''} found: ${bad.map(v => '§' + v.pair.join(' vs §')).join(', ')}.` : 'No contradictions found.'}${verdicts.length > bad.length ? ` ${verdicts.length - bad.length} flagged pair${verdicts.length - bad.length > 1 ? 's were' : ' was'} judged compatible.` : ''}</div>`;
     $('st').textContent = `3 agents, ${Math.round((t1 + t2 + t3) * 10) / 10} ms of compute`;
     ctx.work.step('Verdict', `${bad.length} contradiction(s): ${bad.map(v => '§' + v.pair.join('/§')).join(', ') || 'none'}`, { kind: 'result' });
+    WORLD.emit('agents:verdict', { contradictions: bad.length }); ctx.work.step('World updated', 'Bellevue towers pulse with light', { ms: 0 });
     busy = false; btn.disabled = false; btn.textContent = 'Run again'; if (runs === 1) ctx.complete();
   }
   el.querySelector('[data-run]').addEventListener('click', run);

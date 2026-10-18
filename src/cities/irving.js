@@ -6,7 +6,7 @@
 import { newCity } from '../kit/city.js';
 import { addOSM } from '../kit/osm.js';
 import irvingOSM from '../data/osm/irving.json';
-import { THREE, mat, glow, mesh, box, cyl, cone, ball, lathe, extrude, grp, building, sign, person, SKIN, car, pickup, semi, streetLight, rnd, reseed } from '../kit/kit.js';
+import { THREE, mat, glow, mesh, box, cyl, cone, ball, lathe, extrude, grp, building, sign, person, SKIN, car, pickup, semi, streetLight, rnd, reseed, wheel } from '../kit/kit.js';
 
 const BRONZE = mat('#7B5531', { metalness: .6, roughness: .4 });
 const BRONZE_D = mat('#5A3C22', { metalness: .6, roughness: .45 });
@@ -223,6 +223,8 @@ export function build() {
   for (let i = 0; i < 40; i++) { const x = (rnd() - .5) * 240, z = rnd() < .5 ? 26 + rnd() * 20 : 88 + rnd() * 30; if (Math.abs(x - SX) < 20 && z < 50) continue; C.add(ball(.6 + rnd() * .5, '#A89A5E', x, .2, z, 0)); }
   C.particles('dust', 500);
 
+  deliveryWorld(C);
+
   C.spot(-48, 24, -16);
   C.spot(PX, 6, PZ);
   C.spot(SX - 4, 3.5, SZ + 4);
@@ -232,4 +234,26 @@ export function build() {
   });
   C.credit = 'Streets & buildings: © OpenStreetMap contributors';
   return C;
+}
+
+// ===== World reaction: 'etl:done' — delivery trucks leave the depot by the office and drive out along the boulevard =====
+function deliveryWorld(C) {
+  const trucks = [];
+  const mk = (i) => {
+    const body = ['#F2F2F2', '#E8E2D0', '#F2F2F2'][i];
+    const g = grp(
+      box(3.4, 2.5, 2.3, body, -1.2, .7), box(3.42, .5, 2.32, '#2D6CB5', -1.2, 1.6), box(.1, .5, 1.6, glow('#FFB347', 1.8), -2.95, 2.1),
+      box(1.8, 1.9, 2.2, '#2D6CB5', 1.5, .7), box(.06, .8, 1.8, '#9FC3D8', 2.42, 1.65), box(.08, .3, .5, glow('#FFF4D0', 2.4), 2.42, .95, .7), box(.08, .3, .5, glow('#FFF4D0', 2.4), 2.42, .95, -.7),
+      wheel(1.5, 1.05, .45), wheel(1.5, -1.05, .45), wheel(-1.6, 1.05, .45), wheel(-1.6, -1.05, .45));
+    g.visible = false; C.scene.add(g); return g;
+  };
+  for (let i = 0; i < 3; i++) trucks.push(mk(i));
+  const Z = 8.6, X0 = -66, X1 = 150; let cancel = null;
+  C.on('etl:done', () => {
+    if (cancel) cancel();
+    trucks.forEach((v, i) => { v.position.set(X0 + i * 7, 0, Z + (i === 1 ? -0.1 : 0)); v.visible = true; });
+    cancel = C.anim(18, (p, el) => {
+      trucks.forEach((v, i) => { const e = Math.max(0, el - i * 1.4); v.position.x = X0 + i * 7 + (e < 3 ? 2 * e * e : 18 + 12 * (e - 3)); });
+    }, () => { trucks.forEach(v => { v.visible = false; }); cancel = null; });
+  });
 }

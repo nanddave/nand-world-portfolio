@@ -76,6 +76,7 @@ export const SHOTS = [
   { at: 44.0, do: 'enter', city: 'brokai' },
   { at: 44.0, do: 'drive', from: 'spawn', to: { spot: 0 }, dur: 3.4 },
   { at: 44.4, do: 'caption', text: 'Bangalore, again', sub: 'Founder, Brokai Labs', dur: 2.8 },
+  { at: 47.4, do: 'spot', k: 1, dur: 3.2 },
   { at: 47.4, do: 'mission', id: 'voice', dur: 3.2 },
   { at: 47.6, do: 'caption', text: 'Voice AI for a real salon', sub: 'Scripted demo of the call flow', dur: 3.0 },
   { at: 50.8, do: 'spot', k: 2, dur: 3.2 },

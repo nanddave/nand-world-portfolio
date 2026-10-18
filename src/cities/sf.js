@@ -260,6 +260,8 @@ export function build() {
   [[4, 27, '#EADBC6'], [12, 27, '#D3E0E8'], [20, 27, '#F1D9C4'], [28, 27, '#E4E8D2'], [36, 27, '#EED8DE']].forEach(([x, z, c]) => C.add(grp(building(7.6, 7, 9, c, 'res', false, '#6E5A50'), box(7.9, .4, 9.4, '#FFFFFF', 0, 7)), x, z, Math.PI));
   [[6, 16], [14, 20], [24, 15], [34, 19]].forEach(([x, z]) => C.add(treeRound('#5E7F45', 1.1), x, z));
 
+  hillFlare(C, -30, PR, 33);
+
   C.crowd([[14, -8.4, 0], [22, -7.8, 2.2], [-20, -7.2, 1.2], [-10, -7.4, 3], [40, 8, 4], [5, 7.6, 1], [50, -7.5, 2]]);
   C.particles('dust', 220);
 
@@ -273,4 +275,26 @@ export function build() {
   });
   C.credit = 'Streets & buildings: © OpenStreetMap contributors';
   return C;
+}
+
+// ===== World reaction: 'goal:planned' — a flare of light rises from the hill viewpoint (rings + beam + sparks) =====
+function hillFlare(C, x, y, z) {
+  const m = glow('#FFD27A', 3.2); m.transparent = true;
+  const g = grp(); g.position.set(x, y, z); g.visible = false; C.add(g);
+  const core = ball(1, m, 0, 3, 0, 2); core.castShadow = false; g.add(core);
+  const beam = new THREE.Mesh(new THREE.CylinderGeometry(.5, 1.6, 40, 16, 1, true), m); beam.position.y = 20; beam.castShadow = false; g.add(beam);
+  const rings = [0, 1].map(() => { const r = new THREE.Mesh(new THREE.TorusGeometry(1, .08, 6, 40), m); r.rotation.x = Math.PI / 2; r.castShadow = false; g.add(r); return r; });
+  const sparks = []; for (let i = 0; i < 18; i++) { const b = ball(.18, m, 0, 0, 0, 0); b.castShadow = false; b.userData.a = i * 2.4; b.userData.v = 3 + (i % 5); g.add(b); sparks.push(b); }
+  let cancel = null;
+  C.on('goal:planned', () => {
+    if (cancel) cancel();
+    g.visible = true;
+    cancel = C.anim(3.6, (p, el) => {
+      const fade = p < .15 ? p / .15 : Math.max(0, 1 - (p - .15) / .85);
+      m.opacity = fade; core.scale.setScalar(.8 + Math.sin(el * 9) * .2 + p * 2.5); core.position.y = 3 + p * 6;
+      beam.scale.set(1 + p * 1.5, 1, 1 + p * 1.5);
+      rings.forEach((r, i) => { const q = Math.max(0, (el - i * .8) / 2.2); r.visible = q > 0 && q < 1; r.scale.setScalar(1 + q * 14); r.position.y = 1 + q * 5; });
+      sparks.forEach(b => { const k = Math.min(1, el / 3); b.position.set(Math.cos(b.userData.a + el) * (1 + k * 6), 2 + b.userData.v * el * .9, Math.sin(b.userData.a + el) * (1 + k * 6)); });
+    }, () => { g.visible = false; cancel = null; });
+  });
 }

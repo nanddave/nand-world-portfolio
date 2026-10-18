@@ -3,6 +3,7 @@
 // Illustration of the approach on synthetic data; the real pipelines ran in PySpark across 10+ sources.
 import './missions.css';
 import { esc, rng, lifetime, now, ms, tokens, jaccard } from './_util.js';
+import { WORLD } from '../kit/events.js';
 
 const CATS = {
   drinks: ['cola', 'lemonade', 'iced tea', 'sparkling water', 'energy drink', 'fruit punch'],
@@ -118,6 +119,7 @@ export function mount(el, ctx) {
     dag(6); t0 = now(); const clusters = best.C.map((c, j) => { const members = deduped.filter((_, i) => best.a[i] === j); const top = [...c].map((v, i) => [vocab[i], v]).sort((a, b) => b[1] - a[1]).slice(0, 3).map(x => x[0]); const cats = {}; members.forEach(m => cats[m._cat] = (cats[m._cat] || 0) + 1); const maj = Object.entries(cats).sort((a, b) => b[1] - a[1])[0] || ['-', 0]; return { j, top, members, maj, label: top.slice(0, 2).join(' / ') }; }).filter(c => c.members.length).sort((a, b) => b.members.length - a.members.length);
     const purity = clusters.reduce((s, c) => s + c.maj[1], 0) / N; counts.label = clusters.length;
     ctx.work.step('Label clusters by top terms', clusters.map(c => `"${c.label}" (${c.members.length} offers) top terms: ${c.top.join(', ')}`).join('\n') + `\npurity vs the generator's hidden category: ${(purity * 100).toFixed(1)}% (synthetic check, not the production metric)`, { ms: ms(t0) });
+    WORLD.emit('etl:done', { clusters: clusters.length }); ctx.work.step('World updated', 'delivery trucks leave the depot in Irving', { ms: 0 });
     dag(7); st.textContent = `done in ${Math.round(now() - T)} ms`;
     ctx.work.step('Pipeline finished', `${raw.length} raw -> ${valid.length} valid -> ${deduped.length} unique -> ${clusters.length} clusters\npurity ${(purity * 100).toFixed(1)}% on synthetic data`, { kind: 'result', ms: ms(T) });
     // render

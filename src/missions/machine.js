@@ -3,6 +3,7 @@
 // which shows up as cracked rims at the curl. Simulation inspired by a real incident; numbers illustrative.
 import './missions.css';
 import { esc, rng, lifetime, now, ms } from './_util.js';
+import { WORLD } from '../kit/events.js';
 
 const STATIONS = ['feed', 'fold', 'curl', 'stack'];
 const NAMES = { feed: 'Feed', fold: 'Fold', curl: 'Curl', stack: 'Stack' };
@@ -113,6 +114,7 @@ export function mount(el, ctx) {
       const order = [...S.done].join(' → ');
       $('res').innerHTML = `<div class="ms-result">Fixed in ${S.downtime} minutes of downtime. The rim cracked at the curl, but the cause was upstream: the paper was misaligned at the fold. ${S.adjustedCurl ? 'Adjusting the curl first changed nothing, which is exactly what we did too.' : 'You skipped the curl adjustment we wasted rounds on.'} I still debug that way: look upstream of the symptom.</div>`;
       ctx.work.step('Diagnosis complete', `path: ${order}\ntotal downtime ${S.downtime} min · ${S.cups} cups simulated\nroot cause: fold misalignment (symptom at curl)`, { kind: 'result' });
+      WORLD.emit('machine:fixed'); ctx.work.step('World updated', 'ANA factory: warning beacon off, line lights green, cups rolling out (visible in Bangalore)', { ms: 0 });
       ctx.complete();
     }
     draw();

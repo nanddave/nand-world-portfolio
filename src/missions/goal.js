@@ -2,6 +2,7 @@
 // the horizon sets how many milestones, any number in the goal is split into progressive targets.
 import './missions.css';
 import { esc, now, ms, tokens } from './_util.js';
+import { WORLD } from '../kit/events.js';
 
 const TEMPLATES = {
   build: { kw: ['build', 'launch', 'ship', 'startup', 'app', 'product', 'company', 'business', 'customers', 'saas', 'mvp', 'agency', 'clients', 'users'],
@@ -54,6 +55,7 @@ export function mount(el, ctx) {
     out.innerHTML = `<div class="ms-panel"><span class="ms-label">${n} milestones over ${H} days</span><ol class="ms-timeline">${ms_.map(m => `<li><small>day ${m.day} · ${esc(m.date)}</small><b>${esc(m.text)}</b></li>`).join('')}</ol></div>
       <div class="ms-panel"><span class="ms-label">This week</span><ol class="ms-week">${tpl.week.map(w => `<li>${esc(w)}</li>`).join('')}</ol></div>`;
     ctx.work.step('Plan ready', `${n} milestones + ${tpl.week.length} actions for this week (template "${key}")`, { ms: ms(T), kind: 'result' });
+    WORLD.emit('goal:planned', { milestones: n }); ctx.work.step('World updated', 'a flare of light at the San Francisco viewpoint', { ms: 0 });
     if (++plans === 1) ctx.complete();
   }
   el.querySelector('[data-plan]').addEventListener('click', plan);

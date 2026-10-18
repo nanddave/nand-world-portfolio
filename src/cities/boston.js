@@ -78,7 +78,7 @@ function zakim() {
     const sp = extrude([[-1.6, 0], [1.6, 0], [.6, 40], [-.6, 40]], 2.4, tw); sp.position.set(x, 45, 0); g.add(sp);
     for (let k = 0; k < 9; k++) {
       const y = 56 + k * 3, dx = 10 + k * 7.5;
-      [1, -1].forEach(sd => [-1.2, 1.2].forEach(z => g.add(tube([[x, y, z * .2], [x + sd * dx, 16, z * 3.4]], .09, cab, 1))));
+      [1, -1].forEach(sd => [-1.2, 1.2].forEach(z => { const cm = tube([[x, y, z * .2], [x + sd * dx, 16, z * 3.4]], .09, cab.clone(), 1); cm.userData.cableK = (x + sd * dx + 140) / 280; g.add(cm); }));
     }
   });
   g.children.forEach(c => { c.castShadow = false; c.receiveShadow = false; });
@@ -148,7 +148,8 @@ export function build() {
   for (let i = 0; i < 6; i++) C.add(box(1.4, .6, 6, '#6B5A4A', -46 + i * 10, 0, -159));
 
   // Zakim-style cable-stayed bridge across the river
-  C.add(zakim(), 40, -236, .55);
+  const bridge = C.add(zakim(), 40, -236, .55);
+  bridgeWorld(C, bridge);
 
   // south side: snowy park strip, trees, lamps, benches
   for (let i = 0; i < 12; i++) { C.add(acornLamp(), -66 + i * 12, -13.2); C.add(acornLamp(), -60 + i * 12, 13.2); }
@@ -181,4 +182,28 @@ export function build() {
   });
   C.credit = 'Streets & buildings: © OpenStreetMap contributors';
   return C;
+}
+
+// ===== World reaction: 'train:converged' — bridge cables (and a row of beads near the campus) sweep in a colour wave for ~4.5 s =====
+function bridgeWorld(C, bridge) {
+  const items = [];
+  bridge.children.forEach(c => { if (c.userData.cableK !== undefined) items.push({ m: c.material, k: c.userData.cableK, c0: c.material.color.clone(), e0: c.material.emissive.clone(), i0: c.material.emissiveIntensity }); });
+  // cue near the Northeastern spot: beads that carry the same wave (the bridge is ~215 m away)
+  const beads = [];
+  for (let i = 0; i < 16; i++) { const m = glow('#6E8CC8', .15), b = ball(.55, m, -4 + i * 4.4, 10.5, -19.5, 1); b.castShadow = false; b.visible = false; C.add(b); beads.push({ m, b, k: i / 15, c0: m.color.clone(), e0: m.emissive.clone(), i0: .15 }); }
+  const col = new THREE.Color();
+  let cancel = null;
+  const apply = (it, p, boost) => {
+    const d = p * 1.7 - 0.2 - it.k, w = Math.exp(-Math.pow(d * 5, 2));
+    col.setHSL((it.k * .85 + p * .6) % 1, 1, .58);
+    it.m.color.copy(it.c0).lerp(col, w); it.m.emissive.copy(it.e0).lerp(col, w); it.m.emissiveIntensity = it.i0 + w * boost;
+  };
+  C.on('train:converged', () => {
+    if (cancel) cancel();
+    beads.forEach(o => { o.b.visible = true; });
+    cancel = C.anim(4.5, p => { items.forEach(it => apply(it, p, 5)); beads.forEach(it => apply(it, p, 6)); }, () => {
+      items.forEach(it => { it.m.color.copy(it.c0); it.m.emissive.copy(it.e0); it.m.emissiveIntensity = it.i0; });
+      beads.forEach(o => { o.b.visible = false; }); cancel = null;
+    });
+  });
 }

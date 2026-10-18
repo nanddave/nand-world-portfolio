@@ -1,4 +1,5 @@
 // City scene builder. Each city module (src/cities/<id>.js) exports `build()` returning newCity(...) filled with content.
+import { WORLD } from './events.js';
 import { THREE, V, mat, box, ball, place, rnd, person, SKIN, heroCar } from './kit.js';
 
 /**
@@ -107,6 +108,16 @@ export function newCity(cfg) {
     sun.color.copy(D.sun); sun.intensity = D.si; cfg.bloom = D.bloom;
     (C._pcs || []).forEach(o => { o.visible = true; });
     ['rain', 'snow'].forEach(t => { if (wx[t]) { C.removeParticles(wx[t]); wx[t] = null; } });
+  };
+  /** World events from missions. Handlers must be idempotent (cities are cached; missions may run twice). Returns off(). */
+  C.on = (evt, fn) => WORLD.on(evt, fn);
+  C.once = (evt, fn) => { const off = WORLD.on(evt, d => { off(); fn(d); }); return off; };
+  /** Timed effect: fn(p 0..1, elapsedSeconds) every frame for `dur` seconds (a final fn(1) then done()). Returns cancel(). */
+  C.anim = (dur, fn, done) => {
+    let el = 0, live = true;
+    const f = (t, dt) => { if (!live) return; el += dt; if (el >= dur) { live = false; fn(1, dur); done && done(); Promise.resolve().then(() => { const i = C.tick.indexOf(f); if (i >= 0) C.tick.splice(i, 1); }); } else fn(el / dur, el); };
+    fn(0, 0); C.tick.push(f);
+    return () => { live = false; const i = C.tick.indexOf(f); if (i >= 0) C.tick.splice(i, 1); };
   };
   C.hero = (x, z, ry = 0) => { const c = heroCar(!!cfg.night); C.add(c, x, z, ry); C.heroCar = c; return c; };
   C.crowd = pts => pts.forEach(([x, z, ry]) => C.add(person(SKIN[Math.floor(rnd() * SKIN.length)]), x, z, ry ?? rnd() * 6));

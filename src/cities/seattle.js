@@ -124,13 +124,17 @@ export function build() {
 
   // Bellevue downtown glass towers
   const T = [[30, -46, 14, 14, 60, '#6E98B2'], [50, -60, 16, 14, 72, '#86AAC0'], [66, -44, 12, 12, 46, '#5F8AA6'], [84, -64, 18, 14, 58, '#94B4C8'], [16, -66, 12, 12, 36, '#A3BED0'], [100, -46, 14, 12, 36, '#7A9EB6'], [-66, -56, 12, 12, 28, '#8FA6B4']];
+  const bands = [], bandMat = glow('#7FE0D2', 3); bandMat.transparent = true;
   T.forEach(([x, z, w, d, h, c], i) => {
     const b = grp(building(w, h, d, c, 'glass', false, '#5E6870'));
     if (i === 0) { b.add(building(w * .7, 8, d * .7, '#5E8FAE', 'glass', false, '#4A5560')); b.children[1].position.y = h + 4; b.add(box(w * .72, .5, d * .72, glow('#7FE0D2', 1.2), 0, h + 8)); }
     else if (i === 1) { const cr = mesh(new THREE.CylinderGeometry(0, w * .62, 10, 4), mat('#7C98A8', { roughness: .3, metalness: .3 }), 0, h + 5, 0); cr.rotation.y = Math.PI / 4; b.add(cr); }
     else b.add(box(w * .5, 3, d * .5, '#5E6870', 0, h));
+    const band = box(w + .5, 1.4, d + .5, bandMat, 0, 0); band.castShadow = false; band.visible = false; b.add(band); bands.push({ band, h, i });
     C.add(b, x, z);
   });
+  towerPulse(C, bands, bandMat);
+  redactBoard(C);
   // plaza in front of the towers
   const plaza = new THREE.Mesh(new THREE.PlaneGeometry(64, 12), mat('#8C9296', { flatShading: false, roughness: .4 })); plaza.rotation.x = -Math.PI / 2; plaza.position.set(50, .05, -30); C.add(plaza);
 
@@ -214,4 +218,51 @@ export function build() {
   });
   C.credit = 'Streets & buildings: © OpenStreetMap contributors';
   return C;
+}
+
+// ===== World reaction: 'agents:verdict' — a ring of light climbs the Bellevue towers, twice =====
+function towerPulse(C, bands, m) {
+  let cancel = null;
+  C.on('agents:verdict', () => {
+    if (cancel) cancel();
+    cancel = C.anim(3.6, (p, el) => {
+      bands.forEach(({ band, h, i }) => {
+        const q = ((el - i * .12) / 1.5) % 1, on = el > i * .12 && p < 1;
+        band.visible = on; band.position.y = q * h; m.opacity = 1;
+        band.scale.y = 1 + (1 - Math.abs(q - .5) * 2) * 2;
+      });
+    }, () => { bands.forEach(b => { b.band.visible = false; }); cancel = null; });
+  });
+}
+
+// ===== World reaction: 'pii:redacted' — a roadside screen shows a SYNTHETIC record; black bars slide over the personal details =====
+function redactBoard(C) {
+  const cv = document.createElement('canvas'); cv.width = 640; cv.height = 340; const g = cv.getContext('2d');
+  const tex = new THREE.CanvasTexture(cv);
+  const rows = [['Name', 'Priya Raman'], ['Phone', '+1 425 555 0142'], ['Email', 'p.raman@example.com'], ['Card', '4111 1111 1111 1111'], ['Address', '12 Pine St, Bellevue']];
+  const F = '700 30px "Courier New", monospace';
+  const draw = (prog, count) => {
+    g.fillStyle = '#0D1B24'; g.fillRect(0, 0, 640, 340);
+    g.fillStyle = '#9FD3FF'; g.font = '800 28px "Big Shoulders Display", "Arial Narrow", sans-serif'; g.textAlign = 'left'; g.textBaseline = 'middle';
+    g.fillText('SAMPLE RECORD (SYNTHETIC, NOT REAL DATA)', 24, 34);
+    g.font = F;
+    rows.forEach(([k, v], i) => {
+      const y = 92 + i * 46; g.fillStyle = '#7F95A6'; g.fillText(k + ':', 24, y); const x0 = 180; g.fillStyle = '#F1F5F8'; g.fillText(v, x0, y);
+      const w = g.measureText(v).width + 14, q = Math.min(1, Math.max(0, prog * (rows.length + 1.2) - i * 1));
+      if (q > 0) { g.fillStyle = '#000'; g.fillRect(x0 - 7, y - 20, w * q, 40); g.fillStyle = '#FF3B2F'; g.fillRect(x0 - 7 + w * q - 3, y - 20, 3, 40); }
+    });
+    if (prog >= 1) { g.fillStyle = '#FF3B2F'; g.font = '800 30px "Big Shoulders Display", "Arial Narrow", sans-serif'; g.fillText(`${count ?? rows.length} SPANS REDACTED`, 24, 322); }
+    tex.needsUpdate = true;
+  };
+  draw(0);
+  const m = new THREE.MeshStandardMaterial({ map: tex, emissiveMap: tex, emissive: new THREE.Color(0xffffff), emissiveIntensity: 1, roughness: .5 });
+  const B = grp(cyl(.18, .22, 6, '#3A3D45', -4.4, 0, 0, 8), cyl(.18, .22, 6, '#3A3D45', 4.4, 0, 0, 8), box(10.2, 5.6, .5, '#1B2127', 0, 3.6));
+  const scr = new THREE.Mesh(new THREE.PlaneGeometry(9.6, 5.1), m); scr.position.set(0, 6.4, .27); B.add(scr);
+  B.add(box(10.2, .25, .7, glow('#7FE0D2', 1.6), 0, 9.3, 0));
+  C.add(B, 46, -12);
+  let cancel = null;
+  C.on('pii:redacted', d => {
+    if (cancel) cancel();
+    cancel = C.anim(2.6, p => draw(p, d && d.count), () => { cancel = null; });
+  });
 }

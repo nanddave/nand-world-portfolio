@@ -3,6 +3,7 @@
 // A rule-based demo of the annotation task; the paper is about annotating PII at scale across languages.
 import './missions.css';
 import { esc, now, ms } from './_util.js';
+import { WORLD } from '../kit/events.js';
 
 const EX = {
   English: 'Hi, this is Dr. Sarah Miller. Call me at +1 (206) 555-0143 or email sarah.miller@example.com.\nMy card 4111 1111 1111 1111 was charged twice (order ref 4111 1111 1111 1112). SSN 123-45-6789 is on file, DOB: 1988-03-02.\nLast login from 192.168.10.24. Please cc Rahul.',
@@ -71,7 +72,7 @@ export function mount(el, ctx) {
     const counts = {}; taken.forEach(h => counts[h.type] = (counts[h.type] || 0) + 1);
     ctx.work.step('Scan complete', `${text.length} chars, ${DETECTORS.length} detectors, ${taken.length} spans\n${Object.entries(counts).map(([k, v]) => `${k} ${v}`).join(' · ') || 'nothing found'}`, { ms: ms(T), kind: 'result' });
     $('st').textContent = `${taken.length} spans in ${ms(T)} ms`;
-    render(); if (scans === 1) ctx.complete();
+    render(); if (taken.length) { WORLD.emit('pii:redacted', { count: taken.length }); ctx.work.step('World updated', `Seattle billboard shows ${taken.length} redaction bars`, { ms: 0 }); } if (scans === 1) ctx.complete();
   }
   function render() {
     if (!last) return; const { text, spans } = last; let html = '', i = 0;

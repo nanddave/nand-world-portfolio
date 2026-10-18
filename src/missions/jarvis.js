@@ -3,6 +3,7 @@
 // Mock tools; the real Jarvis connects to Slack and Linear.
 import './missions.css';
 import { esc, lifetime, now, ms, pretty, json, tokens, STOP, jaccard } from './_util.js';
+import { WORLD } from '../kit/events.js';
 
 const DEFAULT = '@jarvis checkout is timing out for some users on mobile. Can someone from payments look before the weekend? It\'s blocking orders.';
 const MOCK_ISSUES = [
@@ -79,6 +80,7 @@ export function mount(el, ctx) {
     $('res').innerHTML = `<div class="ms-ticket"><span class="ms-tid">${id} · ${esc(team[0])} · Triage</span><h5>${esc(payload.title)}</h5><div class="ms-meta"><span class="ms-tag" style="${priority === 'Urgent' ? 'background:#FDECEA;border-color:#F0473C' : ''}">${priority}</span>${payload.dueDate ? `<span class="ms-tag">Due ${payload.dueDate}</span>` : ''}${payload.labels.map(l => `<span class="ms-tag">${esc(l)}</span>`).join('')}${dup ? `<span class="ms-tag">Related ${dup.id}</span>` : ''}</div><p style="margin-top:8px;font-size:12px;color:var(--ink-soft)">Jarvis in thread: “Filed ${id} for ${esc(team[0])}${payload.dueDate ? `, due ${payload.dueDate}` : ''}.${dup ? ` Linked ${dup.id}, which looks related.` : ''}”</p></div>`;
     $('st').textContent = `4 steps in ${ms(T)} ms (pauses are for reading)`;
     ctx.work.step('Done', `Slack message -> ${id} (${priority}, ${team[0]})`, { kind: 'result' });
+    WORLD.emit('jarvis:ticket', { id }); ctx.work.step('World updated', 'Brokai office windows flash in a ripple', { ms: 0 });
     busy = false; btn.disabled = false; btn.textContent = 'Send again'; if (runs === 1) ctx.complete();
   }
   el.querySelector('[data-send]').addEventListener('click', send);

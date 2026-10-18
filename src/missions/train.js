@@ -2,6 +2,7 @@
 // Real gradient descent, written by hand: logistic regression or a 1-hidden-layer MLP (tanh), binary cross-entropy.
 import './missions.css';
 import { rng, lifetime, now, ms } from './_util.js';
+import { WORLD } from '../kit/events.js';
 
 const COL = ['#2F5D9E', '#F0473C'];
 const W = 300; // canvas internal resolution
@@ -108,7 +109,7 @@ export function mount(el, ctx) {
     const params = model.H ? `W1 ${model.H}x2, W2 ${model.H}x1 (weights hidden for brevity)` : `w = [${model.w.map(x => x.toFixed(3)).join(', ')}], b = ${model.b.toFixed(3)}\nboundary: ${model.w[0].toFixed(2)}·x + ${model.w[1].toFixed(2)}·y + ${model.b.toFixed(2)} = 0`;
     ctx.work.step('Training finished', `${model.epochs} epochs in ${wall} ms (wall clock, includes drawing)\nfinal loss ${last.loss.toFixed(4)} · train accuracy ${(last.acc * 100).toFixed(1)}%\n${params}`, { ms: wall, kind: 'result' });
     st.textContent = `done: ${(last.acc * 100).toFixed(1)}% train accuracy in ${Math.round(wall)} ms` + (!model.H && last.acc < 0.9 ? ' (a straight line can\'t do better; try the hidden layer)' : '');
-    training = false; trainBtn.disabled = false; ctx.complete();
+    training = false; trainBtn.disabled = false; WORLD.emit('train:converged', { acc: last.acc }); ctx.work.step('World updated', 'Boston bridge cable lights sweep in a colour wave', { ms: 0 }); ctx.complete();
   }
 
   const trainBtn = el.querySelector('[data-train]');

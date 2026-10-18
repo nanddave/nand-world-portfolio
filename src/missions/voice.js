@@ -3,6 +3,7 @@
 // and a real slot-search function against a mini Saturday calendar.
 import './missions.css';
 import { esc, lifetime, now, ms, json } from './_util.js';
+import { WORLD } from '../kit/events.js';
 
 const SLOTS = ['3:00', '3:30', '4:00', '4:30', '5:00', '5:30', '6:00', '6:30'];
 const SCRIPT = [
@@ -83,6 +84,7 @@ export function mount(el, ctx) {
     const b = cal.find(s => s.state === 'booked');
     $('st').textContent = `call ended · ${Math.round((now() - T) / 1000)} s`;
     ctx.work.step('Call ended', `booked: ${b ? `Saturday ${b.t} for ${b.name}` : 'none'}\nwall time ${Math.round(now() - T)} ms\npipeline durations shown are illustrative`, { kind: 'result', ms: ms(T) });
+    if (b) { WORLD.emit('voice:booked', { time: b.t }); ctx.work.step('World updated', 'salon neon sign flashes BOOKED', { ms: 0 }); }
     playing = false; btn.disabled = false; btn.textContent = '▶ Play again'; ctx.complete();
   }
   el.querySelector('[data-play]').addEventListener('click', play);

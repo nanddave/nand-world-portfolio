@@ -191,6 +191,7 @@ function factory(C) {
   // loading dock + rolling shutter on the yard side
   F.add(box(10, 1.2, 3, '#9A9488', 6, 0, D / 2 + 1.5));
   F.add(box(6, 4.2, .1, glow('#FFDCA0', .7), 6, 1.2, D / 2 + .06));
+  factoryWorld(C, F, { W, D, H });
   C.add(F, x0, z0);
   // carton stacks + a worker
   for (let i = 0; i < 6; i++) C.add(box(1.2, 1, 1.2, '#C79A5C', x0 - 6 + (i % 3) * 1.3, Math.floor(i / 3), z0 + D / 2 + 3.6));
@@ -251,4 +252,40 @@ function shops(C) {
 function skyline(C) {
   [[-110, -70, 18, 18], [-80, -100, 14, 16], [110, -70, 16, 20], [130, -40, 18, 16], [-10, -105, 14, 12], [-40, -110, 12, 14], [120, -120, 20, 22], [-140, -40, 16, 18], [96, -100, 14, 14]].forEach(([x, z, w, h]) =>
     C.add(building(w, h, w, '#8C8C96', 'office', true, '#5A5A64'), x, z));
+}
+
+// ===== World reaction: 'machine:fixed' — the beacon and line lights go red -> green, cups roll out =====
+function factoryWorld(C, F, { W, D, H }) {
+  const red = glow('#FF3326', 2.6), zf = D / 2 + .1; // yard-facing wall (the side the story camera sees)
+  // warning beacon + smoke on the roof (visible from any default camera)
+  const bx = 9, bz = 3;
+  F.add(cyl(.12, .12, 3, '#3A3D45', bx, H + .4, bz, 6));
+  const beacon = ball(.8, red, bx, H + 4.1, bz, 1); beacon.castShadow = false; F.add(beacon);
+  const smokeMat = mat('#4B4540', { transparent: true, opacity: .55, flatShading: false }), smoke = [];
+  for (let i = 0; i < 9; i++) { const b = ball(.9, smokeMat, bx, H + 5, bz, 1); b.castShadow = false; b.userData.o = i / 9; F.add(b); smoke.push(b); }
+  // line lights along the yard-facing wall (one per station)
+  const lights = []; for (let i = 0; i < 7; i++) { const l = box(1.4, .5, .12, red, -12 + i * 4, 6.5, zf); lights.push(l); F.add(l); }
+  // conveyor out of a lit hatch on the yard-facing wall, with cups (hidden until fixed)
+  const cx = -10, belt = grp(box(1.3, .25, 8, '#2D3036', 0, 0.55, 0), box(1.5, .1, 8.2, '#555B66', 0, .8, 0));
+  [-3.6, 0, 3.6].forEach(z => belt.add(box(.2, .6, .2, '#2D3036', 0, 0, z)));
+  belt.position.set(cx, 0, zf + 4.1); F.add(belt);
+  F.add(box(2.6, 1.6, .1, glow('#FFDCA0', .8), cx, .9, zf));
+  const cupMat = mat('#FBFAF6', { flatShading: false }), cups = [];
+  for (let i = 0; i < 8; i++) { const c = mesh(new THREE.CylinderGeometry(.3, .2, .55, 10), cupMat, cx, 1.18, zf); c.visible = false; c.userData.o = i / 8; c.castShadow = false; F.add(c); cups.push(c); }
+  let state = 'broken', cancel = null;
+  C.tick.push((t, dt) => {
+    if (state !== 'broken') return;
+    smoke.forEach(b => { const k = (t * .3 + b.userData.o) % 1; b.position.set(bx + Math.sin(k * 7 + b.userData.o * 9) * .5 + k * 1.2, H + 4.6 + k * 7, bz); b.scale.setScalar(.6 + k * 1.8); b.visible = true; });
+    red.emissiveIntensity = 1.6 + Math.sin(t * 6) * 1.2; // flashing warning
+  });
+  smoke.forEach(b => { b.visible = true; });
+  C.on('machine:fixed', () => {
+    if (state === 'fixed') return; state = 'fixed';
+    smoke.forEach(b => { b.visible = false; });
+    red.color.set('#2BD66B'); red.emissive.set('#2BD66B'); red.emissiveIntensity = 2.4; // beacon + line lights share the material
+    cups.forEach(c => { c.visible = true; });
+    cancel = C.anim(7, (p, el) => {
+      cups.forEach(c => { const k = (el * .45 + c.userData.o) % 1; c.position.z = zf + .2 + k * 7.2; c.visible = p < 1; });
+    }, () => { cups.forEach(c => { c.visible = false; }); });
+  });
 }

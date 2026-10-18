@@ -92,6 +92,19 @@ function office(C) {
   s.position.set(0, 9.8, 6.08); O.add(s);
   // a planter and a bench at the entrance
   O.add(box(3, .6, 1, '#4A4F5C', -7, 0, 7)); O.add(ball(.7, '#3E7A46', -7.6, 1, 7, 1)); O.add(ball(.6, '#3E7A46', -6.4, .95, 7, 1));
+  // world reaction ('jarvis:ticket'): glow panels over the facade that ripple outward from the lobby, then vanish
+  const wins = [];
+  [4.9, 7.0, 11.5].forEach((y, r) => { for (let c = 0; c < 7; c++) {
+    const m = glow('#FFE7C2', 0), w = box(2, 1.3, .06, m, -8.1 + c * 2.7, y, 6.14); w.castShadow = false; w.visible = false; O.add(w);
+    wins.push({ w, m, d: Math.hypot((c - 3) * 2.7, y - 2) }); } });
+  let cancel = null; const col = new THREE.Color(), cA = new THREE.Color('#5EEAD4'), cB = new THREE.Color('#FFE7C2');
+  C.on('jarvis:ticket', () => {
+    if (cancel) cancel();
+    cancel = C.anim(3.4, (p, el) => wins.forEach(o => {
+      const k = el * 9 - o.d, on = k > 0 && k < 14, f = on ? Math.sin(Math.min(1, k / 14) * Math.PI) : 0;
+      o.w.visible = f > .02; col.copy(cA).lerp(cB, Math.min(1, k / 10)); o.m.color.copy(col); o.m.emissive.copy(col); o.m.emissiveIntensity = f * 3.2;
+    }), () => { wins.forEach(o => { o.w.visible = false; }); cancel = null; });
+  });
   C.add(O, x0, z0);
 }
 
@@ -127,6 +140,14 @@ function salon(C) {
   const ns = sign('SALON', 7, 1.6, { bg: '#1A1428', fg: '#FF6FB5', glow: true, font: '800 96px "Big Shoulders Display", "Arial Narrow", sans-serif' });
   ns.position.set(0, 5, D / 2 + .17); S.add(ns);
   S.add(box(7.4, .1, .1, glow('#FF6FB5', 2.4), 0, 4.15, D / 2 + .2)); S.add(box(7.4, .1, .1, glow('#FF6FB5', 2.4), 0, 5.85, D / 2 + .2));
+  // world reaction ('voice:booked'): the neon flickers to BOOKED for a few seconds, then back
+  const bs = sign('BOOKED \u2713', 7, 1.6, { bg: '#0F2A1C', fg: '#4DFF9A', glow: true, font: '800 96px "Big Shoulders Display", "Arial Narrow", sans-serif' });
+  bs.position.set(0, 5, D / 2 + .19); bs.visible = false; S.add(bs);
+  let cancel = null;
+  C.on('voice:booked', () => {
+    if (cancel) cancel();
+    cancel = C.anim(5, (p, el) => { const flick = el < .9 ? Math.sin(el * 55) > 0 : true; bs.visible = flick; ns.visible = !flick; }, () => { bs.visible = false; ns.visible = true; cancel = null; });
+  });
   C.add(S, x0, z0);
 }
 
