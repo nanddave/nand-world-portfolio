@@ -65,7 +65,9 @@ async function fromPrebaked(key) {
   const idx = await mod(idxLoader); if (!Array.isArray(idx)) return null;
   const hit = idx.find(c => c && c.slug && c.slug !== 'index' && [c.name, ...(c.aliases || [])].some(v => key2(v) === key)); if (!hit) return null;
   const f = fileFor(hit.slug); if (!f) return null;
-  const raw = await mod(f); const c = (isFinite(hit.lat) && isFinite(hit.lon)) ? { lat: +hit.lat, lon: +hit.lon } : centreOf(raw); if (!c) return null;
+  const raw = await mod(f);
+  if (raw && raw.v && Array.isArray(raw.b)) return { name: hit.name, lat: +hit.lat, lon: +hit.lon, data: raw }; // already baked by tools/bake-cities.mjs
+  const c = (isFinite(hit.lat) && isFinite(hit.lon)) ? { lat: +hit.lat, lon: +hit.lon } : centreOf(raw); if (!c) return null;
   const { data } = bakeYourCity(raw, c.lat, c.lon, hit.slug);
   if (data.b.length + data.r.length < 3) return null;
   return { name: hit.name, lat: c.lat, lon: c.lon, data };

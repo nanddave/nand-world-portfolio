@@ -5,3 +5,4 @@ dist-single/
 *.log
 shots/
 data/osm-raw/
+data/cities-raw/
