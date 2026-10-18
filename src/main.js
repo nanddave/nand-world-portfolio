@@ -64,6 +64,7 @@ let liveMood = null; // { C, w, hour, live }
 const wxText = w => { const k = w.rain || w.snow; return w.label === 'rain' || w.label === 'snow' ? (k <= .5 ? 'light ' : k >= 1 ? 'heavy ' : '') + w.label : w.label; };
 function applyMood(live) {
   const m = liveMood; if (!m) return; m.live = live;
+  document.body.classList.toggle('live-mood', !!live);
   if (live && m.w) m.C.setMood({ hour: m.hour, isDay: m.w.isDay, cloud: m.w.cloud, rain: m.w.rain, snow: m.w.snow, fog: m.w.fog, temp: m.w.temp }); else m.C.resetMood?.();
   const b = $('#moodBtn'); b.textContent = live ? 'Live' : 'Designed'; b.setAttribute('aria-pressed', String(live)); b.title = live ? 'Showing live weather. Switch to the designed look.' : 'Showing the designed look. Switch to live weather.';
 }
@@ -127,7 +128,7 @@ async function enterCity(i) {
   const s = STOPS[i]; state.mode = 'city'; state.cityIdx = i; state.spot = -1;
   globe.view = 'hidden'; globe.hidePins(); city.show(i, C);
   document.body.classList.add('incity');
-  $('#cStop').textContent = `Stop ${i + 1} of ${STOPS.length}`; $('#cName').textContent = s.name; $('#cMeta').innerHTML = `${s.region}<br>${s.coord}<br>${s.mood}`; $('#cCredit').textContent = C.credit || ''; setDriveUI(); $('#ctitle').classList.add('show'); setupLive(i, C);
+  $('#cStop').textContent = `Stop ${i + 1} of ${STOPS.length}`; $('#cName').textContent = s.name; $('#cMeta').innerHTML = `${s.region}<br>${s.coord}<br><span class="designed-mood">${s.mood}</span>`; $('#cCredit').textContent = C.credit || ''; setDriveUI(); $('#ctitle').classList.add('show'); setupLive(i, C);
   $('#next').textContent = i < LAST ? `Continue to ${short(STOPS[i + 1])}` : (VISITOR.company ? `Finish: next stop, ${VISITOR.company}` : 'Finish the trip');
   Sound.play(C.cfg?.sound || s.id); updateChips(); fade(false); state.transit = false;
   if (state.pending !== null) { const p = state.pending; state.pending = null; setTimeout(() => state.cityIdx === i && focusSpot(p), REDUCE ? 0 : 1300); }
@@ -136,7 +137,7 @@ async function enterCity(i) {
 }
 async function exitCity() {
   if (state.transit || state.mode !== 'city') return; state.transit = true; card.close(); fade(true); await wait(600);
-  setDrive(false); state.mode = 'globe'; city.hide(); globe.view = 'travel'; document.body.classList.remove('incity', 'focus'); $('#ctitle').classList.remove('show'); liveMood?.C.resetMood?.(); liveMood = null;
+  setDrive(false); state.mode = 'globe'; city.hide(); globe.view = 'travel'; document.body.classList.remove('incity', 'focus'); $('#ctitle').classList.remove('show'); liveMood?.C.resetMood?.(); liveMood = null; document.body.classList.remove('live-mood');
   Sound.play('globe'); fade(false); state.transit = false; state.cityIdx = -1; state.custom = null; updateChips();
 }
 /** Last stop's continue: with a company, take them to the empty lot first; then back to the globe to roam. */
@@ -180,7 +181,7 @@ async function goYours(typed) {
 async function showYours({ name, C, real, lat, lon }) {
   if (state.transit) return; state.transit = true; fade(true); await wait(600);
   if (state.mode === 'intro') begin();
-  card.close(); setDrive(false); liveMood?.C.resetMood?.(); liveMood = null; $('#cLive').hidden = true; $('#moodBtn').hidden = true; $('#travel').classList.remove('show');
+  card.close(); setDrive(false); liveMood?.C.resetMood?.(); liveMood = null; document.body.classList.remove('live-mood'); $('#cLive').hidden = true; $('#moodBtn').hidden = true; $('#travel').classList.remove('show');
   const spots = [{ t: 'Your company here', m: 'The next stop', b: `<p>This lot is yours. If you're hiring for applied AI, this is where Nand would like to build next. The passport has his contact.</p><p><small>The building that rises is a stand-in, the same for every visitor.</small></p>` }];
   state.custom = { name, spots, lat, lon }; state.mode = 'city'; state.cityIdx = -2; state.spot = -1;
   globe.view = 'hidden'; globe.hidePins(); city.showCustom(C, { name, spots }); document.body.classList.remove('focus'); document.body.classList.add('incity');

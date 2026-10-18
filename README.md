@@ -30,13 +30,26 @@ Travel legs: Nadiad → Bangalore by road, Bangalore → Boston by air, Boston �
 - **San Francisco:** golden hour, painted Victorian houses, a cable car, the red bridge over the bay with fog rolling in. Sound: foghorn and cable-car bell.
 - **Bangalore, again:** late night, lit tech parks, the Brokai office sign, a neon salon, and an empty lot with a sign that changes to the visitor's company.
 
-## Things the visitor can do
+## What's in it
 
-- Drag to look around any city; tap yellow markers to open a spot.
-- **Passport:** each city stamps the passport. A full passport ends with a prompt to contact me.
-- **Co-pilot:** ask a question ("has he built voice AI?", "what did he study?") and it travels to the city and opens the right spot. Scripted in the prototype.
-- **Voice demo:** a short scripted salon call plays with the browser's built-in voice. No live voice backend, so it costs nothing to run. The final version should play a real recording of the actual agent.
-- **Empty lot:** the visitor types what their team builds; three blocks rise on the lot and the sign changes to their company.
+- **Globe travel:** a real Earth with a yellow car and a plane for the long hops.
+- **Seven city scenes:** each built on real OpenStreetMap streets, with its own look and sound.
+- **Drive mode:** WASD or arrow keys, a touch joystick, H for the horn, E to open a spot, Esc to return to orbit.
+- **Live time and weather:** local time plus Open-Meteo weather for each city, with a Designed/Live toggle.
+- **Nine missions:** small in-browser demos that change the 3D world as you use them.
+- **Voice co-pilot:** uses the browser's built-in speech.
+- **Passport and postcard:** each city stamps the passport; a shareable postcard.
+- **Your city:** add `?yours=City` to the URL to make your own city the last stop.
+- **Trailer:** a 60-second trailer at `?trailer=1` (add `&v=1` for vertical). Record it with `node tools/record-trailer.mjs`.
+
+Data credits: © OpenStreetMap contributors (ODbL); weather by Open-Meteo.com (CC BY 4.0); land from Natural Earth.
+
+## Dev checks
+
+- `tools/drive-cities.mjs`
+- `tools/world-test.mjs`
+- `tools/shell-test.mjs`
+- `tools/shot.mjs` (screenshots for city and mission pages)
 
 ## Files
 

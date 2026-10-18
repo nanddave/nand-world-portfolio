@@ -232,3 +232,4 @@ body.trailer-v #tEnd .n{font-size:clamp(60px,22vw,420px)}
 body.trailer-v #tEnd .l{font-size:clamp(20px,4.6vw,100px);padding:0 6vw}
 body.trailer-v #tEnd .c{font-size:clamp(18px,4vw,90px);padding:1.4vw 5vw;margin-top:4vw}
 body.trailer-v #tEnd .u{font-size:clamp(16px,3.4vw,80px)}
+body.live-mood .designed-mood{display:none}
