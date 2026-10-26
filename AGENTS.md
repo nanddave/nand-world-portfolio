@@ -7,5 +7,5 @@ Short version:
 - Never invent facts about Nand. All story content lives in `src/content/stops.js`.
 - `npm run build` (deployed to Vercel from `dist/`) and `npm run build:single` must both pass.
 - Check visual changes with `node tools/shot.mjs` (see CLAUDE.md).
-- Plan and status: `docs/PLAN.md` and `HANDOFF.md`. Update them when you finish a phase.
+- **Current work: `docs/PRD-v4-launch.md`** (prioritised v4 changes; build in that order). Background: `docs/REVIEW.md`, `docs/FINAL-CHANGES.md`, `docs/PLAN.md`, `HANDOFF.md`.
 - Work on a branch and open a PR. `main` auto-deploys to production on Vercel.
