@@ -104,6 +104,6 @@ export const STOPS = [
 // Travel legs: 'd' drive, 'f' fly.
 export const LEGS = [[0, 1, 'd'], [1, 2, 'f'], [2, 3, 'd'], [3, 4, 'd'], [4, 5, 'd'], [5, 6, 'f']];
 
-export const CONTACT = { email: 'nand@brokailabs.com', site: '[your link]', resume: './Nand_Dave_Resume.pdf', linkedin: 'https://www.linkedin.com/in/nanddave', github: 'https://github.com/nanddave' };
+export const CONTACT = { email: 'nand@brokailabs.com', site: 'https://nanddave.github.io/nand-world-portfolio/', resume: './Nand_Dave_Resume.pdf', linkedin: 'https://www.linkedin.com/in/nanddave', github: 'https://github.com/nanddave' };
 /** False for placeholders ('', '#', or '[...]'): such values must never render to a visitor. */
 export const isReal = v => typeof v === 'string' && v.trim() !== '' && v.trim() !== '#' && !v.trim().startsWith('[');
