@@ -1,3 +1,4 @@
+import { browserPath } from './browser.mjs';
 // World-reaction test: enter a city, focus the mission spot, emit the mission's event, wait, screenshot to shots/world-<name>.png.
 // Usage: node tools/world-test.mjs
 import { createServer } from 'vite';
@@ -12,7 +13,7 @@ const CASES = [
 ].filter(c => !process.env.ONLY || process.env.ONLY.split(',').includes(c.name));
 const server = await createServer({ server: { port: 0, host: '127.0.0.1' }, logLevel: 'error' }); await server.listen();
 const port = server.httpServer.address().port;
-const b = await chromium.launch({ executablePath: '/opt/pw-browsers/chromium', args: ['--use-gl=swiftshader', '--enable-webgl', '--ignore-gpu-blocklist'] });
+const b = await chromium.launch({ executablePath: browserPath, args: ['--use-gl=swiftshader', '--enable-webgl', '--ignore-gpu-blocklist'] });
 const errs = [];
 for (const c of CASES) {
   const p = await b.newPage({ viewport: { width: 1440, height: 900 } });

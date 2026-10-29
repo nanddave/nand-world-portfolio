@@ -1,12 +1,14 @@
 // San Francisco — golden hour, the fog rolling in.
 // Layout (camera looks north, -z): main road along x. North side: Painted Ladies row (west), the startup garage (east),
 // a cable-car street climbing to Russian Hill (x≈45) with Lombard's switchbacks on its west face.
+// A drivable loop: main street → east avenue (x=150) → the Embarcadero waterfront (z=-192) → west avenue (x=-58).
 // Behind: downtown with the Transamerica Pyramid, Coit Tower on Telegraph Hill, then the bay and the Golden Gate Bridge.
-// South side: Alamo-Square-style park slope with the hilltop lookout bench.
+// South side: the 24-hour hackathon building (the YC stop) and an Alamo-Square-style park.
 import { newCity } from '../kit/city.js';
 import { addOSM } from '../kit/osm.js';
 import sfOSM from '../data/osm/sf.json';
-import { THREE, mat, glow, mesh, box, cyl, cone, ball, lathe, extrude, tube, grp, building, person, SKIN, treeRound, streetLight, car, cablecar, rnd, reseed } from '../kit/kit.js';
+import { THREE, mat, glow, mesh, box, cyl, cone, ball, lathe, extrude, tube, grp, building, person, SKIN, treeRound, streetLight, realCar, cablecar, sign, rnd, reseed } from '../kit/kit.js';
+import { tickProps } from '../core/drive.js';
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 
 const ORANGE = '#C0362C';
@@ -129,6 +131,63 @@ function transamerica() {
   return g;
 }
 
+// ---------- Salesforce Tower: rounded obelisk with a lit crown ----------
+function salesforceTower() {
+  const g = grp(), H = 104, m = mat('#D7DCE1', { fog: false, roughness: .35, metalness: .3 });
+  const prof = []; for (let i = 0; i <= 12; i++) prof.push([7.6 * (1 - .3 * (i / 12) ** 1.6), H * i / 12]);
+  prof.push([5.0, H + 3], [3.2, H + 8], [0, H + 10.5]);
+  g.add(lathe(prof, m, 16));
+  const crown = cyl(5.5, 5.1, 9, glow('#FFF1D6', 1.1), 0, H - 7, 0, 16); crown.material.transparent = true; crown.material.opacity = .85; g.add(crown);
+  for (let i = 0; i < 16; i++) { const a = i / 16 * Math.PI * 2; g.add(box(.35, H - 8, .35, mat('#AEB6BE', { fog: false }), Math.cos(a) * 7.0, 0, Math.sin(a) * 7.0)); }
+  g.add(box(22, 2, 22, mat('#C9C2B6', { fog: false })));
+  return g;
+}
+// ---------- Bay Bridge: silver suspension span heading east into the fog ----------
+function bayBridge() {
+  const g = grp(), m = mat('#C8CDD2', { fog: false, roughness: .6 }), L = 340, DECK = 20, T = [95, 215], TH = 64;
+  g.add(box(L, 2.4, 9, m, L / 2, DECK - 1.2, 0)); g.add(box(L, 1, 8, mat('#9AA0A6', { fog: false }), L / 2, DECK - 5));
+  for (let x = 12; x < L; x += 28) g.add(box(3, DECK - 5, 5, mat('#A9A296', { fog: false }), x, 0, 0));
+  T.forEach(x => { [-4.2, 4.2].forEach(z => g.add(box(2.2, TH, 2.2, m, x, 0, z))); [DECK + 8, 44, TH - 2].forEach(y => g.add(box(2, 1.6, 10.6, m, x, y, 0))); });
+  const cy = x => { if (x < T[0]) return DECK + 2 + (TH - DECK - 2) * (x / T[0]) ** 2; if (x > T[1]) return TH - (TH - DECK - 2) * ((x - T[1]) / (L - T[1])) ** .5; const u = (x - (T[0] + T[1]) / 2) / ((T[1] - T[0]) / 2); return DECK + 3 + (TH - DECK - 3) * u * u; };
+  const sus = [];
+  [-4.2, 4.2].forEach(z => {
+    const pts = []; for (let i = 0; i <= 70; i++) { const x = L * i / 70; pts.push([x, cy(x), z]); }
+    g.add(tube(pts, .35, m, 140));
+    for (let x = 6; x < L; x += 6) { const h = cy(x) - DECK; if (h < 1) continue; const b = new THREE.BoxGeometry(.12, h, .12); b.translate(x, DECK + h / 2, z); sus.push(b); }
+  });
+  g.add(mesh(mergeGeometries(sus), m));
+  g.userData.noCollide = true; return g;
+}
+// ---------- Ferry Building: long arcaded hall with the clock tower ----------
+function ferryBuilding() {
+  const g = grp(), c = mat('#E9DDC8', { fog: false }), dark = mat('#4A4440', { fog: false });
+  g.add(box(56, 9, 12, c)); g.add(box(57, .8, 13, mat('#CBBFA8', { fog: false }), 0, 9)); g.add(box(56, 2.4, 10, mat('#7E8A8C', { fog: false }), 0, 9.8));
+  for (let i = 0; i < 14; i++) { const x = -26 + i * 4; if (Math.abs(x) < 4) continue; g.add(box(2.2, 4.2, .1, dark, x, 1.6, 6.05)); }
+  g.add(box(7, 27, 7, c, 0, 9)); g.add(box(5.4, 7, 5.4, c, 0, 36)); g.add(box(3.6, 3, 3.6, c, 0, 43));
+  g.add(cone(2.4, 5, mat('#7E8A8C', { fog: false }), 0, 46, 0, 8)); g.add(cyl(.08, .08, 4, '#3A3A40', 0, 51));
+  [[0, 3.56, 0], [0, -3.56, Math.PI], [3.56, 0, Math.PI / 2], [-3.56, 0, -Math.PI / 2]].forEach(([x, z, r]) => {
+    const f = cyl(1.7, 1.7, .12, mat('#F8F4EA', { fog: false }), 0, 0, 0, 20); f.rotation.x = Math.PI / 2; const fg = grp(f, box(.12, 1.2, .1, dark, 0, -.1, .1), box(.9, .12, .1, dark, .35, 0, .1));
+    fg.position.set(x, 31, z); fg.rotation.y = r; g.add(fg);
+  });
+  return g;
+}
+// ---------- the 24-hour hackathon building (the YC stop): brick loft, every window lit ----------
+function hackHouse() {
+  const g = grp(), W = 22, H = 10, D = 12, front = -D / 2;
+  g.add(box(W, H, D, '#6A4E46')); g.add(box(W + .4, .6, D + .4, '#3A2E2C', 0, H));
+  g.add(box(W + .2, .45, D + .2, mat('#F26522', { emissive: '#7A2A08' }), 0, H - 1.4)); // orange band
+  const win = glow('#FFD49A', 1.1);
+  for (let f = 0; f < 2; f++) for (let i = 0; i < 6; i++) {
+    const x = -W / 2 + 2.2 + i * 3.5, y = 1 + f * 4.3; g.add(box(2.8, 3.1, .08, win, x, y, front - .05)); g.add(box(3.1, .22, .25, '#2A2A30', x, y + 3.1, front - .1));
+    if ((i + f) % 2 === 0) { g.add(box(.55, .7, .06, '#2B2420', x - .4, y + .7, front - .1)); g.add(ball(.24, '#2B2420', x - .4, y + 1.6, front - .1, 1)); } // people at the windows
+  }
+  const sg = sign('24-HOUR HACKATHON', 9, 1.1, { bg: '#1B1716', fg: '#FF8A4C', glow: true, font: '800 64px "Schibsted Grotesk", system-ui, sans-serif' });
+  sg.position.set(0, H - 2.55, front - .14); sg.rotation.y = Math.PI; g.add(sg);
+  [[-8, 2.4], [5, 2.6], [9, 2]].forEach(([x, z]) => g.add(box(1.6, 1, 1.4, '#9AA0A6', x, H + .6, z))); // rooftop units
+  const lamp = new THREE.PointLight('#FFB868', 40, 22, 1.6); lamp.position.set(0, 4, front - 3); g.add(lamp);
+  return g;
+}
+
 export function build() {
   reseed(415);
   const C = newCity({ top: '#5877B4', hor: '#F9B57E', bot: '#9C7A6A', fog: '#EFCDB2', fn: 70, ff: 330, sun: '#FFC08A', si: 1.35, sunPos: [-70, 18, 14], sunGlow: '#D9773F', hs: '#BFCBE8', hg: '#7A5A44', hi: .62, ground: '#BDB088', yaw: .05 });
@@ -147,6 +206,12 @@ export function build() {
   // ---- Golden Gate Bridge ----
   const gg = goldenGate(); C.add(gg, -55, -215, .2); C.tick.push(gg.userData.tick);
 
+  // ---- waterfront (Embarcadero) with the Ferry Building, Salesforce Tower and the Bay Bridge ----
+  const deck = box(240, .08, 48, '#BFB5A4', 47, 0, -192); deck.receiveShadow = true; C.add(deck); deck.userData.noCollide = true;
+  C.add(ferryBuilding(), 90, -208);
+  C.add(salesforceTower(), 122, -160);
+  C.add(bayBridge(), 168, -200, -.15);
+
   // sailboats
   const boats = [];
   for (let i = 0; i < 5; i++) {
@@ -154,6 +219,14 @@ export function build() {
     b.children[1].position.set(-1.5, .8, 0); b.position.set(-200 + i * 85, 0, -175 - rnd() * 60); b.rotation.y = rnd() * .4; C.add(b); boats.push(b);
   }
   C.tick.push((t, dt) => boats.forEach((b, i) => { b.position.x += (2 + i * .3) * dt; if (b.position.x > 220) b.position.x = -220; b.rotation.z = Math.sin(t + i) * .05; }));
+
+  // skydiver drifting down over the bay (canopy + lines + jumper), loops every ~45 s
+  const sky = grp(), cells = ['#E63946', '#F4F1EA', '#1D4E89', '#F4F1EA', '#E63946'];
+  cells.forEach((c, i) => { const a = (i - 2) * .26; const cell = box(1.5, .35, 3.2, mat(c, { side: THREE.DoubleSide })); cell.position.set(0, 7 + Math.cos(a) * 1.2, Math.sin(a) * 5.6); cell.rotation.x = -a; sky.add(cell); });
+  [-1, 1].forEach(s => [-.5, .5].forEach(x => { const l = cyl(.02, .02, 7.4, '#2B2B35', 0, 0, 0, 4); l.position.set(x * .8, 3.6, s * 2.6); l.rotation.x = s * -.62; sky.add(l); }));
+  const jumper = person('#F2C14E'); jumper.position.y = -.2; sky.add(jumper);
+  sky.scale.setScalar(1.6); sky.userData.noCollide = true; C.add(sky, 30, -150);
+  C.tick.push(t => { const u = (t % 45) / 45; sky.position.set(70 - u * 70, 115 - u * 100, -150 + Math.sin(t * .2) * 10); sky.rotation.y = Math.sin(t * .35) * .4; sky.rotation.z = Math.sin(t * .8) * .06; });
 
   // ---- downtown + Transamerica + Coit Tower ----
   [[6, -132, 11, 11, 28, '#D8D2C6'], [20, -152, 12, 12, 38, '#C9C4BC'], [58, -140, 13, 12, 44, '#B9C3CC'], [72, -158, 14, 14, 34, '#D2CABD'],
@@ -205,21 +278,36 @@ export function build() {
   C.add(box(10, .1, 32, '#5A5A60', -11, 0, -82)); // street at the foot
 
   // ---- main street ----
-  C.road(0, 0, 220, 10, 0, { color: '#4A4A50', walk: 2.6, walkColor: '#C4BAA8' });
+  C.road(25, 0, 290, 10, 0, { color: '#4A4A50', walk: 2.6, walkColor: '#C4BAA8' });
+  // the loop: east avenue up to the waterfront, the Embarcadero, and back down the west avenue past the Painted Ladies
+  const RO = { color: '#4A4A50', walk: 2.2, walkColor: '#C4BAA8' };
+  [C.road(150, -96, 196, 10, Math.PI / 2, RO), C.road(-58, -96, 196, 10, Math.PI / 2, RO), C.road(46, -192, 220, 10, 0, RO)].forEach(r => { r.position.y = .06; });
+  for (let z = -16; z > -180; z -= 24) { C.add(streetLight(), 158.3, z, -Math.PI / 2); C.add(streetLight(), -50.3, z, -Math.PI / 2); }
+  for (let x = -40; x < 150; x += 26) C.add(streetLight(), x, -184.6, Math.PI);
   for (let x = -90; x <= 90; x += 22) { C.add(streetLight(), x, 8.3); C.add(streetLight(), x + 11, -8.3, Math.PI); }
-  C.lane(() => car(['#ECF0F1', '#B03A2E', '#34495E', '#7FA8C9', '#2F4F3E'][Math.floor(rnd() * 5)]), 2.1, 1, 9, 4, 210);
-  C.lane(() => car(['#D5D8DC', '#1B2631', '#C9A86A'][Math.floor(rnd() * 3)]), -2.1, -1, 9, 3, 210);
+  const KINDS = ['sedan', 'classic', 'suv', 'sedan'], traffic = cols => () => realCar(KINDS[Math.floor(rnd() * KINDS.length)], cols[Math.floor(rnd() * cols.length)]);
+  C.lane(traffic(['#ECF0F1', '#B03A2E', '#34495E', '#7FA8C9', '#2F4F3E']), 2.1, 1, 9, 4, 210);
+  C.lane(traffic(['#D5D8DC', '#1B2631', '#C9A86A']), -2.1, -1, 9, 3, 210);
+  // a self-driving taxi circling the loop (roof sensor dome, no branding)
+  const taxi = realCar('suv', '#F2F3F1'); taxi.add(cyl(.34, .38, .34, '#1C1D22', -.6, 1.95, 0, 16)); taxi.add(cyl(.12, .12, .2, '#1C1D22', 2.3, 1.15, .95)); taxi.add(cyl(.12, .12, .2, '#1C1D22', 2.3, 1.15, -.95));
+  taxi.userData.noCollide = true; C.add(taxi);
+  const LOOP = [[-60.5, 4], [152.5, 4], [152.5, -194.5], [-60.5, -194.5]], legs = LOOP.map((p, i) => { const q = LOOP[(i + 1) % 4]; return { p, q, len: Math.hypot(q[0] - p[0], q[1] - p[1]) }; }), lap = legs.reduce((a, l) => a + l.len, 0);
+  C.tick.push(t => { let d = (t * 9) % lap; for (const l of legs) { if (d > l.len) { d -= l.len; continue; } const u = d / l.len, dx = l.q[0] - l.p[0], dz = l.q[1] - l.p[1]; taxi.position.set(l.p[0] + dx * u, .06, l.p[1] + dz * u); taxi.rotation.y = Math.atan2(-dz, dx); break; } });
+  // road-work cones on the waterfront; drive into them
+  C.props = [];
+  for (let i = 0; i < 8; i++) { const c = grp(cone(.26, .72, '#FF6A13', 0, 0, 0, 12), cyl(.2, .22, .12, '#F4F4F2', 0, .3, 0, 12), box(.5, .05, .5, '#1C1C20')); c.userData.noCollide = true; C.add(c, 68 + i * 3.6, -189.6).position.y = .09; C.props.push({ o: c, r: .35 }); }
+  C.tick.push((t, dt) => tickProps(C.props, dt));
 
   // ---- Painted Ladies (north side, stepping up the hill to the west) ----
   const lad = [['#F2B5C4', '#7A4A9A'], ['#A9D9C8', '#C0563A'], ['#F5D98A', '#3E6E8E'], ['#B9C4F0', '#C7843A'], ['#F7C29A', '#4A7A4A'], ['#CFE5A9', '#8A3A5A'], ['#D9BCE8', '#2E6A6A']];
   lad.forEach(([c, a], i) => { const h = lady(c, a); h.position.set(-47 + i * 6.3, (6 - i) * .55, -15); C.add(h); C.add(box(6.3, (6 - i) * .55, 12, '#D9D0C0', -47 + i * 6.3, 0, -15)); });
   C.add(box(46, .25, 2.4, '#CFC6B6', -28, 0, -7.6));
   // generic row houses beyond the ladies
-  [[-62, '#E8D9C4'], [-70, '#D6E2E8'], [-78, '#F0D4C0']].forEach(([x, c]) => C.add(grp(building(7.5, 12, 11, c, 'res', false, '#6E5A50'), box(7.8, .5, 11.4, '#FFFFFF', 0, 12)), x, -15));
+  [[-70, '#D6E2E8'], [-78, '#F0D4C0']].forEach(([x, c]) => C.add(grp(building(7.5, 12, 11, c, 'res', false, '#6E5A50'), box(7.8, .5, 11.4, '#FFFFFF', 0, 12)), x, -15));
 
   // back blocks filling the slope between the ladies and Russian Hill (kept low so the bridge stays visible)
   for (let x = -66; x <= 22; x += 8.5) [-34, -47].forEach((z, j) => {
-    if (x > 8 && j === 0) return; const h = 6 + ((x * 3 + j * 5) % 4 + 4) % 4 * 1.2, c = hc[Math.abs(Math.round(x + j * 3)) % hc.length];
+    if (x > 8 && j === 0 || x < -52) return; /* x < -52: keep the west avenue clear */ const h = 6 + ((x * 3 + j * 5) % 4 + 4) % 4 * 1.2, c = hc[Math.abs(Math.round(x + j * 3)) % hc.length];
     C.add(grp(building(7.8, h, 10, c, 'res', false, '#6E5A50'), box(8.1, .4, 10.3, '#FFFFFF', 0, h)), x, z);
   });
   // ---- the startup garage (Oaklet) ----
@@ -255,24 +343,29 @@ export function build() {
   C.add(grp(cyl(.06, .08, 3.6, '#2B2B30'), ball(.3, '#F6E6C0', 0, 3.7, 0, 1)), -27, 33).position.y = PR;
   [[-31, 32.4, Math.PI], [-25, 31, 2.6], [-20, 20, .6], [-38, 15, 2], [-34, 25, -1]].forEach(([x, z, r]) => C.add(person(SKIN[Math.floor(rnd() * SKIN.length)]), x, z, r).position.y = ph(z));
   // near-side row (east of the park)
-  [[50, '#E7D7C2'], [58, '#C9DCE6'], [66, '#F2D6BE'], [74, '#E0E6CF']].forEach(([x, c]) =>
-    C.add(grp(building(7.6, 8, 10, c, 'res', false, '#6E5A50'), box(7.9, .45, 10.4, '#FFFFFF', 0, 8)), x, 15));
+  C.add(hackHouse(), 62, 18);
   [[4, 27, '#EADBC6'], [12, 27, '#D3E0E8'], [20, 27, '#F1D9C4'], [28, 27, '#E4E8D2'], [36, 27, '#EED8DE']].forEach(([x, z, c]) => C.add(grp(building(7.6, 7, 9, c, 'res', false, '#6E5A50'), box(7.9, .4, 9.4, '#FFFFFF', 0, 7)), x, z, Math.PI));
   [[6, 16], [14, 20], [24, 15], [34, 19]].forEach(([x, z]) => C.add(treeRound('#5E7F45', 1.1), x, z));
 
-  hillFlare(C, -30, PR, 33);
+  hillFlare(C, 62, 10.6, 18);
 
   C.crowd([[14, -8.4, 0], [22, -7.8, 2.2], [-20, -7.2, 1.2], [-10, -7.4, 3], [40, 8, 4], [5, 7.6, 1], [50, -7.5, 2]]);
   C.particles('dust', 220);
 
   C.spot(18, 5.5, -11);
-  C.spot(-30, PR + 2.5, 33);
+  C.spot(62, 12.5, 18);
   addOSM(C, sfOSM, {
-    handRoads: [{ z: 0, half: 8, halfX: 115 }],
+    handRoads: [{ z: 0, half: 8, halfX: 172 }, { z: -192, half: 8, halfX: 172 }],
     clearBoxes: [{ minX: -54, maxX: -2, minZ: -24, maxZ: -6 },       // Painted Ladies row (the real 710-722 Steiner footprints land here)
       { minX: -400, maxX: 400, minZ: -600, maxZ: -170 },              // the bay
-      { minX: -218, maxX: -82, minZ: -172, maxZ: -48 }],              // hand-made inlet
+      { minX: -218, maxX: -82, minZ: -172, maxZ: -48 },               // hand-made inlet
+      { minX: 140, maxX: 160, minZ: -200, maxZ: 6 }, { minX: -68, maxX: -48, minZ: -200, maxZ: -6 }, // loop avenues
+      { minX: 108, maxX: 136, minZ: -174, maxZ: -146 }],              // Salesforce Tower plaza
   });
+  // shoreline: invisible walls so the car stays on land and on the waterfront deck
+  (C.colliders ||= []).push({ minX: -400, maxX: 400, minZ: -600, maxZ: -216 }, { minX: -400, maxX: -73, minZ: -216, maxZ: -168 },
+    { minX: 167, maxX: 400, minZ: -216, maxZ: -168 }, { minX: -218, maxX: -85, minZ: -172, maxZ: -48 });
+  C.driveRadius = 250;
   C.credit = 'Streets & buildings: © OpenStreetMap contributors';
   return C;
 }

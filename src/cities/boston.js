@@ -2,7 +2,7 @@
 import { newCity } from '../kit/city.js';
 import { addOSM } from '../kit/osm.js';
 import bostonOSM from '../data/osm/boston.json';
-import { THREE, V, mat, glow, mesh, box, cyl, cone, ball, dome, extrude, tube, grp, building, car, person, SKIN, bareTree, trolley, rnd, reseed } from '../kit/kit.js';
+import { THREE, V, mat, glow, mesh, box, cyl, cone, ball, dome, extrude, tube, grp, building, car, realCar, pickup, person, SKIN, bareTree, trolley, rnd, reseed } from '../kit/kit.js';
 
 const SNOW = '#EEF2F6';
 const GOLD = mat('#E0AE3C', { metalness: .65, roughness: .28, emissive: '#A8741A', emissiveIntensity: .75, flatShading: false });
@@ -101,6 +101,11 @@ export function build() {
   });
   for (let i = 0; i < 9; i++) { const x = -80 + i * 20; C.add(grp(cyl(.12, .14, 6.6, '#2E3A34', 0, 0, 0, 6), box(.15, .15, 5.2, '#2E3A34', 0, 6.4, 0)), x, 0); }
 
+  // Back Bay grid: a block loop south of Huntington (drive a full circuit)
+  const RO = { color: '#353943', dash: false, walk: 2, walkColor: '#C9D1D9', rough: .5 };
+  [C.road(0, 34, 130, 9, 0, RO), C.road(-56, 17, 34, 9, Math.PI / 2, RO), C.road(56, 17, 34, 9, Math.PI / 2, RO)].forEach(r => { r.position.y = .04; });
+  for (let i = 0; i < 11; i++) C.add(acornLamp(), -60 + i * 12, 38.4);
+
   // Green Line stop (spot 3): island platform with shelter
   const plat = grp(box(18, .55, .9, '#8E9298'), box(18, .06, .1, '#F2C230', 0, .55, .4), box(18, .06, .1, '#F2C230', 0, .55, -.4));
   plat.add(box(6, .12, 1.4, '#2E3A34', 0, 3.2), box(.12, 2.6, .12, '#2E3A34', -2.8, .55), box(.12, 2.6, .12, '#2E3A34', 2.8, .55), box(5.4, .3, .5, SNOW, 0, 3.32));
@@ -160,13 +165,27 @@ export function build() {
   for (let i = 0; i < 30; i++) [1, -1].forEach(sd => { if (sd < 0 && i % 4 === 0) return; const b = ball(1.2 + rnd() * .5, SNOW, -116 + i * 8 + rnd() * 2, 0, sd * 12.2, 0); b.scale.set(1.8, .5, .7); b.castShadow = false; C.add(b); });
 
   // parked cars with snow on the roof, traffic both ways
-  [[-30, -10.4], [-16, -10.4], [10, -10.4], [38, 10.4], [52, -10.4]].forEach(([x, z], i) => { const c = car(['#2C3E50', '#8E1B1B', '#5D6D7E', '#1B2631', '#ECF0F1'][i], true); c.add(box(2.3, .25, 1.6, SNOW, -.2, 2.08)); C.add(c, x, z, z > 0 ? 0 : Math.PI); });
-  C.lane(() => car(['#2C3E50', '#ECF0F1', '#7F8C8D'][Math.floor(rnd() * 3)], true), 7, 1, 9, 3, 220);
-  C.lane(() => car(['#8E1B1B', '#1B2631', '#D0D3D4'][Math.floor(rnd() * 3)], true), -7, -1, 9, 3, 220);
+  [[-30, -10.4], [-16, -10.4], [10, -10.4], [38, 10.4], [52, -10.4]].forEach(([x, z], i) => { const c = realCar('sedan', ['#2C3E50', '#8E1B1B', '#5D6D7E', '#1B2631', '#ECF0F1'][i], true); c.add(box(2.3, .25, 1.6, SNOW, -.2, 2.08)); C.add(c, x, z, z > 0 ? 0 : Math.PI); });
+  C.lane(() => realCar('suv', ['#2C3E50', '#ECF0F1', '#7F8C8D'][Math.floor(rnd() * 3)], true), 7, 1, 9, 3, 220);
+  C.lane(() => realCar('sedan', ['#8E1B1B', '#1B2631', '#D0D3D4'][Math.floor(rnd() * 3)], true), -7, -1, 9, 3, 220);
+
+  // local life: a snowplow clearing Huntington, amber beacon turning
+  const plow = pickup('#E8A23A');
+  const blade = box(.35, 1.3, 3.6, '#C4C8CC', 2.95, .95, 0); blade.rotation.y = .42; plow.add(blade);
+  plow.add(box(.1, .9, 3.4, '#D94A3A', 3.1, .95, 0)); // blade trim
+  const beacon = ball(.24, glow('#FF9500', 2.4), -.5, 2.0, 0, 1); beacon.castShadow = false; plow.add(beacon);
+  plow.userData.noCollide = true; C.add(plow, -70, 8.6, 0);
+  C.tick.push((t, dt) => { plow.position.x += 6 * dt; if (plow.position.x > 124) plow.position.x = -124; beacon.material.emissiveIntensity = 1.3 + Math.sin(t * 7) * 1.2; });
 
   // people in winter coats
   const coats = ['#1F2A44', '#7A2E2E', '#2E5E45', '#3A3A3A', '#B5651D', '#5B4A7A'];
   [[-36, -14.6], [-34.6, -14.8], [-10, -14], [6, 14.2], [8, 14.6], [30, -14.4], [-24, 14], [44, 14.4], [21, .1], [23.5, -.1]].forEach(([x, z], i) => { const p = person(coats[i % 6]); p.add(cyl(.3, .3, .12, '#C0392B', 0, 1.5, 0, 8)); C.add(p, x, z, rnd() * 6); if (Math.abs(z) < 1) p.position.y = .55; });
+  // people clutching takeaway coffee in the snow
+  [[-20, 15.4], [4, 15.6], [-2, -14.8], [40, 14.8]].forEach(([x, z], i) => {
+    const p = person(coats[(i + 2) % 6]); p.add(cyl(.3, .3, .12, '#7A2E2E', 0, 1.5, 0, 8));
+    const cup = cyl(.09, .07, .2, '#F4EDE2', 0, 0, 0, 8); cup.position.set(.28, .95, .22); p.add(cup);
+    p.add(cyl(.1, .1, .04, '#6A4A2E', .28, 1.07, .22, 8)); C.add(p, x, z, 1 + rnd() * 4);
+  });
 
   C.particles('snow', 2800);
   C.hero(-4, 10.4, 0);
@@ -178,8 +197,19 @@ export function build() {
     handRoads: [{ z: 0, half: 16, halfX: 125 }],
     greenColor: '#E4EAF0', roofColor: '#EEF2F6', treeColors: ['#C9D3DC', '#D6DEE6', '#E4EAF0'],
     clearBoxes: [{ minX: -48, maxX: 12, minZ: -104, maxZ: -38 }, // hand-made State House terrace + hill (real footprint is excluded in the bake)
-      { minX: -400, maxX: 400, minZ: -600, maxZ: -152 }],        // Charles River + Zakim bridge
+      { minX: -400, maxX: 400, minZ: -600, maxZ: -152 },         // Charles River + Zakim bridge
+      { minX: -70, maxX: 70, minZ: 29, maxZ: 39 },               // Back Bay loop: south street
+      { minX: -61, maxX: -51, minZ: -4, maxZ: 37 },              // west cross
+      { minX: 51, maxX: 61, minZ: -4, maxZ: 37 }],               // east cross
   });
+  // invisible walls: keep the car on the streets, off the frozen Charles and out past Back Bay
+  (C.colliders ||= []).push(
+    { minX: -118, maxX: 118, minZ: -46, maxZ: -38 },  // north (river side)
+    { minX: -118, maxX: 118, minZ: 44, maxZ: 52 },    // south
+    { minX: -118, maxX: -108, minZ: -46, maxZ: 52 },  // west
+    { minX: 108, maxX: 118, minZ: -46, maxZ: 52 },    // east
+  );
+  C.driveRadius = 140;
   C.credit = 'Streets & buildings: © OpenStreetMap contributors';
   return C;
 }

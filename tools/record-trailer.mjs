@@ -1,3 +1,4 @@
+import { browserPath } from './browser.mjs';
 // Record the trailer (src/core/trailer.js). Starts its own Vite dev server and drives headless Chromium.
 //
 //   node tools/record-trailer.mjs [--vertical] [--reel hero] [--from S] [--to S] [--fps 30] [--webm] [--keep] [--nomp4]
@@ -32,7 +33,7 @@ fs.mkdirSync('shots', { recursive: true });
 
 const server = await createServer({ server: { port: 0, host: '127.0.0.1' }, logLevel: 'error' }); await server.listen();
 const port = server.httpServer.address().port;
-const browser = await chromium.launch({ executablePath: '/opt/pw-browsers/chromium', args: ['--use-gl=swiftshader', '--enable-webgl', '--ignore-gpu-blocklist', '--autoplay-policy=no-user-gesture-required'] });
+const browser = await chromium.launch({ executablePath: browserPath, args: ['--use-gl=swiftshader', '--enable-webgl', '--ignore-gpu-blocklist', '--autoplay-policy=no-user-gesture-required'] });
 const errs = [];
 const hook = p => { p.on('pageerror', e => errs.push('pageerror: ' + e.message)); p.on('console', m => { if (m.type() === 'error' && !/404|ERR_|Failed to load resource/.test(m.text())) errs.push('console: ' + m.text()); }); };
 let code = 0;

@@ -198,6 +198,7 @@ export function createGlobe({ small = false, reduce = false, pinsEl, onPin }) {
     legInfo(from, to) { const a = Math.min(from, to), b = Math.max(from, to); let fly = false, dist = 0; for (let q = a; q < b; q++) { const [x, y, t] = LEGS[q]; if (t === 'f') fly = true; dist += km(STOPS[x], STOPS[y]); } return { fly, km: Math.round(dist / 10) * 10 }; },
     /** Stylised 3 s sweep of the sun through one full day, ending at the real current position. Resolves when done (at once for reduced motion / trailer). */
     sweep(dur = 3) { if (reduce || G.trailer) return Promise.resolve(); return new Promise(res => { G.sw = { t: 0, dur, res }; }); },
+    cancelSweep() { if (G.sw) { const pending = G.sw; G.sw = null; pending.res(); } },
     faceIndia() { G.orbitA = india.a; G.orbitE = .3; },
     drag(dx, dy) { G.orbitA -= dx * .005; G.orbitE = clamp(G.orbitE + dy * .004, -1.2, 1.2); },
     setPinsDone(set) { pins.forEach((p, i) => p && p.classList.toggle('done', set.has(i) || S.some(s => s.dupOf === i && set.has(s.i)))); },
@@ -219,7 +220,7 @@ export function createGlobe({ small = false, reduce = false, pinsEl, onPin }) {
   const P = V(), U = V(), A = V(), B = V(), Fw = V(), Sx = V(), desired = V(), look = V(), pr = V(), tmp = V();
   let ssT = -99, ss = subsolar();
   G.update = (dt, T, W, H) => {
-    clouds.rotation.y += dt * .006;
+    if (!G.paused || G.trailer) clouds.rotation.y += dt * .006;
     if (T - ssT > 5) { ss = subsolar(); ssT = T; }
     let off = 0; if (G.sw) { const w = G.sw; w.t += dt; const x = clamp(w.t / w.dur, 0, 1); off = 360 * (1 - x) ** 3; if (x >= 1) { G.sw = null; w.res(); } }
     DN.uSun.value.copy(ll(ss.lat, ss.lon + off).normalize());
@@ -245,7 +246,7 @@ export function createGlobe({ small = false, reduce = false, pinsEl, onPin }) {
     const k = reduce ? 1 : 1 - Math.exp(-dt * 1.8);
     const free = G.view === 'intro' || G.view === 'orbit';
     if (free) {
-      if (!G.dragging && G.view === 'intro' && !reduce) G.orbitA += dt * .02 * G.spin;
+      if (!G.dragging && G.view === 'intro' && !reduce && !G.paused) G.orbitA += dt * .02 * G.spin;
       const dist = W < 700 ? 92 : 76;
       desired.set(Math.sin(G.orbitA) * Math.cos(G.orbitE), Math.sin(G.orbitE), Math.cos(G.orbitA) * Math.cos(G.orbitE)).multiplyScalar(dist); look.set(0, 0, 0);
       if (G.view === 'intro' && W > 860 && !G.trailer) { Sx.set(Math.cos(G.orbitA), 0, -Math.sin(G.orbitA)); look.addScaledVector(Sx, -17); }

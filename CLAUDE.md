@@ -35,7 +35,7 @@ Do not run `git commit`/`git push`; the lead commits.
 ## Reference
 The previous single-file prototype is `source/v2-src.html` (city builders, sound, globe, UI). Reuse freely.
 
-## Phase 1+ contracts (see docs/PLAN.md)
+## Phase 1+ contracts
 - `C.colliders`: optional array of `{minX,maxX,minZ,maxZ}` (XZ boxes, metres) added to drive collisions. `userData.noCollide = true` on an object (or its parent) excludes it from auto-colliders.
 - `C.driveRadius` (default 140), `C.credit` (string shown small in the city HUD, e.g. OSM attribution).
 - `src/kit/collide.js`: `autoColliders(C)`, `makeGrid(boxes, cell)`, `overlaps(a,b,m)`, `resolveCircle(grid,x,z,r)`.

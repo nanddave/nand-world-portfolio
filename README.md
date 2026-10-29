@@ -1,80 +1,68 @@
-# Nand's World: interactive portfolio
+# Nand's World: an interactive portfolio
 
-Working folder for the globe-and-cities portfolio idea. Kept separate from everything else in Job_FInder on purpose.
+Live site: https://nanddave.life
 
-## The idea in one line
+Nand Dave is an applied AI engineer who builds voice agents and data systems. This site tells his career as a trip: fly a yellow car across a real Earth, drop into seven street-level cities, and try small working demos of the work he did in each one. Recruiters can skip the 3D: "Hiring? 30-second version" opens a one-screen summary, and "Read without 3D" shows the full plain résumé.
 
-A visitor travels a real Earth with a small yellow car (and a plane for the long hops), and at each city drops into a street-level scene of that place. There they find stories from my work and life, small demos to try, and a co-pilot that answers questions by taking them to the right place.
+## The route
 
-## Route (in the order it happened)
-
-| # | City | Who I was there | Spots in the scene |
-|---|------|-----------------|--------------------|
-| 1 | Nadiad, Gujarat | Grew up here | The lane, Santram Mandir, the family farm, Uttarayan kites |
-| 2 | Bangalore | Bachelor's, then a year at ANA Packaging & Trading (2020–21) | Engineering college, the cup factory (with the cracked-rim demo), the chai stall |
-| 3 | Boston | Master's, Northeastern | Campus, first apartment, the Green Line |
-| 4 | Irving, Texas | 7-Eleven Data Scientist co-op (Jun–Dec 2022) | The office (with the offer-grouping demo), the store counter, Texas roads |
-| 5 | Bellevue | Centific (May 2024–Aug 2025), research | The office, research desk (with the contradiction demo), badminton court |
-| 6 | San Francisco | Oaklet (Sep–Oct 2025) | The garage, the view from the hill (with the goal-to-steps demo) |
-| 7 | Bangalore, again | Founder, Brokai Labs (Nov 2025–now) | Brokai office (Jarvis demo), the salon (voice call playback), "Your company here" lot |
-
-Travel legs: Nadiad → Bangalore by road, Bangalore → Boston by air, Boston → Irving → Bellevue → San Francisco by road (a real cross-country drive), San Francisco → Bangalore by air. Distances shown during travel are real great-circle distances.
-
-## What makes each city feel like that city
-
-- **Nadiad:** warm dusty morning, painted houses with wooden balconies, the white temple spires with a saffron flag, a cow shed and hay, kites in the sky. Sound: birds and a distant temple bell.
-- **Bangalore:** evening rush with the streetlights coming on, green-and-yellow autos, a blue city bus, black-and-yellow curbs, rain trees and gulmohar, a domed government building in the distance. Sound: traffic and horns.
-- **Boston:** snowy night, brownstones with bay windows, the Green Line trolley running down the median, a skyline in the distance. Sound: wind and the trolley bell.
-- **Irving:** hot bright afternoon, a six-lane highway with pickups and semis, a glass office campus, the town water tower, a fuel stop. Sound: cicadas and highway whoosh.
-- **Bellevue:** rain, fir trees, glass towers, the lake and floating bridge, Mount Rainier in the distance. Sound: rain.
-- **San Francisco:** golden hour, painted Victorian houses, a cable car, the red bridge over the bay with fog rolling in. Sound: foghorn and cable-car bell.
-- **Bangalore, again:** late night, lit tech parks, the Brokai office sign, a neon salon, and an empty lot with a sign that changes to the visitor's company.
+| # | City | Chapter | Try it |
+|---|------|---------|--------|
+| 1 | Nadiad, Gujarat | Where I grew up: Santram Mandir, the family dairy farm, Uttarayan kites | |
+| 2 | Bangalore | Mechanical engineering at PES University, then ANA Packaging & Trading (paper cups) | Find a machine's root cause |
+| 3 | Boston | Master's at Northeastern; first time living on my own | Train a model live in the browser |
+| 4 | Irving, Texas | Data Scientist co-op at 7-Eleven | Sort 300 messy promotional offers |
+| 5 | Bellevue | AI Engineer at Centific; two co-authored papers | Catch a PII leak; watch agents argue |
+| 6 | San Francisco | Founding AI/ML engineer at Oaklet | Turn a big goal into steps |
+| 7 | Bangalore, again | Founder of Brokai Labs: Jarvis, Hapi, a voice receptionist for a US salon | Try Jarvis; call the salon; sketch a project |
 
 ## What's in it
 
-- **Globe travel:** a real Earth with a yellow car and a plane for the long hops.
-- **Seven city scenes:** each built on real OpenStreetMap streets, with its own look and sound.
-- **Drive mode:** WASD or arrow keys, a touch joystick, H for the horn, E to open a spot, Esc to return to orbit.
-- **Live time and weather:** local time plus Open-Meteo weather for each city, with a Designed/Live toggle.
-- **Nine missions:** small in-browser demos that change the 3D world as you use them.
-- **Voice co-pilot:** uses the browser's built-in speech.
-- **Passport and postcard:** each city stamps the passport; a shareable postcard.
-- **Your city:** add `?yours=City` to the URL to make your own city the last stop.
-- **Trailer:** a 60-second trailer at `?trailer=1` (add `&v=1` for vertical). Record it with `node tools/record-trailer.mjs`.
+- **Globe travel** over a real Earth, with real great-circle distances.
+- **Seven city scenes** built on OpenStreetMap streets, each with its own light, weather and sound.
+- **Drive mode**: WASD or arrow keys (touch joystick on phones), H horn, C change car, E open a spot, Esc back to orbit. Four cars drawn in code (yellow coupe by default, luxury sedan, hypercar, off-roader) with spinning, steering wheels, body lean, skid marks and props you can knock over.
+- **Autopilot tour**: one button travels the whole route and opens each story for a few seconds; any tap stops it.
+- **San Francisco loop**: main street, an east avenue, the Embarcadero waterfront and a west avenue past the Painted Ladies, with the Golden Gate, Salesforce Tower, Transamerica, Coit Tower, the Ferry Building, the Bay Bridge and a self-driving taxi.
+- **Nine demos** that run entirely in the browser; each says up front what is real and what is illustrative.
+- **Project case studies** for Jarvis, Hapi and the salon receptionist (Menu → Projects).
+- **Co-pilot**: ask a question and it takes you to the right place (local search, optional voice input).
+- **Passport and postcard**: each city stamps a passport; share a postcard at the end.
+- **Your city**: add `?yours=City` to make your own city a bonus stop. `?for=Company` personalises the last lot.
+- **Links into the story**: `?stop=sf&spot=0`, `?project=hapi`, `?role=recruiter`, `?role=founder`.
+- **Trailer**: `?trailer=1` plays a 60-second trailer (`&v=1` for vertical). Record it with `node tools/record-trailer.mjs`.
+- **No-3D fallback**: without WebGL or JavaScript the page shows the full readable résumé.
 
-Data credits: © OpenStreetMap contributors (ODbL); weather by Open-Meteo.com (CC BY 4.0); land from Natural Earth.
+## Run it
 
-## Dev checks
+```bash
+npm ci
+npm run dev
+```
 
-- `tools/drive-cities.mjs`
-- `tools/world-test.mjs`
-- `tools/shell-test.mjs`
-- `tools/shot.mjs` (screenshots for city and mission pages)
+Build: `npm run build` (site in `dist/`) or `npm run build:single` (one self-contained `dist-single/index.html`).
 
-## Files
+## Tests
 
-- `prototypes/v1-toy-planet.html`: first working preview (small fantasy planet).
-- `prototypes/v2-real-world.html`: current preview (real Earth + seven city scenes). Open it in a browser; it loads three.js from a CDN, so it needs an internet connection.
-- `source/v2-src.html`: the same page with a `__MASK__` placeholder where the land data goes.
-- `tools/make-land-mask.mjs`: builds the land data from Natural Earth (via the `world-atlas` npm package).
+`npm test` runs every check and prints a pass/fail table. `npm test -- <category>` runs one or more categories:
 
-## Facts to confirm before anything goes public
+| Category | What it checks |
+|---|---|
+| build | Both builds succeed |
+| content | Chapter text, project records and the readable résumé match |
+| layout | Sheets fit phone and desktop screens, labels never cover controls, accessibility basics |
+| driving | Keyboard and touch input, collisions, every spot reachable in every city |
+| navigation | City changes, deep links, browser Back/Forward, motion settings |
+| demos | All nine demos start, finish and reset |
+| world | City scenes and the postcard render without errors |
+| fallback | The no-WebGL and no-JavaScript pages |
+| launch | Page load on desktop and a throttled phone (FCP, LCP, layout shift, bytes), main flows, tap-target size, share tags and links |
 
-- ANA's location: the preview puts the cup factory in Bangalore.
-- The two 2025 papers: placed at Bellevue (Centific era). Move them if they came from Northeastern.
-- Bachelor's in mechanical engineering: college name and years still missing.
-- The family farm in Nadiad: included as a spot; remove it if you'd rather keep it private.
-- Dashed boxes in the cards are placeholders for your own stories. Nothing there has been invented.
-- `[your email]` placeholders need your real contact.
+`npm run test:launch` also checks outbound links (LinkedIn, GitHub, papers).
 
-## What's still prototype quality
+## How it's built
 
-- Buildings and vehicles are simple shapes. The final build should use properly modelled, consistent assets (Blender → GLB), real photos on postcards, and a recorded voice call.
-- The co-pilot is keyword-based. The real one would be one serverless AI endpoint grounded in a reviewed fact list, with tools to travel and open spots.
-- Performance on phones hasn't been tested on a real device.
+Vite and three.js, plain JavaScript, no framework. Every building, car and landmark is drawn in code; there are no downloaded 3D models. Content lives in `src/content/stops.js`; each city is one file in `src/cities/`, each demo one file in `src/missions/`.
 
-## Suggested next steps
+Visits are counted with Vercel Web Analytics (no cookies) on the deployed site.
 
-1. Lock the look of one city (Bangalore is the richest) to final quality, then roll that standard out to the others.
-2. Collect your real material: photos for each city, a recording of the salon agent, short stories for the dashed placeholders.
-3. Port to a proper project (Next.js + React Three Fiber) once the experience is agreed.
+Data credits: © OpenStreetMap contributors (ODbL); weather by Open-Meteo.com (CC BY 4.0); land outline from Natural Earth.

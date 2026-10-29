@@ -6,3 +6,5 @@ dist-single/
 shots/
 data/osm-raw/
 data/cities-raw/
+docs/
+HANDOFF.md

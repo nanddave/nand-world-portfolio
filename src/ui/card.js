@@ -23,6 +23,7 @@ export function createCard({ reduce, onNext, onClose, onComplete }) {
     $('#kTitle').textContent = sp.t; $('#kMeta').textContent = sp.m; body.innerHTML = sp.b;
     $('#kNext').textContent = nextLabel;
     el.scrollTop = 0; el.classList.add('open'); document.body.classList.add('cardopen');
+    $('#cardX').focus({ preventScroll: true });
     if (sp.mission) {
       const my = token, work = new WorkLog(); slot.hidden = false; slot.innerHTML = '<p class="mission-loading">Loading the demo…</p>';
       workBtn.hidden = false; workN.textContent = '0';
@@ -44,6 +45,7 @@ export function createCard({ reduce, onNext, onClose, onComplete }) {
     unmount(); cur = { ci: -2, k: 0 };
     $('#kKick').textContent = kick; $('#kTitle').textContent = title; $('#kMeta').textContent = meta; body.innerHTML = html; $('#kNext').textContent = nextLabel;
     el.scrollTop = 0; el.classList.add('open'); document.body.classList.add('cardopen');
+    $('#cardX').focus({ preventScroll: true });
     try { onOpen?.(); } catch (e) { console.error(e); }
   }
   function close() { unmount(); cur = null; el.classList.remove('open'); document.body.classList.remove('cardopen'); }

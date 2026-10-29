@@ -37,8 +37,9 @@ export function createDrive({ cam, reduce = false }) {
       cam.fov = baseFov(); cam.updateProjectionMatrix();
     },
     sync() { D.car.position.x = D.x; D.car.position.z = D.z; D.car.rotation.y = D.h; },
-    /** dt seconds; paused = a card is open (input ignored, car coasts to a stop). Returns { speed, nearSpot }. */
+    /** dt seconds; paused stops movement immediately. Returns { speed, nearSpot }. */
     update(dt, paused = false) {
+      if (paused) { D.speed = 0; return { speed: 0, nearSpot: D.nearSpot }; }
       const MAXF = MAXF0 * D.boost, MAXR = MAXF0 / 3, ACC = ACC0 * D.boost;
       const C = D.C, car = D.car, inp = paused ? { throttle: 0, steer: 0, brake: true } : D.input;
       let sp = D.speed;
@@ -60,7 +61,11 @@ export function createDrive({ cam, reduce = false }) {
       if (d > lim) { const nx = -x / d, nz = -z / d, vn = sp * (fx * nx + fz * nz); x = -nx * lim; z = -nz * lim; if (vn < 0) { impact = Math.max(impact, -vn); sp -= vn * (fx * nx + fz * nz); } }
       D._cool -= dt;
       if (impact > 2.5 && D._cool <= 0) { D._cool = .35; D.hits++; D.shake = Math.min(.45, impact * .035); Sound.thud?.(Math.min(1, impact / 10)); }
+      const yawRate = clamp(inp.steer, -1, 1) * 1.9 * steerGain * Math.sign(sp), accel = (sp - D.speed) / Math.max(dt, 1e-3);
       D.x = x; D.z = z; D.speed = sp; D.sync();
+      feel(car, sp, yawRate, accel, clamp(inp.steer, -1, 1), dt, reduce);
+      skids(C, car, Math.abs(sp) > 9 && Math.abs(inp.steer) > .6 || inp.brake && Math.abs(sp) > 6, x, z, fx, fz);
+      bump(C, x, z, fx * sp, fz * sp);
       // spot proximity (XZ)
       let near = -1, best = NEAR * NEAR;
       // A spot on top of a big solid base (temple compound, hill) counts as near when the car is within 4 m of that base's edge.
@@ -83,4 +88,46 @@ export function createDrive({ cam, reduce = false }) {
     },
   };
   return D;
+}
+
+// ---- driving feel: wheels spin and steer, the body leans into turns and dips under braking ----
+function feel(car, sp, yawRate, accel, steer, dt, reduce) {
+  const { wheels, body } = car.userData; if (!wheels) return;
+  for (const w of wheels) { w.spin.rotation.z -= sp * dt / w.r; if (w.front) w.pivot.rotation.y = steer * .42; }
+  if (!body || reduce) return;
+  const k = 1 - Math.exp(-dt * 6);
+  body.rotation.x += (clamp(sp * yawRate * .006, -.06, .06) - body.rotation.x) * k; // lean outward in a turn
+  body.rotation.z += (clamp(accel * .004, -.045, .03) - body.rotation.z) * k;     // nose dips when braking, lifts when accelerating
+}
+// ---- skid marks: a recycled pool of dark strips dropped behind the rear wheels while sliding or braking hard ----
+const _skidGeo = new THREE.PlaneGeometry(.5, .28), _skidMat = new THREE.MeshBasicMaterial({ color: '#141414', transparent: true, opacity: .45, depthWrite: false });
+function skids(C, car, on, x, z, fx, fz) {
+  if (!on) { C._skidLast = null; return; }
+  const pool = C._skids || (C._skids = { list: [], i: 0 });
+  if (C._skidLast && Math.hypot(x - C._skidLast.x, z - C._skidLast.z) < .3) return;
+  C._skidLast = { x, z };
+  const s = car.scale.x, back = -1.4 * s, side = .78 * s, sx = -fz, sz = fx;
+  for (const sd of [1, -1]) {
+    let m = pool.list[pool.i];
+    if (!m) { m = new THREE.Mesh(_skidGeo, _skidMat); m.rotation.x = -Math.PI / 2; m.renderOrder = 1; C.scene.add(m); pool.list[pool.i] = m; }
+    m.position.set(x + fx * back + sx * sd * side, .07, z + fz * back + sz * sd * side); m.rotation.z = Math.atan2(fz, fx) * -1;
+    pool.i = (pool.i + 1) % 240;
+  }
+}
+// ---- props (C.props: [{ o, r }]) get knocked over and slide when the car hits them; the city ticks their motion ----
+function bump(C, x, z, vx, vz) {
+  if (!C.props) return;
+  for (const p of C.props) {
+    const dx = p.o.position.x - x, dz = p.o.position.z - z, d = Math.hypot(dx, dz);
+    if (d > R + p.r || Math.hypot(vx, vz) < 1.5) continue;
+    p.vx = vx * .7 + dx / (d || 1) * 2; p.vz = vz * .7 + dz / (d || 1) * 2; p.fall = 1; Sound.thud?.(.2);
+  }
+}
+/** Advance knocked-over props: slide with friction and tip over. Call from the city's tick. */
+export function tickProps(props, dt) {
+  for (const p of props) {
+    if (!p.fall) continue;
+    p.o.position.x += p.vx * dt; p.o.position.z += p.vz * dt; const f = Math.exp(-dt * 2.5); p.vx *= f; p.vz *= f;
+    p.o.rotation.y = Math.atan2(-p.vz, p.vx); p.o.rotation.z += (-(Math.PI / 2) - p.o.rotation.z) * Math.min(1, dt * 8);
+  }
 }

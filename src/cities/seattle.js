@@ -2,7 +2,8 @@
 import { newCity } from '../kit/city.js';
 import { addOSM } from '../kit/osm.js';
 import seattleOSM from '../data/osm/seattle.json';
-import { THREE, V, mat, glow, mesh, box, cyl, cone, ball, lathe, tube, grp, building, sign, fir, car, person, SKIN, streetLight, rnd, reseed } from '../kit/kit.js';
+import { THREE, V, mat, glow, mesh, box, cyl, cone, ball, lathe, tube, grp, building, sign, fir, car, realCar, person, SKIN, streetLight, rnd, reseed } from '../kit/kit.js';
+import { Sound } from '../core/sound.js';
 
 const WHITE = '#ECEBE6';
 
@@ -85,17 +86,37 @@ export function build() {
   // the hero landmarks are tall: a lower, slightly raised orbit shows the Needle and Rainier
   C.pitch = .14; C.dist = 76; C.target = V(0, 10, 0);
 
-  // street
-  C.road(0, 0, 240, 12, 0, { color: '#2C3036', rough: .35, walk: 3, walkColor: '#7C8389' });
+  // street — wet, dark and reflective in the rain
+  C.road(0, 0, 240, 12, 0, { color: '#23272D', rough: .12, walk: 3, walkColor: '#7C8389' });
   for (let i = 0; i < 9; i++) { C.add(streetLight(false), -56 + i * 14, -9.6, 0); C.add(streetLight(false), -49 + i * 14, 9.6, Math.PI); }
+  // loop around the Bellevue towers: a tower-front road joined to the main street at both ends
+  const RO = { color: '#23272D', rough: .12, dash: false, walk: 2, walkColor: '#7C8389' };
+  [C.road(0, -40, 150, 8, 0, RO), C.road(8, -20, 40, 8, Math.PI / 2, RO), C.road(112, -20, 40, 8, Math.PI / 2, RO)].forEach(r => { r.position.y = .045; });
+  // puddles: glossy sheets that catch the streetlights
+  const puddleM = mat('#1A2026', { flatShading: false, roughness: .05, metalness: .6 });
+  for (let i = 0; i < 10; i++) { const p = new THREE.Mesh(new THREE.CircleGeometry(1.2 + rnd() * 1.6, 16), puddleM); p.rotation.x = -Math.PI / 2; p.scale.x = 1.8; p.position.set(-100 + rnd() * 200, .08, (rnd() - .5) * 9); C.add(p); }
 
   // water: Elliott Bay / the lake beyond the towers, with a ferry
   const water = new THREE.Mesh(new THREE.PlaneGeometry(700, 220), mat('#5E7686', { flatShading: false, roughness: .15, metalness: .25 }));
   water.rotation.x = -Math.PI / 2; water.position.set(0, .14, -214); water.receiveShadow = true; C.add(water);
   C.add(box(700, .5, 3, '#7E878C', 0, 0, -104)); // seawall
   const fr = ferry(); C.add(fr, -60, -116); C.movers.push({ v: fr, dir: 1, speed: 2.2, len: 360 });
+  // the floating bridge across the lake (SR-520 style): a low deck resting on pontoons
+  const fb = grp(), FBL = 150;
+  fb.add(box(9, 1.1, FBL, '#54606A', 0, .55, 0), box(9.2, .28, FBL, '#CFCFCF', 0, 1.1, 0), box(.2, .06, FBL, '#F2F2F2', 0, 1.26, 0));
+  for (let z = -FBL / 2 + 6; z < FBL / 2; z += 12) fb.add(box(12, 1.5, 7, '#6A7680', 0, -.35, z));
+  [-4.5, 4.5].forEach(x => fb.add(box(.2, .7, FBL, '#8A949C', x, 1.1, 0)));
+  fb.userData.noCollide = true; C.add(fb, 92, -156);
 
   C.add(rainier(), 30, -450);
+  // ferry horn: a deep foghorn sounds now and then, with a puff of steam from the funnel
+  const puff = ball(1, mat('#F2F2F2', { transparent: true, opacity: 0, flatShading: false }), 3, 8.6, 0, 1); puff.castShadow = false; fr.add(puff);
+  let fh = 7, pk;
+  C.tick.push((t, dt) => {
+    fh -= dt;
+    if (fh <= 0) { fh = 16 + rnd() * 8; pk = 0; if (Sound.on && Sound.ctx) { Sound.voice('sawtooth', 92, 0, 2.2, .08, ['lowpass', 520]); Sound.voice('sawtooth', 70, .06, 2.4, .06, ['lowpass', 520]); } }
+    if (pk !== undefined) { pk += dt / 2.6; puff.material.opacity = Math.max(0, .5 * (1 - pk)); puff.scale.setScalar(1 + pk * 2.4); puff.position.y = 8.6 + pk * 3.4; if (pk >= 1) pk = undefined; }
+  });
 
   // Space Needle (Seattle Center) with lawn
   const lawn = new THREE.Mesh(new THREE.CircleGeometry(16, 24), mat('#4F7A4C', { flatShading: false })); lawn.rotation.x = -Math.PI / 2; lawn.position.set(-22, .05, -80); C.add(lawn);
@@ -193,8 +214,8 @@ export function build() {
   [-60, -40, -24, 30, 46, 70].forEach(x => C.add(fir(.9), x, 11.6));
 
   // traffic both ways
-  C.lane(() => car(['#2C3E50', '#ECF0F1', '#7F8C8D', '#145A32', '#8E1B1B'][Math.floor(rnd() * 5)]), 2.2, 1, 9, 5, 220);
-  C.lane(() => car(['#1B2631', '#D0D3D4', '#5D6D7E'][Math.floor(rnd() * 3)]), -2.2, -1, 9, 5, 220);
+  C.lane(() => realCar('sedan', ['#2C3E50', '#ECF0F1', '#7F8C8D', '#145A32', '#8E1B1B'][Math.floor(rnd() * 5)]), 2.2, 1, 9, 5, 220);
+  C.lane(() => realCar('suv', ['#1B2631', '#D0D3D4', '#5D6D7E'][Math.floor(rnd() * 3)]), -2.2, -1, 9, 5, 220);
   const bs = grp(box(12, 2.8, 2.6, '#1F5F8B', 0, .5), box(12.02, .9, 2.62, '#2A3440', 0, 1.7)); [4, -4].forEach(x => [1.15, -1.15].forEach(z => { const w = cyl(.5, .5, .3, '#1E1E24'); w.rotation.x = Math.PI / 2; w.position.set(x, .5, z); bs.add(w); }));
   C.add(bs); bs.position.set(30, 0, -2.6); bs.rotation.y = Math.PI; C.movers.push({ v: bs, dir: -1, speed: 7, len: 220 });
 
@@ -214,8 +235,19 @@ export function build() {
     handRoads: [{ z: 0, half: 10, halfX: 125 }],
     clearBoxes: [{ minX: -400, maxX: 400, minZ: -600, maxZ: -98 },  // Elliott Bay (hand-made water + seawall)
       { minX: -42, maxX: -2, minZ: -98, maxZ: -60 },                // Space Needle lawn
-      { minX: 16, maxX: 84, minZ: -38, maxZ: -22 }],                // plaza in front of the Bellevue towers
+      { minX: 16, maxX: 84, minZ: -38, maxZ: -22 },                 // plaza in front of the Bellevue towers
+      { minX: -78, maxX: 78, minZ: -45, maxZ: -35 },                // tower-front loop road
+      { minX: 2, maxX: 14, minZ: -44, maxZ: 4 },                     // west cross
+      { minX: 106, maxX: 118, minZ: -44, maxZ: 4 }],                 // east cross
   });
+  // invisible walls: keep the car on the streets, off the lawn and out of Elliott Bay
+  (C.colliders ||= []).push(
+    { minX: -122, maxX: 122, minZ: -54, maxZ: -46 },  // north (waterfront side)
+    { minX: -122, maxX: 122, minZ: 42, maxZ: 50 },    // south
+    { minX: -122, maxX: -112, minZ: -54, maxZ: 50 },  // west
+    { minX: 112, maxX: 122, minZ: -54, maxZ: 50 },    // east
+  );
+  C.driveRadius = 155;
   C.credit = 'Streets & buildings: © OpenStreetMap contributors';
   return C;
 }

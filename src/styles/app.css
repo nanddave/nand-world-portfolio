@@ -24,7 +24,7 @@ a.btn{text-decoration:none}
 #top{position:fixed;top:0;left:0;right:0;z-index:8;display:flex;justify-content:space-between;align-items:center;gap:12px;pointer-events:none;
   padding:calc(14px + env(safe-area-inset-top,0px)) max(18px,env(safe-area-inset-right,0px)) 0 max(18px,env(safe-area-inset-left,0px))}
 #top>*{pointer-events:auto}
-.mark{white-space:nowrap;font-family:var(--display);font-weight:900;font-size:28px;letter-spacing:.4px;color:var(--paper);text-decoration:none;text-shadow:0 2px 12px rgba(0,0,0,.35);opacity:0;transition:.4s}
+.mark{display:inline-flex;align-items:center;min-height:44px;white-space:nowrap;font-family:var(--display);font-weight:900;font-size:28px;letter-spacing:.4px;color:var(--paper);text-decoration:none;text-shadow:0 2px 12px rgba(0,0,0,.35);opacity:0;transition:.4s}
 body.on .mark{opacity:1}
 .tools{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end}
 .chip{text-decoration:none;min-height:40px;padding:0 14px;border-radius:20px;border:0;background:rgba(255,251,243,.92);color:var(--ink);font-weight:600;font-size:14px;display:inline-flex;align-items:center;gap:7px;box-shadow:0 3px 12px rgba(0,0,0,.18)}
@@ -318,3 +318,46 @@ body.trailer #toast{display:none!important}
   .tools{gap:5px}
   .chip{padding:0 9px;font-size:12.5px;gap:5px;min-height:40px}
 }
+
+/* v4.2 reading panels: measured viewport bounds, independent scrolling. */
+.modal{box-sizing:border-box;padding:16px;max-height:100dvh}
+.modal .sheet{box-sizing:border-box;max-height:calc(100vh - 32px);max-height:calc(100dvh - 32px - env(safe-area-inset-top,0px) - env(safe-area-inset-bottom,0px));overflow:auto;overscroll-behavior:contain;overflow-wrap:anywhere;font-size:16px;line-height:1.55}
+.modal .sx,#card .x{position:sticky;float:right;top:0;right:0;z-index:2;flex:none;width:44px;height:44px}
+.modal .sheet h2{padding-right:0}
+.modal .sheet input{box-sizing:border-box;max-width:100%}
+.modal .sheet .contact code{overflow-wrap:anywhere;max-width:100%;box-sizing:border-box}
+#card{box-sizing:border-box;width:min(512px,calc(100% - 32px));top:80px;max-height:calc(100vh - 208px);font-size:16px;line-height:1.55;overflow-wrap:anywhere}
+#card p,#card ul{font-size:16px;line-height:1.55}
+.modal .go{min-height:44px}
+@media (min-width:768px) and (max-width:1023px){.modal .sheet{padding:24px}}
+@media (max-width:1023px){
+ #card{top:auto;left:0;right:0;bottom:0;width:100%;max-height:72vh;max-height:72dvh;border-radius:16px 16px 0 0;padding:20px 20px calc(20px + env(safe-area-inset-bottom,0px));transform:translateY(40px)}
+ body.cardopen #pilot,body.cardopen #bar{visibility:hidden}
+}
+@media (max-width:767px){.modal .sheet{padding:20px}.modal h2{font-size:38px}}
+.menu-links{display:grid;gap:8px}.menu-links a,.menu-links button{display:flex;align-items:center;min-height:44px;padding:0 12px;border:0;border-radius:6px;background:var(--paper-2);color:var(--ink);font:inherit;font-weight:600;text-align:left;text-decoration:none;cursor:pointer}
+#top{height:64px;box-sizing:border-box;padding:env(safe-area-inset-top,0px) 24px 0}.tools{flex-wrap:nowrap}.tools .chip{min-height:44px}
+#intro{left:64px;top:152px;transform:none;max-width:620px;max-height:calc(100dvh - 168px);overflow:auto}body.on #intro{transform:translateX(-30px)}
+#intro::before{content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;background:linear-gradient(90deg,rgba(11,16,38,.88),rgba(11,16,38,.68) 55%,transparent)}
+#intro p.pos{font-size:30px;margin-top:16px}#intro p.hook{font-size:18px;line-height:1.55;margin:16px 0 24px}#intro .row{gap:12px}#intro .row .btn{min-height:48px}#intro .founders a{color:inherit}
+@media (min-width:768px) and (max-width:1023px){#top{padding-left:16px;padding-right:16px}#intro{left:32px;right:32px;top:120px}#intro p.pos{font-size:26px}}
+@media (max-width:767px){#top{padding-left:12px;padding-right:12px;gap:6px}.mark{font-size:18px;opacity:1}.tools{gap:6px}.tools .chip{padding:0 9px;font-size:12px}#intro{left:20px;right:20px;top:96px;bottom:auto;max-height:calc(100dvh - 108px)}#intro h1{font-size:76px}#intro p.pos{font-size:24px;line-height:1.1;margin-top:12px}#intro p.hook{font-size:16px;line-height:1.5;margin:12px 0 20px}#intro .row{display:grid;gap:12px}#intro p.founders{margin-top:16px}body.on #intro{transform:translateY(20px)}}
+@media (max-width:767px){#soundBtn .sound-label,#menuBtn .menu-label{display:none}#soundBtn,#menuBtn{min-width:44px;justify-content:center;font-size:18px}}
+@media (max-width:767px){#intro::before{background:linear-gradient(180deg,rgba(11,16,38,.85),rgba(11,16,38,.7) 75%,transparent)}}
+.spot{width:40px;height:40px;display:block}.spot .lab{position:absolute;width:max-content;max-width:calc(100vw - 16px);white-space:normal}.spot .lab.collapsed{visibility:hidden}
+.spot .lab::after{content:"";position:absolute;background:rgba(22,25,46,.86)}
+.spot[data-label-side="0"] .lab::after{width:2px;height:8px;top:100%;left:50%}.spot[data-label-side="3"] .lab::after{width:2px;height:8px;bottom:100%;left:50%}
+.spot[data-label-side="1"] .lab::after{width:8px;height:2px;right:100%;top:50%}.spot[data-label-side="2"] .lab::after{width:8px;height:2px;left:100%;top:50%}
+.mission-scope{font-size:14px;line-height:1.5;padding:10px 12px;background:var(--paper-2);border-radius:6px}
+body.motion-paused .spot .ring{animation:none}
+.project-list>div{padding:12px 0;border-bottom:1px solid var(--line)}.project-list h3{margin:0}.project-list p{margin:4px 0}.project-actions{display:flex;gap:12px;flex-wrap:wrap;margin-top:20px}.project-actions .btn{min-height:44px}#projectBody h4{font-family:var(--display);font-size:20px;margin:20px 0 4px}
+#ctitle.compact h2{font-size:32px;line-height:1.1}#ctitle.compact .stop,#ctitle.compact .meta{display:none}
+#ctitle .credit,#ctitle .wxcredit,.spot .lab i{font-size:12px}
+#ctitle .scene-label{font-size:12px;font-weight:600;color:var(--paper);text-shadow:0 2px 10px rgba(0,0,0,.7)}
+@media (max-width:767px){#ctitle.compact h2{font-size:24px}}
+
+/* Phones: the city header is just stop, name, the map credit and the three controls; other details move into Places. */
+@media (max-width:767px){#ctitle .meta,#ctitle .scene-label,#ctitle .live,#ctitle #moodBtn{display:none!important}}
+.places-info{margin:14px 0 0;font-size:13px;line-height:1.5;color:var(--ink-soft)}.places-info:empty{display:none}
+#tourChip{position:fixed;left:50%;top:calc(76px + env(safe-area-inset-top,0px));transform:translateX(-50%);z-index:9;min-height:44px;padding:0 18px;border:0;border-radius:99px;background:var(--sun,#FFC93C);color:var(--sun-ink,#16192E);font:700 14px var(--body,system-ui);box-shadow:0 6px 20px rgba(0,0,0,.25)}
+#tourChip[hidden]{display:none}body.touring #pilot{display:none}

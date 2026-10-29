@@ -1,4 +1,4 @@
-// Renders baked OSM JSON (see tools/osm-bake.mjs, docs/PLAN.md 1.3 D) into a city: merged buildings, roads, green, water, a few trees.
+// Renders baked OSM JSON (see tools/osm-bake.mjs) into a city: merged buildings, roads, green, water, a few trees.
 // addOSM(C, data, opts) -> { counts }. opts:
 //   clearRadius, clearBoxes:[{minX,maxX,minZ,maxZ}]  area kept free of OSM buildings, roads, green, water and trees (big hand-made landmarks, hand-made water/hills)
 //   handRoads:[{z, half, halfX}]  hand-made roads (centre z, half-width incl. verges, half-length) that OSM must not overlap; default one road at z=0, half 8, halfX 130

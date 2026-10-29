@@ -1,5 +1,5 @@
 // Bake raw Overpass JSON (data/osm-raw/<id>.json) into compact src/data/osm/<id>.json. Usage: node tools/osm-bake.mjs <id>
-// Logic lives in src/kit/osmbake.js (shared with the browser). See docs/PLAN.md 1.3 D.
+// Logic lives in src/kit/osmbake.js (shared with the browser).
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';

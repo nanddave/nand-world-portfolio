@@ -8,8 +8,8 @@ export const HEADLINE = 'Applied AI Engineer | Voice Agents | Customer Delivery'
 export const SUMMARY = 'Applied AI engineer and founder with 3 years across data and AI roles, delivering customer-facing voice agents, Python/FastAPI tool integrations and production data pipelines.';
 export const BEST_FOR = 'applied AI / FDE / founding engineer roles, and voice-agent or automation builds for businesses';
 export const PAPERS = [
-  { title: 'LegalWiz', venue: 'NeurIPS 2025 GenProCC Workshop', url: 'https://arxiv.org/abs/2510.03418' },
-  { title: 'Scalable Multilingual PII Annotation for Responsible AI in LLMs', venue: 'IEEE ICDM Workshops 2025', url: 'https://arxiv.org/abs/2510.06250' },
+  { title: 'LegalWiz', venue: 'NeurIPS 2025 GenProCC Workshop', url: 'https://arxiv.org/abs/2510.03418', method: 'A multi-agent framework that writes legal-style documents with six kinds of planted contradictions, to test whether AI systems can catch them.', contribution:'I am a co-author.', demo:'The demo here is a simplified lease example, not the full framework.' },
+  { title: 'Scalable Multilingual PII Annotation for Responsible AI in LLMs', venue: 'IEEE ICDM Workshops 2025', url: 'https://arxiv.org/abs/2510.06250', method:'A human-in-the-loop framework for labelling personal data across 13 locales and about 336 PII types, producing high-quality data for fine-tuning LLMs.', contribution:'I am a co-author.', demo:'The detector here is a simple rule-based illustration.' },
 ];
 export const EDU = [
   { school: 'Northeastern University, Boston', what: 'Master\'s in Engineering Management, specialisation in Data Science' },
@@ -17,7 +17,7 @@ export const EDU = [
 ];
 /** Newest first. `where` = [city id, spot title] so the 30-second version can deep-link. */
 export const ROLES = [
-  { role: 'Founder & Lead AI Engineer', org: 'Brokai Labs', place: 'Bangalore', when: 'Nov 2025–now', where: ['brokai', 'Brokai Labs'] },
+  { role: 'Founder & Lead AI Engineer', org: 'Brokai Labs', place: 'Bangalore', when: 'Nov 2025–Oct 2026', where: ['brokai', 'Brokai Labs'] },
   { role: 'Founding AI/ML Engineer', org: 'Oaklet', place: 'Berkeley, CA', when: 'Sep–Oct 2025', where: ['sf', 'Oaklet'] },
   { role: 'AI Engineer', org: 'Centific', place: 'Bellevue', when: 'May 2024–Aug 2025', where: ['seattle', 'Centific'] },
   { role: 'Data Scientist (Co-op)', org: '7-Eleven', place: 'Irving, TX', when: 'Jun–Dec 2022', where: ['irving', '7-Eleven'] },
@@ -25,7 +25,24 @@ export const ROLES = [
 ];
 /** Projects that are not tied to a city. */
 export const PROJECTS = [
-  { name: 'Hapi', text: 'FastAPI tool-calling prototype with 28 defined actions across Gmail, Sheets, Slack and PostgreSQL (auth, credential encryption, schema migrations, execution logs).' },
+  { id:'jarvis', name:'Jarvis', status:'Voice agent · Brokai Labs · a team project I started', where:['brokai','Brokai Labs'],
+    text:'A voice assistant that remembers context and gets work done across Slack, Linear, Gmail, Calendar and Notion, so you can ask once instead of switching between five apps.',
+    contribution:'I started Jarvis and wrote most of the first voice agent on LiveKit, then brought in collaborators and led the team as it grew. I evaluated it with 30–40 test cases per round, scoring task completion, tool routing and answer relevance.',
+    flow:['You speak; LiveKit streams the voice session','Jarvis recalls what it knows about you and the task','It picks the right workplace tool','It takes the action or answers back by voice','Every run is traced and scored'],
+    limitations:['The demo here is a small rule-based Slack-to-Linear example, so you can see the flow without connecting real accounts.','The full system was built with a team, and its code is private.'],
+    evidenceNote:'Built on LiveKit with persistent memory, tool handlers for Slack, Linear, Gmail, Calendar and Notion, and tracing on every session. Each evaluation round used 30–40 cases.' },
+  { id:'hapi', name:'Hapi', status:'Prototype · my own project', where:['brokai','Brokai Labs'],
+    text:'One API that lets an AI agent take actions in Gmail, Sheets, Slack and PostgreSQL, instead of a separate integration for every app.',
+    contribution:'I designed and built Hapi, with my team supporting the work. It puts four connector families and 28 actions behind a single execution endpoint.',
+    flow:['The agent sends one authenticated request','Hapi finds the action in its registry','The right connector runs it with stored, encrypted credentials','The reply is trimmed to what the agent needs, and the run is logged'],
+    limitations:['Hapi is a prototype, not a product in production.','This site does not connect to any real account.'],
+    evidenceNote:'FastAPI backend with OAuth and API-key sign-in, encrypted credentials, database migrations, configurable response fields, execution logs and a React management screen.' },
+  { id:'salon', name:'Salon voice receptionist', status:'Client work · Brokai Labs · first paying customer', where:['brokai','The salon (US client)'],
+    text:'An AI voice receptionist for a US salon that answers calls, books appointments and handles rescheduling.',
+    contribution:'I took it from the first customer conversation to launch: scoping the calls, building the agent on Retell and rolling it out.',
+    flow:['A client calls the salon','The agent understands the request and collects the details','It checks availability and runs the booking tools','It confirms the booking or change on the call'],
+    limitations:['The call on this site uses your browser\'s voice and a pretend calendar; no real booking is made.','Real call recordings stay private to the client.'],
+    evidenceNote:'The salon handled about 300 calls and 240 confirmed bookings a month through it (client-reported figures).' },
 ];
 /** Short "what you'll do" phrase per mission, used to tease the next stop. */
 export const MISSION_TEASE = {
@@ -39,19 +56,18 @@ export const STOPS = [
     id: 'nadiad', tz: 'Asia/Kolkata', wlat: 22.69, wlon: 72.86, name: 'Nadiad', lat: 22.69, lon: 72.86, stamp: '#C2571A',
     region: 'Gujarat, India', coord: '22.69° N, 72.86° E', mood: 'A warm, dusty morning',
     spots: [
-      { t: 'The lane I grew up on', m: 'Home', b: '<p class="city">Nadiad is a small city in Gujarat\'s Kheda district, the heart of India\'s dairy belt.</p><p class="todo">Your story: growing up here, your family, what you did as a kid.</p>' },
-      { t: 'Santram Mandir', m: 'The town', b: '<p class="city">The white spires of the Santram Mandir are Nadiad\'s best-known landmark.</p><p class="todo">Your memory of the temple, or of the town around it.</p>' },
-      { t: 'The family farm', m: 'Family', b: '<p>My family runs a dairy farm in Nadiad.</p><p class="todo">Your story: what the farm taught you about running something real.</p>' },
-      { t: 'Uttarayan', m: 'Every January', b: '<p class="city">Every January 14, the sky over Gujarat fills with kites for Uttarayan.</p><p class="todo">Your Uttarayan story: the rooftops, the cut kites, the people.</p>' },
+      { t: 'The lane I grew up on', m: 'Home', b: '<p class="city">Nadiad is a small city in Gujarat\'s Kheda district, the heart of India\'s dairy belt.</p><p>I grew up here.</p>' },
+      { t: 'Santram Mandir', m: 'The town', b: '<p class="city">The white spires of the Santram Mandir are Nadiad\'s best-known landmark.</p><p>It is the town\'s most famous temple, and I have been going there since I was a child.</p>' },
+      { t: 'The family farm', m: 'Family', b: '<p>My dad owns a dairy farm here with close to 100 cattle. It is where he is happily spending the next stage of his life.</p>' },
+      { t: 'Uttarayan', m: 'Every January', b: '<p class="city">Every January 14, the sky over Gujarat fills with kites for Uttarayan, one of Gujarat\'s biggest festivals.</p>' },
     ],
   },
   {
     id: 'blr', tz: 'Asia/Kolkata', wlat: 12.93, wlon: 77.53, name: 'Bangalore', lat: 12.97, lon: 77.59, stamp: '#2E7D4F',
     region: 'Karnataka, India', coord: '12.97° N, 77.59° E', mood: 'Evening rush, the streetlights coming on',
     spots: [
-      { t: 'PES University', m: 'Bachelor\'s degree, 2016–2020', b: '<p>I left Nadiad for Bangalore to do my bachelor\'s in mechanical engineering at PES University, 2016–2020.</p><p class="todo">Add: one story from campus.</p>' },
-      { t: 'ANA Packaging & Trading', m: 'Founder, Jun 2020–Jul 2021 · paper-cup manufacturer', mission: 'machine', b: '<p>Right after my bachelor\'s I founded ANA and spent a year making paper cups. We sold them for under ₹1 each in a commodity market with thin margins, so volume and waste decided everything.</p><p>I learned the machines by repairing them. The year ran straight through COVID, and we kept the factory going.</p><p>I managed inventory and buyer-risk decisions using R/SQL analysis and A/B tests:</p><ul><li>Stockouts fell 17%</li><li>Payment defaults fell 70%</li><li>Order conversion rose 16.2%</li></ul>' },
-      { t: 'The darshini', m: 'Life in Bangalore', b: '<p class="city">Bangalore runs on filter coffee from standing-room darshinis, and on traffic you learn to plan your day around.</p><p class="todo">Your story: friends, where you lived, your weekends.</p>' },
+      { t: 'PES University', m: 'Bachelor\'s degree, 2016–2020', b: '<p>I left Nadiad for Bangalore to do my bachelor\'s in mechanical engineering at PES University, 2016–2020.</p>' },
+      { t: 'ANA Packaging & Trading', m: 'Founder, Jun 2020–Jul 2021 · paper-cup manufacturer', mission: 'machine', b: '<p>June 2020. I had just finished engineering college, the country was in lockdown, and I started a paper-cup factory. Each cup sold for less than ₹1, so every wasted cup was money gone.</p><p>Then the rims started cracking. I adjusted the curling stage, where the cracks showed, iteration after iteration. Nothing worked. The real fault was earlier: the paper was slightly misaligned during folding, long before the damage was visible.</p><p>That machine taught me the lesson I still use in every AI system I build: trace the fault through the whole line before you touch the part where it shows.</p><p>I also ran inventory and buyer-risk decisions on R/SQL analysis and A/B tests:</p><ul><li>Stockouts fell 17%</li><li>Payment defaults fell 70%</li><li>Order conversion rose 16.2%</li></ul>' },
     ],
   },
   {
@@ -59,8 +75,8 @@ export const STOPS = [
     region: 'Massachusetts, USA', coord: '42.34° N, 71.09° W', mood: 'A snowy winter night',
     spots: [
       { t: 'Northeastern University', m: 'Master\'s degree', mission: 'train', b: '<p>My master\'s at Northeastern: Engineering Management, with a specialisation in Data Science.</p>' },
-      { t: 'My first apartment', m: 'On my own', b: '<p>The first time I lived on my own, in another country: managing money, work and life at the same time.</p><p class="todo">One small story from that apartment.</p>' },
-      { t: 'The Green Line', m: 'Getting around', b: '<p class="city">The Green Line\'s E branch runs right past campus, down Huntington Avenue.</p><p class="todo">Your story: your first Boston winter.</p>' },
+      { t: 'My first apartment', m: 'On my own', b: '<p>In Boston, for the first time, there was no one at home to ask. I was in another country, starting a master\'s at Northeastern, and suddenly every decision was mine: rent, groceries, what to save and what to spend.</p><p>I learned to balance classes with work, stretch a budget, and keep applying until the 7-Eleven co-op came through. It was the year I started running my own life.</p>' },
+      { t: 'The Green Line', m: 'Getting around', b: '<p class="city">The Green Line\'s E branch runs right past campus, down Huntington Avenue.</p>' },
     ],
   },
   {
@@ -68,7 +84,7 @@ export const STOPS = [
     region: 'Texas, USA', coord: '32.81° N, 96.95° W', mood: 'A hot, bright afternoon',
     spots: [
       { t: '7-Eleven', m: 'Data Scientist (Co-op), Jun–Dec 2022', mission: 'etl', b: '<p>Rebuilt ETL pipelines in PySpark across 10+ sources, improving data accuracy 18% and cutting KPI runtimes 23.7%; automated unsupervised clustering of 1,000+ promotional offers at 98.2% accuracy, saving 1,000+ manual hours a year.</p>' },
-      { t: 'The Mustangs of Las Colinas', m: 'Irving\'s landmark', b: '<p class="city">Nine bronze mustangs gallop through a fountain in Williams Square, Irving\'s best-known sight.</p><p class="todo">Your story: a Texas summer and fall.</p>' },
+      { t: 'The Mustangs of Las Colinas', m: 'Irving\'s landmark', b: '<p class="city">Nine bronze mustangs gallop through a fountain in Williams Square, Irving\'s best-known sight.</p>' },
       { t: 'The store counter', m: 'Why it mattered', b: '<p>Every one of those promotions ends up as a sign on a counter like this. Grouping them automatically gave people back hours they used to spend sorting offers by hand.</p>' },
     ],
   },
@@ -76,10 +92,10 @@ export const STOPS = [
     id: 'seattle', tz: 'America/Los_Angeles', wlat: 47.61, wlon: -122.34, name: 'Seattle & Bellevue', short: 'Bellevue', lat: 47.61, lon: -122.20, stamp: '#2F5D6E',
     region: 'Washington, USA', coord: '47.61° N, 122.20° W', mood: 'Rain, and Mount Rainier somewhere behind the clouds',
     spots: [
-      { t: 'Centific', m: 'AI Engineer, May 2024–Aug 2025', b: '<p>My first full-time role after my master\'s, in Bellevue. I worked across three AI teams and learned how AI systems are actually built, tested and shipped.</p><ul><li>Audio pipeline on Azure Blob Storage and Label Studio: 6,000+ hours a week across 6+ locales, processing time down 70%, failures down 85%, 99.5% uptime.</li><li>Human-in-the-loop speaker-label validation for noisy audio: 95%+ labeling accuracy.</li><li>Near-duplicate detection across 10+ languages, including right-to-left and character-based scripts: associated costs down 30%.</li></ul>' },
-      { t: 'Catch the leak', m: 'Research: multilingual PII annotation', mission: 'pii', b: `<p><b>Scalable Multilingual PII Annotation for Responsible AI in LLMs</b>, IEEE ICDM Workshops 2025. Published while at Centific.</p><p>${A('https://arxiv.org/abs/2510.06250', 'Read the paper on arXiv')}</p>` },
-      { t: 'Agents that argue', m: 'Research: LegalWiz', mission: 'agents', b: `<p><b>LegalWiz</b>: a multi-agent framework for contradiction detection in legal documents, NeurIPS 2025 GenProCC workshop (co-author). Published while at Centific.</p><p>${A('https://arxiv.org/abs/2510.03418', 'Read the paper on arXiv')}</p>` },
-      { t: 'The badminton court', m: 'Off hours', b: '<p>Badminton, whenever I get the chance.</p><p class="todo">Your story: the people you played with.</p>' },
+      { t: 'Centific', m: 'AI Engineer, May 2024–Aug 2025', b: '<p>Bellevue was my first full-time job after my master\'s. I moved across three AI teams and learned how these systems are built, tested and shipped. It was a steep period of technical learning.</p><ul><li>Audio pipeline on Azure Blob Storage and Label Studio: 6,000+ hours a week across 6+ locales, processing time down 70%, failures down 85%, 99.5% uptime.</li><li>Human-in-the-loop speaker-label validation for noisy audio: 95%+ labeling accuracy.</li><li>Near-duplicate detection across 10+ languages, including right-to-left and character-based scripts: associated costs down 30%.</li></ul>' },
+      { t: 'Catch the leak', m: 'Research: multilingual PII annotation', mission: 'pii', b: `<p><b>${PAPERS[1].title}</b>, ${PAPERS[1].venue}. ${PAPERS[1].contribution}</p><p>${PAPERS[1].method} ${PAPERS[1].demo}</p><p>${A(PAPERS[1].url, 'Read the paper on arXiv')}</p>` },
+      { t: 'Agents that argue', m: 'Research: LegalWiz', mission: 'agents', b: `<p><b>${PAPERS[0].title}</b>, ${PAPERS[0].venue}. ${PAPERS[0].contribution}</p><p>${PAPERS[0].method} ${PAPERS[0].demo}</p><p>${A(PAPERS[0].url, 'Read the paper on arXiv')}</p>` },
+      { t: 'The badminton court', m: 'Off hours', b: '<p>Badminton, whenever I get the chance.</p>' },
     ],
   },
   {
@@ -87,16 +103,16 @@ export const STOPS = [
     region: 'California, USA', coord: '37.77° N, 122.42° W', mood: 'Golden hour, the fog rolling in',
     spots: [
       { t: 'Oaklet', m: 'Founding AI/ML Engineer, Sep–Oct 2025', b: '<p>Oaklet\'s first AI engineer, in my last few months in the US.</p><ul><li>Built a healthcare appointment assistant that booked appointments, reserved calendar slots and sent emails.</li><li>Implemented a patient-intake workflow with seven question types in React, Express/TypeScript and DynamoDB, with encryption, audit logging and retry handling.</li></ul>' },
-      { t: 'The view from the hill', m: 'Bigger ambitions', mission: 'goal', b: '<p>Being around founders and investors here made my ambitions much bigger. It also taught me to break them into short steps I could actually ship.</p>' },
+      { t: '24 hours at Y Combinator', m: 'The place I had dreamed about', mission: 'goal', b: '<p>For years, Y Combinator was a name I only read about. In my last months in the US, I spent 24 hours inside its building for a hackathon, building through the night in the place I had always dreamed of seeing.</p><p>Around it was the Bay Area: Oaklet, where I joined as the first AI engineer, and conversations with founders and investors that changed the scale of my ambitions. I left with a habit I still keep: hold the big goal, and break it into steps I can ship this week.</p>' },
     ],
   },
   {
-    id: 'brokai', tz: 'Asia/Kolkata', wlat: 12.986, wlon: 77.737, name: 'Bangalore, again', short: 'Bangalore', lat: 12.93, lon: 77.62, stamp: '#1F2A5C',
+    id: 'brokai', tz: 'Asia/Kolkata', wlat: 12.93, wlon: 77.62, name: 'Bangalore, again', short: 'Bangalore', lat: 12.93, lon: 77.62, stamp: '#1F2A5C',
     region: 'Karnataka, India', coord: '12.93° N, 77.62° E', mood: 'Late night, the tech parks still lit',
     spots: [
-      { t: 'Brokai Labs', m: 'Founder & Lead AI Engineer, Nov 2025–now', mission: 'jarvis', b: '<p>I came back to India to build for Indian businesses, and founded Brokai Labs, an AI and automation agency.</p><ul><li><b>Jarvis</b>: a LiveKit LLM voice agent with persistent memory and tool integrations across Slack, Linear, Gmail, Calendar and Notion, evaluated on 30–40 cases per round for task completion, tool routing and answer relevance.</li><li><b>Résumé ranking</b>: led delivery of a bulk résumé-ingestion and candidate-ranking workflow used to screen 300+ applicants.</li><li><b>Hapi</b> (project): a FastAPI tool-calling prototype with 28 defined actions across Gmail, Sheets, Slack and PostgreSQL, with auth, credential encryption, schema migrations and execution logs.</li></ul><p><button type="button" class="go" data-founders>What I can build for you</button></p>' },
-      { t: 'The salon (US client)', m: 'Voice AI for a salon in the US', mission: 'voice', b: '<p>Brokai\'s first paying customer: a US salon. I took its AI voice receptionist (built on Retell) from customer discovery through engineering rollout.</p><ul><li>About 300 calls a month</li><li>About 240 confirmed bookings a month</li></ul>' },
-      { t: 'Your company here', m: 'The next stop', mission: 'lot', b: '<p>This plot is empty on purpose. Tell me what your team builds and I\'ll put up a first sketch of where I\'d start.</p>' },
+      { t: 'Brokai Labs', m: 'Founder & Lead AI Engineer, Nov 2025–Oct 2026', mission: 'jarvis', b: `<p>I came back to India to build for Indian businesses, and founded Brokai Labs, an AI and automation agency.</p><ul><li><b>Jarvis</b>: ${PROJECTS[0].text}</li><li><b>Résumé ranking</b>: led delivery of a bulk résumé-ingestion and candidate-ranking workflow used to screen 300+ applicants.</li><li><b>Hapi</b>: ${PROJECTS[1].text}</li></ul><p><button type="button" class="go" data-founders>What I can build for you</button></p>` },
+      { t: 'The salon (US client)', m: 'Voice AI for a salon in the US', mission: 'voice', b: `<p>Brokai's first paying customer was a US salon. ${PROJECTS[2].text}</p><p>${PROJECTS[2].evidenceNote}</p>` },
+      { t: 'Your company here', m: 'The next stop', mission: 'lot', b: '<p>This empty lot is an invitation to imagine what we might build together.</p>' },
     ],
   },
 ];
@@ -104,6 +120,6 @@ export const STOPS = [
 // Travel legs: 'd' drive, 'f' fly.
 export const LEGS = [[0, 1, 'd'], [1, 2, 'f'], [2, 3, 'd'], [3, 4, 'd'], [4, 5, 'd'], [5, 6, 'f']];
 
-export const CONTACT = { email: 'nand@brokailabs.com', site: 'https://nanddave.github.io/nand-world-portfolio/', resume: './Nand_Dave_Resume.pdf', linkedin: 'https://www.linkedin.com/in/nanddave', github: 'https://github.com/nanddave' };
+export const CONTACT = { email: 'nanddave99@gmail.com', site: 'https://nanddave.life/', resume: './Nand_Dave_Resume.pdf', booking: '', linkedin: 'https://www.linkedin.com/in/nanddave', github: 'https://github.com/nanddave' };
 /** False for placeholders ('', '#', or '[...]'): such values must never render to a visitor. */
 export const isReal = v => typeof v === 'string' && v.trim() !== '' && v.trim() !== '#' && !v.trim().startsWith('[');
