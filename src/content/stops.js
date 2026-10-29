@@ -58,7 +58,7 @@ export const STOPS = [
     spots: [
       { t: 'The lane I grew up on', m: 'Home', b: '<p class="city">Nadiad is a small city in Gujarat\'s Kheda district, the heart of India\'s dairy belt.</p><p>I grew up here.</p>' },
       { t: 'Santram Mandir', m: 'The town', b: '<p class="city">The white spires of the Santram Mandir are Nadiad\'s best-known landmark.</p><p>It is the town\'s most famous temple, and I have been going there since I was a child.</p>' },
-      { t: 'The family farm', m: 'Family', b: '<p>My dad owns a dairy farm here with close to 100 cows. It is where he is happily spending the next stage of his life.</p>' },
+      { t: 'The family farm', m: 'Family', b: '<p>My dad owns a dairy farm here with close to 100 cattle. It is where he is happily spending the next stage of his life.</p>' },
       { t: 'Uttarayan', m: 'Every January', b: '<p class="city">Every January 14, the sky over Gujarat fills with kites for Uttarayan, one of Gujarat\'s biggest festivals.</p>' },
     ],
   },
@@ -120,6 +120,6 @@ export const STOPS = [
 // Travel legs: 'd' drive, 'f' fly.
 export const LEGS = [[0, 1, 'd'], [1, 2, 'f'], [2, 3, 'd'], [3, 4, 'd'], [4, 5, 'd'], [5, 6, 'f']];
 
-export const CONTACT = { email: 'nand@brokailabs.com', site: 'https://nand-world-portfolio.vercel.app/', resume: './Nand_Dave_Resume.pdf', linkedin: 'https://www.linkedin.com/in/nanddave', github: 'https://github.com/nanddave' };
+export const CONTACT = { email: 'nanddave99@gmail.com', site: 'https://nand-world-portfolio.vercel.app/', resume: './Nand_Dave_Resume.pdf', linkedin: 'https://www.linkedin.com/in/nanddave', github: 'https://github.com/nanddave' };
 /** False for placeholders ('', '#', or '[...]'): such values must never render to a visitor. */
 export const isReal = v => typeof v === 'string' && v.trim() !== '' && v.trim() !== '#' && !v.trim().startsWith('[');
