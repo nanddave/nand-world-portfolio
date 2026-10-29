@@ -12,7 +12,7 @@ import { liveFor, localTime } from './core/live.js';
 import { createPost } from './core/post.js';
 import { Sound } from './core/sound.js';
 import { createTrailer } from './core/trailer.js';
-import { ask, search, SUGGESTIONS } from './core/copilot.js';
+import { ask, search, SUGGESTIONS, PERSONA_SUGGESTIONS } from './core/copilot.js';
 import { createCard } from './ui/card.js';
 import { setupModals, openModal, closeModals, openProject, renderPassport, setProgress } from './ui/modals.js';
 
@@ -356,10 +356,10 @@ async function runAsk(q, { voice = false } = {}) {
   stopSpeaking(); pilotSay('Searching…');
   const r = await ask(q); if (voice) speak(r.text);
   if (r.match) {
-    const s = STOPS[r.match.ci], sp = s.spots[r.match.k];
-    pilotSay(r.text, `Matched: ${s.name} · ${sp.t}` + (r.match.score != null ? ` (score ${r.match.score.toFixed(2)})` : ' (remote answer)'));
-    jumpTo(r.match.ci, r.match.k);
-  } else pilotSay(r.text, r.best ? `Closest: ${STOPS[r.best.ci].spots[r.best.k].t} (score ${r.best.score.toFixed(2)}, below the 1.60 cut-off)` : 'No words matched any story.');
+    const m = r.match, label = m.label || `${STOPS[m.ci].name} · ${STOPS[m.ci].spots[m.k].t}`;
+    pilotSay(r.text, `Matched: ${label}` + (m.score != null ? ` (score ${m.score.toFixed(2)})` : ' (remote answer)'));
+    if (m.project) selectProject(m.project); else if (m.modal) { if (state.mode === 'intro') begin(); openModal(m.modal); } else jumpTo(m.ci, m.k);
+  } else pilotSay(r.text, r.best ? `Closest: ${r.best.label} (score ${r.best.score.toFixed(2)}, below the 1.60 cut-off)` : 'No words matched any story.');
 }
 {
   const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
@@ -399,26 +399,37 @@ addEventListener('pointermove', e => {
   if (state.mode === 'city') city.drag(dx, dy); else if (globe.view === 'intro' || globe.view === 'orbit') globe.drag(dx, dy);
 });
 canvas.addEventListener('wheel', e => { e.preventDefault(); if (trailer.active) return; if (state.mode === 'city') city.wheel(e.deltaY); }, { passive: false });
-/* autopilot tour: travels the whole route by itself and opens each story for a few seconds. Any tap or key stops it. */
+/* autopilot tour: asks who is watching, then drives a short route of the stories that matter most to them and ends on the
+   matching sheet. Spots are [city id, spot title]. Any tap or key stops it. */
+const PERSONAS = {
+  recruiter: { chip: 'Hiring', end: '#quick', route: [['brokai', 'Brokai Labs'], ['brokai', 'The salon (US client)'], ['seattle', 'Centific'], ['irving', '7-Eleven'], ['seattle', 'Catch the leak'], ['boston', 'Northeastern University']] },
+  founder: { chip: 'Founder', end: '#build', route: [['brokai', 'The salon (US client)'], ['brokai', 'Brokai Labs'], ['blr', 'ANA Packaging & Trading'], ['sf', 'Oaklet'], ['brokai', 'Your company here']] },
+  engineer: { chip: 'Engineer', end: '#projects', route: [['brokai', 'Brokai Labs'], ['seattle', 'Catch the leak'], ['seattle', 'Agents that argue'], ['seattle', 'Centific'], ['irving', '7-Eleven'], ['boston', 'Northeastern University']] },
+  curious: { chip: 'Explorer', end: null, route: [['nadiad', 'The lane I grew up on'], ['nadiad', 'The family farm'], ['blr', 'ANA Packaging & Trading'], ['boston', 'My first apartment'], ['sf', '24 hours at Y Combinator'], ['seattle', 'The badminton court']] },
+};
 const tour = { on: false, v: 0 }, pause = ms => new Promise(r => setTimeout(r, ms)); // reading time, even with reduced motion
 function stopTour() { if (!tour.on) return; tour.on = false; tour.v++; document.body.classList.remove('touring'); $('#tourChip').hidden = true; }
-async function runTour() {
-  if (tour.on || trailer.active) return;
-  closeModals(); tour.on = true; const v = ++tour.v; document.body.classList.add('touring'); $('#tourChip').hidden = false;
+async function runTour(key) {
+  const P = PERSONAS[key]; if (tour.on || trailer.active || !P) return;
+  closeModals(); tour.on = true; const v = ++tour.v; document.body.classList.add('touring'); $('#tourChip').textContent = `Autopilot tour · ${P.chip} · tap to stop`; $('#tourChip').hidden = false;
+  $('#sugg').innerHTML = PERSONA_SUGGESTIONS[key].map(q => `<button type="button" data-q="${q}">${q}</button>`).join('');
   const alive = () => tour.on && tour.v === v;
   const until = async fn => { const t0 = performance.now(); while (alive() && !fn() && performance.now() - t0 < 60000) await pause(200); return alive() && fn(); };
   try {
-    for (let i = 0; i < STOPS.length && alive(); i++) {
-      travelTo(i);
-      if (!await until(() => state.mode === 'city' && state.cityIdx === i && !state.transit)) break;
-      await pause(1500);
-      for (let k = 0; k < STOPS[i].spots.length && alive(); k++) { focusSpot(k); await pause(5200); }
-      if (alive()) { card.close(); unfocus(); await pause(700); }
+    for (const [id, title] of P.route) {
+      if (!alive()) break;
+      const i = STOPS.findIndex(s => s.id === id), k = STOPS[i].spots.findIndex(sp => sp.t === title);
+      if (state.mode !== 'city' || state.cityIdx !== i) { card.close(); travelTo(i); if (!await until(() => state.mode === 'city' && state.cityIdx === i && !state.transit)) break; await pause(1500); }
+      if (!alive()) break;
+      focusSpot(k); await pause(5200);
     }
+    if (alive()) { card.close(); unfocus(); if (P.end) { stopTour(); openModal(P.end); } }
   } finally { if (tour.v === v) stopTour(); }
 }
-$('#tourBtn').addEventListener('click', runTour);
-$('#tourMenuBtn').addEventListener('click', runTour);
+const askPersona = () => { if (!tour.on && !trailer.active) openModal('#persona'); };
+$('#persona').addEventListener('click', e => { const b = e.target.closest('[data-persona]'); if (b) runTour(b.dataset.persona); });
+$('#tourBtn').addEventListener('click', askPersona);
+$('#tourMenuBtn').addEventListener('click', askPersona);
 $('#tourChip').addEventListener('click', stopTour);
 for (const ev of ['pointerdown', 'keydown', 'wheel']) addEventListener(ev, e => { if (tour.on && !e.target.closest?.('#tourChip, #tourBtn, #tourMenuBtn')) stopTour(); }, true);
 

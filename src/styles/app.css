@@ -361,3 +361,4 @@ body.motion-paused .spot .ring{animation:none}
 .places-info{margin:14px 0 0;font-size:13px;line-height:1.5;color:var(--ink-soft)}.places-info:empty{display:none}
 #tourChip{position:fixed;left:50%;top:calc(76px + env(safe-area-inset-top,0px));transform:translateX(-50%);z-index:9;min-height:44px;padding:0 18px;border:0;border-radius:99px;background:var(--sun,#FFC93C);color:var(--sun-ink,#16192E);font:700 14px var(--body,system-ui);box-shadow:0 6px 20px rgba(0,0,0,.25)}
 #tourChip[hidden]{display:none}body.touring #pilot{display:none}
+.personas{display:grid;gap:10px;margin-top:14px}.personas .btn{display:flex;flex-direction:column;align-items:flex-start;gap:2px;text-align:left;min-height:56px;padding:10px 16px}.personas small{font:500 13px/1.35 var(--body,system-ui);opacity:.8}

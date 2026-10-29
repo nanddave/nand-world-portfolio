@@ -71,7 +71,7 @@ export const REEL = [
   { at: 25.6, do: 'chip', text: 'Recruiters: put your company in the link.', dur: 2.9 },
 
   // 28.6–31.6 s  PROOF — numbers people repeat.
-  { at: 28.6, do: 'stats', items: [[0, 'paid tools'], [7, 'cities'], [9, 'live AI demos']], dur: 3.0 },
+  { at: 28.6, do: 'stats', items: [[0, 'paid tools'], [7, 'stops'], [9, 'live AI demos']], dur: 3.0 },
 
   // 31.6–35 s  ONE ACTION.
   { at: 31.6, do: 'end', dur: 3.4 },
