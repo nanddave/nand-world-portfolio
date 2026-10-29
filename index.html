@@ -8,8 +8,8 @@
 <meta property="og:type" content="website">
 <meta property="og:title" content="Nand Dave | Nand's World — Applied AI">
 <meta property="og:description" content="Explore Nand Dave's applied AI work, voice agents and data systems through an interactive journey.">
-<meta property="og:image" content="https://nand-world-portfolio.vercel.app/og.png">
-<meta property="og:url" content="https://nand-world-portfolio.vercel.app/">
+<meta property="og:image" content="https://nanddave.life/og.png">
+<meta property="og:url" content="https://nanddave.life/">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="theme-color" content="#0B1026">
 <style>
@@ -43,7 +43,7 @@
     <button class="btn primary" id="startBtn" type="button">Start the journey</button>
     <button class="btn ghost" id="quickBtn2" type="button">Hiring? 30-second version</button>
   </div>
-  <p class="founders"><a id="resumeBtn" href="./Nand_Dave_Resume.pdf" target="_blank" rel="noopener">Résumé</a> · <button class="linkbtn" id="foundersLink" type="button" aria-haspopup="dialog">For founders</button></p>
+  <p class="founders"><a id="resumeBtn" href="./Nand_Dave_Resume.pdf" target="_blank" rel="noopener">Résumé</a> · <button class="linkbtn" id="foundersLink" type="button" aria-haspopup="dialog">For founders</button> · <button class="linkbtn" id="tourBtn" type="button">Watch the autopilot tour</button></p>
   <div class="hint">drag to spin the earth</div>
 </section>
 
@@ -54,6 +54,7 @@
 <div id="ctitle"><div class="stop" id="cStop"></div><h2 id="cName"></h2><div class="meta" id="cMeta"></div><div class="credit" id="cCredit"></div><div class="scene-label" id="cScene">Designed scene</div><div class="live" id="cLive" hidden><span id="cLiveT"></span> <span class="wxcredit" id="cWxCredit" hidden>Weather: Open-Meteo.com</span></div><button type="button" class="chip livebtn" id="moodBtn" aria-pressed="true" hidden>Live</button><button type="button" class="chip drivebtn" id="driveBtn" aria-pressed="false">Drive</button><button type="button" class="chip drivebtn" id="carBtn" aria-label="Change car">Car: Classic</button><button type="button" class="chip drivebtn" id="placesBtn" aria-haspopup="dialog">Places in this city</button></div>
 <div id="speedo" aria-hidden="true"><b id="speedN">0</b><span>km/h</span></div>
 <button type="button" id="drivePrompt" hidden></button>
+<button type="button" id="tourChip" hidden>Autopilot tour · tap to stop</button>
 <div id="driveHint" aria-hidden="true">WASD / arrows to drive · H horn · C change car · E open a spot · Esc back to orbit</div>
 <div id="joy" aria-label="Driving joystick"><i></i></div>
 <button type="button" id="hornBtn" aria-label="Horn">Horn</button>
@@ -89,10 +90,10 @@
   <div class="stops" id="stops"></div>
 </nav>
 
-<div class="modal" id="places" hidden><div class="sheet" role="dialog" aria-modal="true" aria-labelledby="placesT"><button class="sx" type="button" data-close aria-label="Close">×</button><h2 id="placesT">Places in this city</h2><div id="placesList" class="menu-links"></div></div></div>
+<div class="modal" id="places" hidden><div class="sheet" role="dialog" aria-modal="true" aria-labelledby="placesT"><button class="sx" type="button" data-close aria-label="Close">×</button><h2 id="placesT">Places in this city</h2><div id="placesList" class="menu-links"></div><p class="places-info" id="placesInfo"></p></div></div>
 <div class="modal" id="menu" hidden><div class="sheet" role="dialog" aria-modal="true" aria-labelledby="menuT">
   <button class="sx" type="button" data-close aria-label="Close">×</button><h2 id="menuT">Menu</h2>
-  <div class="menu-links"><button id="cvLink" type="button">Read without 3D</button><button id="quickBtn" type="button">30-second version</button><button id="projectsBtn" type="button">Projects</button><button id="skillsBtn" type="button">Skills</button><button id="copilotBtn" type="button">Open co-pilot</button><button id="motionBtn" type="button" aria-pressed="false">Pause scene motion</button><button id="howBtn" type="button">How this was built</button><button id="trailerBtn" type="button">Watch the 60-s trailer</button></div>
+  <div class="menu-links"><button id="tourMenuBtn" type="button">Autopilot tour</button><button id="cvLink" type="button">Read without 3D</button><button id="quickBtn" type="button">30-second version</button><button id="projectsBtn" type="button">Projects</button><button id="skillsBtn" type="button">Skills</button><button id="copilotBtn" type="button">Open co-pilot</button><button id="motionBtn" type="button" aria-pressed="false">Pause scene motion</button><button id="howBtn" type="button">How this was built</button><button id="trailerBtn" type="button">Watch the 60-s trailer</button></div>
 </div></div>
 <div class="modal" id="projects" hidden><div class="sheet wide" role="dialog" aria-modal="true" aria-labelledby="projectsT"><button class="sx" type="button" data-close aria-label="Close">×</button><h2 id="projectsT">Projects</h2><div id="projectsList" class="project-list"></div></div></div>
 <div class="modal" id="project" hidden><div class="sheet wide" role="dialog" aria-modal="true" aria-labelledby="projectT"><button class="sx" type="button" data-close aria-label="Close">×</button><h2 id="projectT"></h2><div id="projectBody"></div><div class="project-actions"><button class="btn primary" id="projectVisit" type="button">Visit this chapter</button><a class="btn small" id="projectContact">Email Nand</a></div></div></div>
@@ -178,7 +179,7 @@
     <li><b>Local time and optional weather.</b> Time comes from your browser's clock and the city's time zone. The designed scene is the default; where available, Open-Meteo weather can be selected. The standalone file makes no weather request.</li>
     <li><b>Voice is the browser's own.</b> The mic button and the spoken answers use your browser's built-in speech features (speech recognition and speech synthesis). This site never records or stores audio; where your browser sends speech for recognition is up to the browser.</li>
     <li><b>Your own city.</b> In the hosted version, a city name is sent to a geocoder and OpenStreetMap's Overpass to draw streets; a designed street is used when those requests fail. The standalone build uses the designed street without these requests.</li>
-    <li><b>Runtime and code access.</b> The site uses no paid APIs or assets in this build. Sound is synthesised with WebAudio. The code for this portfolio is open on GitHub; the client and team projects it describes stay private.</li>
+    <li><b>Runtime and code access.</b> The site uses no paid APIs or assets in this build. Sound is synthesised with WebAudio. Visits are counted with Vercel Web Analytics, which uses no cookies. The code for this portfolio is open on GitHub; the client and team projects it describes stay private.</li>
   </ul>
   <div class="contact"><a class="btn small" id="howRepo" href="#" rel="noopener" target="_blank">View the source on GitHub</a><button class="btn" type="button" data-close data-autofocus>Back to the trip</button></div>
 </div></div>

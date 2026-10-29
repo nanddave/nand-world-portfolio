@@ -70,7 +70,8 @@ export function setupModals({ onGo, onTrip, onBlockingOpen, onProject, onClosePr
     ['Résumé screening and ranking', 'Bulk résumé ingestion and candidate ranking, used to screen 300+ applicants.', 'brokai', 'Brokai Labs'],
   ];
   $('#offerList').innerHTML = offers.map(([t, d, id, st]) => `<li><div><b>${esc(t)}</b><span>${esc(d)}</span></div>${seeIt(spotIdx(id, st)).replace('class="go"', 'class="btn small"')}</li>`).join('');
-  $('#callBtn').href = mailHref(VISITOR.company ? `20-min call: ${VISITOR.company}` : '20-min call');
+  // A real booking link (CONTACT.booking) replaces the email fallback once one exists.
+  $('#callBtn').href = isReal(CONTACT.booking) ? CONTACT.booking : mailHref(VISITOR.company ? `20-min call: ${VISITOR.company}` : '20-min call');
   $('#buildLinkedin').href = CONTACT.linkedin; $('#buildLinkedin').hidden = !isReal(CONTACT.linkedin);
   $('#buildResume').href = resumeUrl; $('#buildResume').textContent = resumeLabel; $('#buildResume').hidden = !isReal(CONTACT.resume);
 

@@ -104,7 +104,7 @@ links.add(await page.goto(origin + '/').then(() => page.evaluate(() => document.
 for (const href of [...links].filter(h => h && /^https?:/.test(h))) {
   const internal = href.startsWith(origin);
   if (!internal && !online) continue;
-  const url = internal ? href : href.replace(/^https:\/\/nand-world-portfolio\.vercel\.app/, origin);
+  const url = internal ? href : href.replace(/^https:\/\/nanddave\.life/, origin);
   try {
     const r = await fetch(url, { method: 'GET', redirect: 'follow', headers: { 'user-agent': 'Mozilla/5.0 launch-test' } });
     check(r.ok || (r.status === 999 && /linkedin/.test(url)), `link ${href} → ${r.status}`);

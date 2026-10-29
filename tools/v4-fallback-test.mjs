@@ -27,7 +27,7 @@ try {
  const ctx=await browser.newContext(), p=await ctx.newPage(), requests=[];
  p.on('request',r=>{if(/^https?:/.test(r.url())) requests.push(r.url())});await p.route('https://**/*',r=>r.abort());
  await p.goto(standalone+'?yours=London');await p.waitForFunction(()=>window.__app?.state.custom,{timeout:30000});
- for(const id of ['resumeBtn','talkCv','buildResume']) {const link=p.locator('#'+id);assert.ok((await link.getAttribute('href')).startsWith('https://nand-world-portfolio.vercel.app/'));assert.ok((await link.textContent()).includes('online'));}
+ for(const id of ['resumeBtn','talkCv','buildResume']) {const link=p.locator('#'+id);assert.ok((await link.getAttribute('href')).startsWith('https://nanddave.life/'));assert.ok((await link.textContent()).includes('online'));}
  assert.ok((await p.locator('#cMeta').innerText()).includes('designed street'));
  await p.evaluate(()=>window.__app.ask('voice AI'));await p.waitForTimeout(500);
  assert.deepEqual(requests.filter(u=>!/fonts\.(googleapis|gstatic)\.com/.test(u)),[],'standalone optional network requests');

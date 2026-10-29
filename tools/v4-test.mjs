@@ -107,9 +107,9 @@ try {
   await cv.close();await p.close();
  } else if(task==='B01') {
   const protectedBullet='Rebuilt ETL pipelines in PySpark across 10+ sources, improving data accuracy 18% and cutting KPI runtimes 23.7%; automated unsupervised clustering of 1,000+ promotional offers at 98.2% accuracy, saving 1,000+ manual hours a year.';assert.ok(STOPS.find(s=>s.id==='irving').spots[0].b.includes(protectedBullet));
-  const chapters=[[1,1,'paper was misaligned'],[2,1,'manage work, money and daily life'],[4,0,'three AI teams'],[5,1,'48-hour hackathons']];
+  const chapters=[[1,1,'misaligned during folding'],[2,1,'started running my own life'],[4,0,'three AI teams'],[5,1,'24 hours inside its building']];
   for(const [ci,k,phrase] of chapters) {const p=await pageAt('',390,844,{reducedMotion:'reduce'});await p.evaluate(async ci=>window.__app.enterCity(ci),ci);await p.evaluate(k=>window.__app.focusSpot(k),k);await p.locator('#card.open').waitFor();assert.ok((await p.locator('#kBody').innerText()).includes(phrase));await p.screenshot({path:`shots/B01-${ci}.png`});await p.close();}
-  const p=await browser.newPage();await p.goto(origin+'/cv.html');const cv=await p.locator('body').innerText();for(const phrase of ['paper was misaligned','manage work, money and daily life','three AI teams','48-hour hackathons',protectedBullet,'LegalWiz','Scalable Multilingual PII']) assert.ok(cv.includes(phrase),phrase);assert.ok(!cv.includes('Your story:'));await p.close();
+  const p=await browser.newPage();await p.goto(origin+'/cv.html');const cv=await p.locator('body').innerText();for(const phrase of ['misaligned during folding','started running my own life','three AI teams','24 hours inside its building',protectedBullet,'LegalWiz','Scalable Multilingual PII']) assert.ok(cv.includes(phrase),phrase);assert.ok(!cv.includes('Your story:'));await p.close();
  } else if(task==='A08') {
   const labels={machine:'Interactive reconstruction',train:'A small model trains',etl:'Browser demonstration',pii:'Rule-based illustration',agents:'Deterministic illustration',goal:'Illustrative breakdown',jarvis:'rules and mock',voice:'fictional calendar',lot:'not a company assessment'};
   for(const [id,phrase] of Object.entries(labels)) {

@@ -8,7 +8,7 @@ const b = await chromium.launch({ executablePath: browserPath, args: ['--use-gl=
 const p = await b.newPage({ viewport: { width: 1280, height: 800 } }); const errs = [];
 p.on('pageerror', e => errs.push(e.message));
 const close = () => p.evaluate(() => { const c = __app.city, car = c.C.heroCar; c.otgt = car.position.clone(); c.otgt.y = 1; c.tdist = 30; c.dist = 9; c.tpitch = c.pitch = .25; c.yaw = car.rotation.y + 2.1; c.paused = true; c.tdist = 9; });
-for (const stop of ['sf', 'boston']) {
+for (const stop of ['sf']) {
   await p.goto(`http://127.0.0.1:${port}/?stop=${stop}`); await p.waitForTimeout(7000);
   for (let i = 0; i < 4; i++) {
     await close(); await p.waitForTimeout(1500);

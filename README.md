@@ -1,6 +1,6 @@
 # Nand's World: an interactive portfolio
 
-Live site: https://nand-world-portfolio.vercel.app
+Live site: https://nanddave.life
 
 Nand Dave is an applied AI engineer who builds voice agents and data systems. This site tells his career as a trip: fly a yellow car across a real Earth, drop into seven street-level cities, and try small working demos of the work he did in each one. Recruiters can skip the 3D: "Hiring? 30-second version" opens a one-screen summary, and "Read without 3D" shows the full plain résumé.
 
@@ -20,7 +20,9 @@ Nand Dave is an applied AI engineer who builds voice agents and data systems. Th
 
 - **Globe travel** over a real Earth, with real great-circle distances.
 - **Seven city scenes** built on OpenStreetMap streets, each with its own light, weather and sound.
-- **Drive mode**: WASD or arrow keys (touch joystick on phones), H horn, C change car, E open a spot, Esc back to orbit. Four cars: Classic (default), Luxury sedan, Hypercar and Off-roader.
+- **Drive mode**: WASD or arrow keys (touch joystick on phones), H horn, C change car, E open a spot, Esc back to orbit. Four cars drawn in code (yellow coupe by default, luxury sedan, hypercar, off-roader) with spinning, steering wheels, body lean, skid marks and props you can knock over.
+- **Autopilot tour**: one button travels the whole route and opens each story for a few seconds; any tap stops it.
+- **San Francisco loop**: main street, an east avenue, the Embarcadero waterfront and a west avenue past the Painted Ladies, with the Golden Gate, Salesforce Tower, Transamerica, Coit Tower, the Ferry Building, the Bay Bridge and a self-driving taxi.
 - **Nine demos** that run entirely in the browser; each says up front what is real and what is illustrative.
 - **Project case studies** for Jarvis, Hapi and the salon receptionist (Menu → Projects).
 - **Co-pilot**: ask a question and it takes you to the right place (local search, optional voice input).
@@ -60,5 +62,7 @@ Build: `npm run build` (site in `dist/`) or `npm run build:single` (one self-con
 ## How it's built
 
 Vite and three.js, plain JavaScript, no framework. Every building, car and landmark is drawn in code; there are no downloaded 3D models. Content lives in `src/content/stops.js`; each city is one file in `src/cities/`, each demo one file in `src/missions/`.
+
+Visits are counted with Vercel Web Analytics (no cookies) on the deployed site.
 
 Data credits: © OpenStreetMap contributors (ODbL); weather by Open-Meteo.com (CC BY 4.0); land outline from Natural Earth.

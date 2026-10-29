@@ -305,6 +305,9 @@ $('#placesBtn').addEventListener('click', () => {
   const spots = state.custom?.spots || STOPS[state.cityIdx]?.spots || [];
   const list = $('#placesList'); list.replaceChildren();
   spots.forEach((spot, i) => { const b = document.createElement('button'); b.type = 'button'; b.textContent = `${i + 1}. ${spot.t}${spot.mission ? ' — interactive demo' : ''}`; b.addEventListener('click', () => { closeModals(); selectSpot(i); }); list.appendChild(b); });
+  // On phones the city header shows only name, stop and controls, so the scene details and credits live here.
+  const info = [$('#cMeta').innerText.replace(/\n/g, ' · '), $('#cLive').hidden ? '' : $('#cLive').innerText, $('#cCredit').textContent].filter(Boolean);
+  $('#placesInfo').textContent = info.join(' · ');
   openModal('#places');
 });
 $('#quickBtn').addEventListener('click', () => openModal('#quick'));
@@ -396,6 +399,29 @@ addEventListener('pointermove', e => {
   if (state.mode === 'city') city.drag(dx, dy); else if (globe.view === 'intro' || globe.view === 'orbit') globe.drag(dx, dy);
 });
 canvas.addEventListener('wheel', e => { e.preventDefault(); if (trailer.active) return; if (state.mode === 'city') city.wheel(e.deltaY); }, { passive: false });
+/* autopilot tour: travels the whole route by itself and opens each story for a few seconds. Any tap or key stops it. */
+const tour = { on: false, v: 0 }, pause = ms => new Promise(r => setTimeout(r, ms)); // reading time, even with reduced motion
+function stopTour() { if (!tour.on) return; tour.on = false; tour.v++; document.body.classList.remove('touring'); $('#tourChip').hidden = true; }
+async function runTour() {
+  if (tour.on || trailer.active) return;
+  closeModals(); tour.on = true; const v = ++tour.v; document.body.classList.add('touring'); $('#tourChip').hidden = false;
+  const alive = () => tour.on && tour.v === v;
+  const until = async fn => { const t0 = performance.now(); while (alive() && !fn() && performance.now() - t0 < 60000) await pause(200); return alive() && fn(); };
+  try {
+    for (let i = 0; i < STOPS.length && alive(); i++) {
+      travelTo(i);
+      if (!await until(() => state.mode === 'city' && state.cityIdx === i && !state.transit)) break;
+      await pause(1500);
+      for (let k = 0; k < STOPS[i].spots.length && alive(); k++) { focusSpot(k); await pause(5200); }
+      if (alive()) { card.close(); unfocus(); await pause(700); }
+    }
+  } finally { if (tour.v === v) stopTour(); }
+}
+$('#tourBtn').addEventListener('click', runTour);
+$('#tourMenuBtn').addEventListener('click', runTour);
+$('#tourChip').addEventListener('click', stopTour);
+for (const ev of ['pointerdown', 'keydown', 'wheel']) addEventListener(ev, e => { if (tour.on && !e.target.closest?.('#tourChip, #tourBtn, #tourMenuBtn')) stopTour(); }, true);
+
 /* drive mode: keyboard, joystick, HUD */
 const hint = $('#driveHint'), prompt = $('#drivePrompt'), hornBtn = $('#hornBtn');
 let hintShown = false, promptK = -2;
@@ -528,3 +554,5 @@ window.__trailer = trailer;
 window.__app = { state, city, drive, exitCity, travelTo, focusSpot, search, ask: runAsk, openModal, enterCity: async i => { begin(); await enterCity(i); } };
 window.__drive = { get active() { return drive.active; }, get x() { return drive.x; }, get z() { return drive.z; }, get speed() { return drive.speed; }, get nearSpot() { return drive.nearSpot; }, get hits() { return drive.hits; } };
 document.body.classList.add('world-ready');
+// Visit counts: Vercel Web Analytics (cookieless). Only on the deployed site; the script 404s harmlessly until it is enabled in the Vercel project.
+if (!__SINGLE__ && location.protocol === 'https:' && !QS.has('trailer')) { window.va = window.va || ((...a) => (window.vaq = window.vaq || []).push(a)); const s = document.createElement('script'); s.defer = true; s.src = '/_vercel/insights/script.js'; document.head.appendChild(s); }

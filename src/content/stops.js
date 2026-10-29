@@ -67,7 +67,7 @@ export const STOPS = [
     region: 'Karnataka, India', coord: '12.97° N, 77.59° E', mood: 'Evening rush, the streetlights coming on',
     spots: [
       { t: 'PES University', m: 'Bachelor\'s degree, 2016–2020', b: '<p>I left Nadiad for Bangalore to do my bachelor\'s in mechanical engineering at PES University, 2016–2020.</p>' },
-      { t: 'ANA Packaging & Trading', m: 'Founder, Jun 2020–Jul 2021 · paper-cup manufacturer', mission: 'machine', b: '<p>We sold paper cups for less than ₹1 each in a crowded commodity market. Manufacturing cost was lower, but margins were thin. Keeping the business going through COVID taught me persistence, the importance of volume, and how much small losses matter.</p><p>When the rims kept cracking, I first tried to fix the curling stage. After many iterations, we found that the paper was misaligned during folding, upstream from the visible damage. I learned to trace a fault through the whole system before changing the part where it appears.</p><p>I managed inventory and buyer-risk decisions using R/SQL analysis and A/B tests:</p><ul><li>Stockouts fell 17%</li><li>Payment defaults fell 70%</li><li>Order conversion rose 16.2%</li></ul>' },
+      { t: 'ANA Packaging & Trading', m: 'Founder, Jun 2020–Jul 2021 · paper-cup manufacturer', mission: 'machine', b: '<p>June 2020. I had just finished engineering college, the country was in lockdown, and I started a paper-cup factory. Each cup sold for less than ₹1, so every wasted cup was money gone.</p><p>Then the rims started cracking. I adjusted the curling stage, where the cracks showed, iteration after iteration. Nothing worked. The real fault was earlier: the paper was slightly misaligned during folding, long before the damage was visible.</p><p>That machine taught me the lesson I still use in every AI system I build: trace the fault through the whole line before you touch the part where it shows.</p><p>I also ran inventory and buyer-risk decisions on R/SQL analysis and A/B tests:</p><ul><li>Stockouts fell 17%</li><li>Payment defaults fell 70%</li><li>Order conversion rose 16.2%</li></ul>' },
     ],
   },
   {
@@ -75,7 +75,7 @@ export const STOPS = [
     region: 'Massachusetts, USA', coord: '42.34° N, 71.09° W', mood: 'A snowy winter night',
     spots: [
       { t: 'Northeastern University', m: 'Master\'s degree', mission: 'train', b: '<p>My master\'s at Northeastern: Engineering Management, with a specialisation in Data Science.</p>' },
-      { t: 'My first apartment', m: 'On my own', b: '<p>Boston was the first time I lived away from my family, in another country. Alongside my master\'s at Northeastern, I learned to manage work, money and daily life, find a job, and decide what to save and what to spend.</p>' },
+      { t: 'My first apartment', m: 'On my own', b: '<p>In Boston, for the first time, there was no one at home to ask. I was in another country, starting a master\'s at Northeastern, and suddenly every decision was mine: rent, groceries, what to save and what to spend.</p><p>I learned to balance classes with work, stretch a budget, and keep applying until the 7-Eleven co-op came through. It was the year I started running my own life.</p>' },
       { t: 'The Green Line', m: 'Getting around', b: '<p class="city">The Green Line\'s E branch runs right past campus, down Huntington Avenue.</p>' },
     ],
   },
@@ -103,7 +103,7 @@ export const STOPS = [
     region: 'California, USA', coord: '37.77° N, 122.42° W', mood: 'Golden hour, the fog rolling in',
     spots: [
       { t: 'Oaklet', m: 'Founding AI/ML Engineer, Sep–Oct 2025', b: '<p>Oaklet\'s first AI engineer, in my last few months in the US.</p><ul><li>Built a healthcare appointment assistant that booked appointments, reserved calendar slots and sent emails.</li><li>Implemented a patient-intake workflow with seven question types in React, Express/TypeScript and DynamoDB, with encryption, audit logging and retry handling.</li></ul>' },
-      { t: 'The view from the hill', m: 'Bigger ambitions', mission: 'goal', b: '<p>My last few months in the US were in the Bay Area, where I joined Oaklet. Conversations with founders and investors, and 48-hour hackathons, changed the scale of my ambitions. I learned to hold a long-term goal while breaking it into short steps I could actually execute.</p>' },
+      { t: '24 hours at Y Combinator', m: 'The place I had dreamed about', mission: 'goal', b: '<p>For years, Y Combinator was a name I only read about. In my last months in the US, I spent 24 hours inside its building for a hackathon, building through the night in the place I had always dreamed of seeing.</p><p>Around it was the Bay Area: Oaklet, where I joined as the first AI engineer, and conversations with founders and investors that changed the scale of my ambitions. I left with a habit I still keep: hold the big goal, and break it into steps I can ship this week.</p>' },
     ],
   },
   {
@@ -120,6 +120,6 @@ export const STOPS = [
 // Travel legs: 'd' drive, 'f' fly.
 export const LEGS = [[0, 1, 'd'], [1, 2, 'f'], [2, 3, 'd'], [3, 4, 'd'], [4, 5, 'd'], [5, 6, 'f']];
 
-export const CONTACT = { email: 'nanddave99@gmail.com', site: 'https://nand-world-portfolio.vercel.app/', resume: './Nand_Dave_Resume.pdf', linkedin: 'https://www.linkedin.com/in/nanddave', github: 'https://github.com/nanddave' };
+export const CONTACT = { email: 'nanddave99@gmail.com', site: 'https://nanddave.life/', resume: './Nand_Dave_Resume.pdf', booking: '', linkedin: 'https://www.linkedin.com/in/nanddave', github: 'https://github.com/nanddave' };
 /** False for placeholders ('', '#', or '[...]'): such values must never render to a visitor. */
 export const isReal = v => typeof v === 'string' && v.trim() !== '' && v.trim() !== '#' && !v.trim().startsWith('[');
