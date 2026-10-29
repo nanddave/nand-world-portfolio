@@ -8,7 +8,7 @@ const CATEGORIES = {
   content: [v4('B01'), v4('B02'), v4('B05')],
   layout: [v4('A02'), v4('A04'), v4('A05'), v4('audit-access')],
   driving: [v4('A03'), ['node', 'tools/drive-test.mjs'], ['node', 'tools/drive-cities.mjs']],
-  navigation: [v4('A06'), v4('B03'), v4('B04'), v4('audit-navigation'), v4('audit-motion')],
+  navigation: [['node', 'tools/persona-test.mjs'], v4('A06'), v4('B03'), v4('B04'), v4('audit-navigation'), v4('audit-motion')],
   demos: [v4('A08'), v4('B06'), v4('B07'), v4('audit-completion')],
   world: [['node', 'tools/world-test.mjs'], ['node', 'tools/shell-test.mjs'], ['node', 'tools/postcard-test.mjs']],
   fallback: [['node', 'tools/v4-fallback-test.mjs']],

@@ -1,5 +1,5 @@
 // Modals: contact sheet, 30-second version (recruiter page), founders sheet, passport, skills index, how this was built.
-import { STOPS, CONTACT, isReal, HEADLINE, SUMMARY, BEST_FOR, PAPERS, EDU, ROLES, PROJECTS } from '../content/stops.js';
+import { STOPS, CONTACT, isReal, HEADLINE, SUMMARY, BEST_FOR, PAPERS, EDU, ROLES, PROJECTS, OFFERS } from '../content/stops.js';
 import { renderProject } from '../content/readable.js';
 import { skillIndex } from '../core/skills.js';
 import { VISITOR } from '../core/visitor.js';
@@ -64,13 +64,9 @@ export function setupModals({ onGo, onTrip, onBlockingOpen, onProject, onClosePr
   const tg = $('#talkGh'); isReal(CONTACT.github) ? tg.href = CONTACT.github : tg.hidden = true;
 
   // Founders sheet: three offers, each grounded in delivered work
-  const offers = [
-    ['Voice receptionist', 'Answers calls and books appointments. Delivered for a US salon: about 300 calls and about 240 confirmed bookings a month.', 'brokai', 'The salon (US client)'],
-    ['Internal ops agent', 'Jarvis: a voice agent with persistent memory that works across Slack, Linear, Gmail, Calendar and Notion, evaluated on 30–40 cases per round.', 'brokai', 'Brokai Labs'],
-    ['Résumé screening and ranking', 'Bulk résumé ingestion and candidate ranking, used to screen 300+ applicants.', 'brokai', 'Brokai Labs'],
-  ];
-  $('#offerList').innerHTML = offers.map(([t, d, id, st]) => `<li><div><b>${esc(t)}</b><span>${esc(d)}</span></div>${seeIt(spotIdx(id, st)).replace('class="go"', 'class="btn small"')}</li>`).join('');
+  $('#offerList').innerHTML = OFFERS.map(([t, d, id, st]) => `<li><div><b>${esc(t)}</b><span>${esc(d)}</span></div>${seeIt(spotIdx(id, st)).replace('class="go"', 'class="btn small"')}</li>`).join('');
   // A real booking link (CONTACT.booking) replaces the email fallback once one exists.
+  if (isReal(CONTACT.booking)) { $('#callBtn').textContent = 'Book a 30-minute call'; $('#callBtn').target = '_blank'; }
   $('#callBtn').href = isReal(CONTACT.booking) ? CONTACT.booking : mailHref(VISITOR.company ? `20-min call: ${VISITOR.company}` : '20-min call');
   $('#buildLinkedin').href = CONTACT.linkedin; $('#buildLinkedin').hidden = !isReal(CONTACT.linkedin);
   $('#buildResume').href = resumeUrl; $('#buildResume').textContent = resumeLabel; $('#buildResume').hidden = !isReal(CONTACT.resume);

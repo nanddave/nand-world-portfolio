@@ -44,6 +44,12 @@ export const PROJECTS = [
     limitations:['The call on this site uses your browser\'s voice and a pretend calendar; no real booking is made.','Real call recordings stay private to the client.'],
     evidenceNote:'The salon handled about 300 calls and 240 confirmed bookings a month through it (client-reported figures).' },
 ];
+/** What founders can hire me for, each tied to the spot that shows it. [title, description, city id, spot title]. */
+export const OFFERS = [
+  ['Voice receptionist', 'Answers calls and books appointments. Delivered for a US salon: about 300 calls and about 240 confirmed bookings a month.', 'brokai', 'The salon (US client)'],
+  ['Internal ops agent', 'Jarvis: a voice agent with persistent memory that works across Slack, Linear, Gmail, Calendar and Notion, evaluated on 30–40 cases per round.', 'brokai', 'Brokai Labs'],
+  ['Résumé screening and ranking', 'Bulk résumé ingestion and candidate ranking, used to screen 300+ applicants.', 'brokai', 'Brokai Labs'],
+];
 /** Short "what you'll do" phrase per mission, used to tease the next stop. */
 export const MISSION_TEASE = {
   machine: 'find a machine\'s root cause', train: 'train a model live', etl: 'sort 300 messy offers', pii: 'catch a PII leak', agents: 'watch agents argue',
@@ -120,6 +126,6 @@ export const STOPS = [
 // Travel legs: 'd' drive, 'f' fly.
 export const LEGS = [[0, 1, 'd'], [1, 2, 'f'], [2, 3, 'd'], [3, 4, 'd'], [4, 5, 'd'], [5, 6, 'f']];
 
-export const CONTACT = { email: 'nanddave99@gmail.com', site: 'https://nanddave.life/', resume: './Nand_Dave_Resume.pdf', booking: '', linkedin: 'https://www.linkedin.com/in/nanddave', github: 'https://github.com/nanddave' };
+export const CONTACT = { email: 'nanddave99@gmail.com', site: 'https://nanddave.life/', resume: './Nand_Dave_Resume.pdf', booking: 'https://cal.com/nand-dave/30min', linkedin: 'https://www.linkedin.com/in/nanddave', github: 'https://github.com/nanddave' };
 /** False for placeholders ('', '#', or '[...]'): such values must never render to a visitor. */
 export const isReal = v => typeof v === 'string' && v.trim() !== '' && v.trim() !== '#' && !v.trim().startsWith('[');
