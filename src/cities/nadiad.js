@@ -21,10 +21,13 @@ export function build() {
   });
   C.pitch = .3;
 
-  // ---------- lane ----------
+  // ---------- lane + a loop up to the temple and around past the farm ----------
   C.road(0, 0, 220, 7, 0, { color: '#AE9670', dash: false, walk: 1.6, walkColor: '#C2AB86' });
   // drain / plinth edges
   [-5.3, 5.3].forEach(z => C.add(box(220, .25, .4, '#9C8A6C', 0, 0, z)));
+  // the loop: a temple road, a back road behind the houses, and a farm road — a drivable circuit east of the chowk
+  const RO = { color: '#A6906A', dash: false, walk: 1.3, walkColor: '#B8A181' };
+  [C.road(34, -26, 52, 5.5, Math.PI / 2, RO), C.road(50, -52, 34, 5.5, 0, RO), C.road(66, -26, 52, 5.5, Math.PI / 2, RO)].forEach(r => { r.position.y = .04; });
 
   const roofs = lane(C);
   temple(C);
@@ -46,6 +49,11 @@ export function build() {
   C.add(cow('#D9D2C4'), 16, 2.6, 2.9);
   C.add(cow('#4A3F3A'), 30, -3.3, 1.2);
   C.hero(-22, 1.8, 0);
+  // local life: cattle ambling across the lane while a couple of scooters wait for them to pass
+  const amble = [];
+  [[-16, '#EAE3D6'], [10, '#CFC6B6']].forEach(([x, col], i) => { const c = cow(col); c.userData.noCollide = true; C.add(c, x, 0); amble.push({ c, ph: i * 3.1 }); });
+  C.tick.push(t => amble.forEach((o, i) => { const z = Math.sin(t * .22 + o.ph) * 5; o.c.position.z = z; o.c.rotation.y = Math.cos(t * .22 + o.ph) >= 0 ? Math.PI / 2 : -Math.PI / 2; }));
+  [['#2C3E50', -22, 2.3, 0], ['#C0392B', -24, -2.4, 0], ['#16A085', 4, 2.4, 0]].forEach(([c, x, z, r]) => { const b = bike(c); b.userData.noCollide = true; C.add(b, x, z, r); });
 
   C.particles('dust', 500);
 
@@ -54,7 +62,19 @@ export function build() {
   C.spot(34, 20, -58);                        // 2 Santram Mandir
   C.spot(66, 7, -27);                         // 3 The family farm
   C.spot(flyers.x, flyers.y + 5, flyers.z);   // 4 Uttarayan (rooftops)
-  addOSM(C, nadiadOSM, { handRoads: [{ z: 0, half: 6, halfX: 112 }] });
+  addOSM(C, nadiadOSM, { handRoads: [{ z: 0, half: 6, halfX: 112 }], clearBoxes: [
+    { minX: 31, maxX: 37, minZ: -55, maxZ: 2 },    // temple road
+    { minX: 32, maxX: 68, minZ: -56, maxZ: -48 },  // back road
+    { minX: 63, maxX: 69, minZ: -55, maxZ: 2 },    // farm road
+  ] });
+  // invisible walls around the town so the car stays on the lanes and fields
+  (C.colliders ||= []).push(
+    { minX: -120, maxX: 104, minZ: -78, maxZ: -70 },  // north
+    { minX: -120, maxX: 104, minZ: 60, maxZ: 68 },    // south
+    { minX: -120, maxX: -112, minZ: -78, maxZ: 68 },  // west
+    { minX: 96, maxX: 104, minZ: -78, maxZ: 68 },     // east
+  );
+  C.driveRadius = 160;
   C.credit = 'Streets & buildings: © OpenStreetMap contributors';
   return C;
 }

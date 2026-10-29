@@ -107,7 +107,7 @@ export const STOPS = [
     ],
   },
   {
-    id: 'brokai', tz: 'Asia/Kolkata', wlat: 12.986, wlon: 77.737, name: 'Bangalore, again', short: 'Bangalore', lat: 12.93, lon: 77.62, stamp: '#1F2A5C',
+    id: 'brokai', tz: 'Asia/Kolkata', wlat: 12.93, wlon: 77.62, name: 'Bangalore, again', short: 'Bangalore', lat: 12.93, lon: 77.62, stamp: '#1F2A5C',
     region: 'Karnataka, India', coord: '12.93° N, 77.62° E', mood: 'Late night, the tech parks still lit',
     spots: [
       { t: 'Brokai Labs', m: 'Founder & Lead AI Engineer, Nov 2025–Oct 2026', mission: 'jarvis', b: `<p>I came back to India to build for Indian businesses, and founded Brokai Labs, an AI and automation agency.</p><ul><li><b>Jarvis</b>: ${PROJECTS[0].text}</li><li><b>Résumé ranking</b>: led delivery of a bulk résumé-ingestion and candidate-ranking workflow used to screen 300+ applicants.</li><li><b>Hapi</b>: ${PROJECTS[1].text}</li></ul><p><button type="button" class="go" data-founders>What I can build for you</button></p>` },

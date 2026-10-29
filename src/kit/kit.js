@@ -227,10 +227,89 @@ export const CARS = [
 let heroKind = 'classic';
 export const setHeroKind = id => { heroKind = CARS.some(c => c.id === id) ? id : 'classic'; return heroKind; };
 export function heroCar(night = false, kind = heroKind) { const g = (CARS.find(c => c.id === kind) || CARS[0]).build(night); g.scale.setScalar(1.05); g.userData.hero = true; g.userData.kind = kind; return g; }
-export function auto() { return grp(box(2.4, .8, 1.3, '#2E8B3E', 0, .3), box(1.8, .08, 1.36, '#F2C230', -.1, 1.9), box(.1, 1.0, 1.3, '#F2C230', .9, 1.1), cyl(.05, .05, .8, '#222', -.95, 1.1, .6), cyl(.05, .05, .8, '#222', -.95, 1.1, -.6), wheel(.9, 0, .3), wheel(-.8, .55, .3), wheel(-.8, -.55, .3)); }
-export function bus(c1, c2, night = false) { return grp(box(11, 2.6, 2.5, c1, 0, .5), box(11.02, .9, 2.52, c2, 0, 1.6), wheel(3.6, 1.1, .55), wheel(-3.6, 1.1, .55), wheel(3.6, -1.1, .55), wheel(-3.6, -1.1, .55), box(10.2, .8, 2.54, night ? glow('#FFE6B0', .9) : '#2D3E50', 0, 1.65)); }
-export function pickup(c) { return grp(box(5.4, 1.0, 2.1, c, 0, .5), box(2.2, .9, 2, c, .5, 1.5), box(2.25, .7, 1.9, '#AFC6D6', .5, 1.55), wheel(1.8, 1, .48), wheel(-1.8, 1, .48), wheel(1.8, -1, .48), wheel(-1.8, -1, .48)); }
-export function semi() { const g = grp(box(3, 2.6, 2.4, '#C0392B', 4.6, .6), box(10, 3.2, 2.5, '#ECECEC', -2.2, .8)); [5, 3.6, -5, -6.2].forEach(x => { g.add(wheel(x, 1.1, .55)); g.add(wheel(x, -1.1, .55)); }); return g; }
-export function bike(c) { const p = person(SKIN[Math.floor(rnd() * SKIN.length)]); p.position.set(-.1, .6, 0); p.scale.setScalar(.8); return grp(box(1.8, .5, .4, c, 0, .5), p, wheel(.7, 0, .32), wheel(-.7, 0, .32)); }
-export function trolley(night = false, c = '#2E7D32') { return grp(box(14, 2.9, 2.7, c, 0, .5), box(14.02, 1.0, 2.72, night ? glow('#FFF0C8', .8) : '#1F2A30', 0, 1.7), box(13, .3, 2.2, '#BDBDBD', 0, 3.4)); }
+// ---------- upgraded traffic vehicles: shared clearcoat paint + chrome-rim wheels, to match the hero cars ----------
+/** Static detailed wheel (tyre + chrome rim + hub), facing across z. Traffic doesn't spin wheels. */
+function vwheel(x, z, r = .34) {
+  const M = carMats(), g = new THREE.Group();
+  const t = new THREE.Mesh(new THREE.CylinderGeometry(r, r, .26, 20), M.tire); t.rotation.x = Math.PI / 2; t.castShadow = true;
+  const rim = new THREE.Mesh(new THREE.CylinderGeometry(r * .6, r * .6, .28, 14), M.chrome); rim.rotation.x = Math.PI / 2;
+  const hub = new THREE.Mesh(new THREE.CylinderGeometry(r * .14, r * .14, .3, 8), M.trim); hub.rotation.x = Math.PI / 2;
+  g.add(t, rim, hub); g.position.set(x, r, z); return g;
+}
+/** Indian auto-rickshaw: black shell, yellow canopy, single front wheel. Faces +x. */
+export function auto() {
+  const b = paint('#17181C'), y = paint('#F4C20D'), M = carMats(), g = grp();
+  g.add(mesh(new THREE.BoxGeometry(1.95, .74, 1.4), b, -.12, .62, 0));                       // cabin tub
+  const cowl = lathe([[0, 0], [.34, .18], [.46, .5], [.32, .82], [0, .96]], b, 14);
+  cowl.rotation.z = -Math.PI / 2; cowl.position.set(.95, .5, 0); g.add(cowl);                 // rounded front
+  g.add(mesh(new THREE.BoxGeometry(.9, .62, 1.18), M.glass, .5, 1.02, 0));                    // windscreen
+  g.add(mesh(new THREE.BoxGeometry(.5, 1.0, 1.4), b, -1.02, .92, 0));                         // seat back
+  g.add(box(2.1, .12, 1.58, y, -.1, 1.68, 0));                                                // canopy roof
+  g.add(box(2.12, .1, 1.6, '#D8A400', -.1, 1.52, 0));                                         // roof edge band
+  [[.82, .66], [.82, -.66], [-.96, .66], [-.96, -.66]].forEach(([x, z]) => g.add(cyl(.045, .045, .96, M.chrome, x, 1.0, z)));
+  const drv = person('#D8C7A0'); drv.position.set(.08, .12, 0); drv.scale.setScalar(.78); g.add(drv);
+  g.add(vwheel(.92, 0, .32)); g.add(vwheel(-.86, .6, .32)); g.add(vwheel(-.86, -.6, .32));
+  return g;
+}
+/** City bus (BMTC-style, no logos): painted body, window strip, destination board. Faces +x. */
+export function bus(c1, c2, night = false) {
+  const body = paint(c1), M = carMats(), g = grp();
+  g.add(mesh(new THREE.BoxGeometry(11, 2.5, 2.52), body, 0, 1.75, 0));                         // main body
+  g.add(box(11.04, .1, 2.56, c2, 0, 2.5, 0));                                                  // roof cap
+  g.add(box(10.4, .92, 2.56, night ? glow('#FFE6B0', .9) : M.glass, 0, 1.9, 0));               // window strip
+  g.add(box(11.02, .26, 2.58, c2, 0, 1.2, 0));                                                 // livery belt
+  for (let x = -4.4; x <= 4.4; x += 1.6) g.add(box(.08, .9, 2.6, M.trim, x, 1.9, 0));          // window mullions
+  g.add(box(.12, 1.0, 2.0, M.glass, 5.5, 1.9, 0));                                             // windscreen
+  g.add(box(1.5, .5, .18, night ? glow('#FFD27A', 1.4) : '#2A2A2E', 5.0, 2.3, 0));             // route board
+  g.add(vwheel(3.6, 1.14, .55)); g.add(vwheel(3.6, -1.14, .55)); g.add(vwheel(-3.6, 1.14, .55)); g.add(vwheel(-3.6, -1.14, .55));
+  return g;
+}
+/** US pickup truck: cab + glass + open bed. Faces +x. */
+export function pickup(c) {
+  const body = paint(c), M = carMats(), g = grp();
+  g.add(mesh(new THREE.BoxGeometry(5.3, .9, 2.1), body, 0, .85, 0));                            // chassis/hood line
+  g.add(mesh(new THREE.BoxGeometry(2.0, .95, 1.98), body, .55, 1.55, 0));                       // cab
+  g.add(mesh(new THREE.BoxGeometry(2.05, .62, 1.84), M.glass, .55, 1.62, 0));                   // cab glass
+  [[-1.7, .9], [-1.7, -.9], [.6, .9], [.6, -.9]].forEach(([x, z]) => g.add(box(.08, .72, .12, body, x, 1.1, z))); // bed walls (short)
+  g.add(box(2.6, .62, 1.98, body, -1.55, .9, 0));                                               // bed sides
+  g.add(box(2.4, .06, 1.7, '#3A3A40', -1.55, 1.2, 0));                                          // bed floor
+  g.add(box(.12, .34, 1.8, M.trim, 2.62, 1.0, 0));                                              // front grille
+  g.add(vwheel(1.7, 1.0, .46)); g.add(vwheel(-1.7, 1.0, .46)); g.add(vwheel(1.7, -1.0, .46)); g.add(vwheel(-1.7, -1.0, .46));
+  return g;
+}
+/** Semi truck: cab + box trailer, chrome tanks. Faces +x. */
+export function semi(c = '#B9281F') {
+  const cab = paint(c), M = carMats(), g = grp();
+  g.add(mesh(new THREE.BoxGeometry(2.6, 2.4, 2.4), cab, 4.5, 1.8, 0));                           // cab
+  g.add(mesh(new THREE.BoxGeometry(2.0, 1.0, 2.3), cab, 5.5, 1.3, 0));                           // hood
+  g.add(box(1.4, .9, 2.2, M.glass, 4.9, 2.1, 0));                                                // windscreen
+  g.add(cyl(.42, .42, 1.6, M.chrome, 3.1, .3, .95)); g.add(cyl(.42, .42, 1.6, M.chrome, 3.1, .3, -.95)); // fuel tanks
+  g.add(mesh(new THREE.BoxGeometry(10, 3.0, 2.5), mat('#ECECEC', { metalness: .2, roughness: .5 }), -2.2, 2.2, 0)); // trailer
+  g.add(box(10.04, .1, 2.54, '#C8C8C8', -2.2, 3.7, 0));
+  [5.0, 3.6, -4.8, -6.2].forEach(x => { g.add(vwheel(x, 1.1, .52)); g.add(vwheel(x, -1.1, .52)); });
+  return g;
+}
+/** Scooter/moped with rider. Faces +x. */
+export function bike(c) {
+  const body = paint(c), M = carMats(), g = grp();
+  g.add(mesh(new THREE.BoxGeometry(1.5, .4, .34), body, 0, .72, 0));                             // step-through frame
+  g.add(mesh(new THREE.BoxGeometry(.5, .5, .36), body, .62, .85, 0));                            // front apron
+  g.add(box(.5, .2, .36, '#1A1A1E', -.5, .95, 0));                                               // seat
+  const stem = cyl(.03, .03, .5, M.chrome, .72, 1.0, 0); stem.rotation.z = -.5; g.add(stem);     // handlebar stem
+  g.add(box(.5, .05, .05, M.trim, .9, 1.3, 0));                                                  // handlebar
+  const p = person(SKIN[Math.floor(rnd() * SKIN.length)]); p.position.set(-.25, .55, 0); p.scale.setScalar(.8); g.add(p);
+  g.add(vwheel(.72, 0, .3)); g.add(vwheel(-.7, 0, .3));
+  return g;
+}
+/** Streetcar / trolley (Boston Green Line-style). Faces +x. */
+export function trolley(night = false, c = '#2E7D32') {
+  const body = paint(c), M = carMats(), g = grp();
+  g.add(mesh(new THREE.BoxGeometry(14, 2.7, 2.6), body, 0, 1.55, 0));                            // car body
+  g.add(box(14.04, .14, 2.64, '#D8D2C4', 0, 2.62, 0));                                           // roof
+  g.add(box(13.2, .95, 2.64, night ? glow('#FFF0C8', .8) : M.glass, 0, 1.9, 0));                 // windows
+  for (let x = -5.6; x <= 5.6; x += 1.4) g.add(box(.08, .95, 2.66, M.trim, x, 1.9, 0));
+  g.add(box(.5, .4, .5, M.trim, 0, 2.9, 0));                                                     // pantograph base
+  g.add(vwheel(5.4, 1.0, .5)); g.add(vwheel(5.4, -1.0, .5)); g.add(vwheel(-5.4, 1.0, .5)); g.add(vwheel(-5.4, -1.0, .5));
+  return g;
+}
 export function cablecar() { return grp(box(8, 2.6, 2.6, '#B83A2E', 0, .5), box(8.02, 1, 2.62, '#F2E6C8', 0, 1.6), box(8.6, .3, 2.9, '#7A2A20', 0, 3.1)); }

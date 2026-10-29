@@ -6,8 +6,9 @@ import { addOSM } from '../kit/osm.js';
 import blrOSM from '../data/osm/blr.json';
 import {
   THREE, mat, glow, mesh, box, cyl, cone, ball, lathe, extrude, grp, building, sign,
-  treeRain, streetLight, auto, bus, car, bike, person, SKIN, wheel, rnd, reseed,
+  treeRain, streetLight, auto, bus, car, realCar, bike, person, SKIN, wheel, rnd, reseed,
 } from '../kit/kit.js';
+import { Sound } from '../core/sound.js';
 
 const FONT = '800 64px "Big Shoulders Display", "Arial Narrow", sans-serif';
 
@@ -21,11 +22,16 @@ export function build() {
 
   C.pitch = .3; // a touch lower than default so the Vidhana Soudha dome sits inside the frame
 
-  // ---------- road  ----------
+  // ---------- roads: main arterial + a service-road loop (drive a full circuit) ----------
   C.road(0, 0, 260, 13, 0, { curb: ['#151515', '#F2C230'], walk: 3, walkColor: '#9E9A90' });
   for (let i = 0; i < 13; i++) { C.add(streetLight(true), -66 + i * 11, 10.6, Math.PI); C.add(streetLight(true), -60 + i * 11, -10.6, 0); }
+  // the loop: a service road parallel to the main road, joined at both ends — the car can drive a closed circuit
+  const RO = { dash: false, color: '#43444A', walk: 1.8, walkColor: '#8E8A80' };
+  [C.road(0, 18, 150, 7, 0, RO), C.road(-75, 9, 20, 7, Math.PI / 2, RO), C.road(75, 9, 20, 7, Math.PI / 2, RO)].forEach(r => { r.position.y = .055; });
+  // planted median between the two carriageways
+  for (let x = -70; x < 72; x += 9) C.add(box(3, .35, 1.2, '#3A5A30', x, 0, 9));
   // side street to the factory yard
-  C.road(28, 20, 22, 6, Math.PI / 2, { dash: false, color: '#4C4D52' });
+  C.road(28, 24, 14, 6, Math.PI / 2, { dash: false, color: '#4C4D52' });
 
   vidhanaSoudha(C);
   metro(C);
@@ -49,15 +55,32 @@ export function build() {
   C.lane(auto, 1.6, 1, 9, 6, 240);
   C.lane(auto, -1.6, -1, 8, 5, 240);
   C.lane(() => bus('#1F5FAD', '#E8E8E8', true), -4.3, -1, 6.5, 2, 240);
-  C.lane(() => car(['#B0B7BF', '#8B1E2B', '#F2F2F2'][Math.floor(rnd() * 3)], true), 4.2, 1, 10, 3, 240);
+  C.lane(() => realCar('sedan', ['#B0B7BF', '#8B1E2B', '#F2F2F2'][Math.floor(rnd() * 3)], true), 4.2, 1, 10, 3, 240);
   C.lane(() => bike(['#2C3E50', '#C0392B', '#111'][Math.floor(rnd() * 3)]), 5.7, 1, 11, 4, 240);
   C.lane(() => bike('#1A1A1A'), -5.8, -1, 10, 3, 240);
+  // the service road carries its own trickle of autos and bikes
+  C.lane(auto, 16.6, -1, 7, 3, 150);
+  C.lane(() => bike(['#C0392B', '#2C3E50'][Math.floor(rnd() * 2)]), 19.4, -1, 9, 3, 150);
   C.hero(-8, 4.6, 0);
+  jammedJunction(C, -40, 2);
 
   // ---------- spots (order = stops.js) ----------
   C.spot(-20, 11, -11);   // 1 PES University (gate)
   C.spot(0, 16, 29); // 2 ANA Packaging & Trading
-  addOSM(C, blrOSM, { clearRadius: 0, clearBoxes: [{ minX: -5, maxX: 101, minZ: -152, maxZ: -48 }] }); // clearBoxes = hand-made Vidhana Soudha plinth
+  addOSM(C, blrOSM, { clearRadius: 0, clearBoxes: [
+    { minX: -5, maxX: 101, minZ: -152, maxZ: -48 },   // hand-made Vidhana Soudha plinth
+    { minX: -80, maxX: 80, minZ: 11, maxZ: 25 },       // service road + median
+    { minX: -82, maxX: -68, minZ: -6, maxZ: 23 },      // west link
+    { minX: 68, maxX: 82, minZ: -6, maxZ: 23 },        // east link
+  ] });
+  // invisible walls around the playable block so the car stays on the streets
+  (C.colliders ||= []).push(
+    { minX: -118, maxX: 110, minZ: -100, maxZ: -92 },  // north
+    { minX: -118, maxX: 110, minZ: 60, maxZ: 68 },     // south
+    { minX: -118, maxX: -108, minZ: -100, maxZ: 68 },  // west
+    { minX: 100, maxX: 110, minZ: -100, maxZ: 68 },    // east
+  );
+  C.driveRadius = 170;
   C.credit = 'Streets & buildings: © OpenStreetMap contributors';
   return C;
 }
@@ -286,5 +309,36 @@ function factoryWorld(C, F, { W, D, H }) {
     cancel = C.anim(7, (p, el) => {
       cups.forEach(c => { const k = (el * .45 + c.userData.o) % 1; c.position.z = zf + .2 + k * 7.2; c.visible = p < 1; });
     }, () => { cups.forEach(c => { c.visible = false; }); });
+  });
+}
+
+// ===== local life: a jammed junction — autos, a bus and bikes nose to tail, a police booth, horns when you drive near =====
+function jammedJunction(C, jx, jz) {
+  // packed, slightly askew vehicles (static; the hero weaves past)
+  const pack = [
+    [auto(), -10, -3.5, .2], [auto(), -7.5, 2.8, -.15], [auto(), -4, -1.5, .35],
+    [bus('#C0392B', '#F2E8D8', true), 6, 1.2, -.05], [auto(), -1, 4.2, .1],
+    [bike('#2C3E50'), -12, 4.5, .25], [bike('#111'), -13.5, -2, -.1], [bike('#C0392B'), 1.5, -4, .2],
+    [realCar('sedan', '#8B1E2B', true), 3, -3.2, -.12], [auto(), 2.5, 1.6, -.3], [bike('#E8E8E8'), -5.5, 5.3, .15],
+  ];
+  pack.forEach(([v, dx, dz, r]) => { v.rotation.y += r; v.userData.noCollide = true; C.add(v, jx + dx, jz + dz); });
+  // traffic police booth on the north corner: raised round dais, striped canopy, a constable
+  const booth = grp();
+  booth.add(cyl(1.6, 1.8, .35, '#D8D2C4', 0, 0, 0, 16));             // dais
+  booth.add(cyl(.08, .08, 2.6, '#9A968E', 0, .35, 0, 8));            // pole
+  booth.add(cone(1.9, .9, mat('#F2C230'), 0, 3, 0, 8));             // canopy
+  for (let i = 0; i < 8; i++) { const a = i / 8 * Math.PI * 2; if (i % 2) booth.add(box(.5, .9, .02, '#C0392B', Math.cos(a) * 1.3, 2.6, Math.sin(a) * 1.3)); } // striped skirt
+  const cop = person('#3A4A2E'); cop.position.y = .35; booth.add(cop);              // khaki constable
+  C.add(booth, jx, jz - 10);
+  // signal pole with three lit aspects
+  const sig = grp(cyl(.1, .12, 5, '#2A2A2E', 0, 0, 0, 8), box(.4, 1.3, .35, '#1A1A1E', 0, 5, 0));
+  [['#E33', 4.9], ['#FB3', 4.5], ['#3C6', 4.1]].forEach(([c, y]) => sig.add(ball(.15, glow(c, 1.6), 0, y, .22, 1)));
+  C.add(sig, jx + 10, jz - 7.5);
+  // horns when the hero drives near the jam
+  let cool = 0;
+  C.tick.push((t, dt) => {
+    const h = C.heroCar; if (!h) return;
+    cool -= dt;
+    if (cool <= 0 && Math.hypot(h.position.x - jx, h.position.z - jz) < 20) { Sound.horn('blr'); cool = 1.6 + rnd() * 1.4; }
   });
 }

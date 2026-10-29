@@ -1,4 +1,4 @@
-// Bangalore, again — late night, the tech parks still lit (Whitefield-ish).
+// Bangalore, again — late night, the tech parks still lit.
 // Layout: main road along x. North (z<0): Brokai Labs office, the salon storefront, tech-park towers behind.
 // South (z>0): street-food cart, low shops, and the empty lot ("your company here") that C.raiseLot() builds on.
 import { newCity } from '../kit/city.js';
@@ -6,7 +6,7 @@ import { addOSM } from '../kit/osm.js';
 import brokaiOSM from '../data/osm/brokai.json';
 import {
   THREE, mat, glow, box, cyl, ball, grp, building, sign, textTex,
-  treeRain, streetLight, auto, car, bike, person, SKIN, wheel, rnd, reseed, clamp,
+  treeRain, streetLight, auto, car, realCar, bike, person, SKIN, wheel, rnd, reseed, clamp,
 } from '../kit/kit.js';
 
 const FONT = '800 64px "Big Shoulders Display", "Arial Narrow", sans-serif';
@@ -21,9 +21,12 @@ export function build() {
   });
   C.pitch = .28;
 
-  // ---------- road ----------
+  // ---------- roads: main road + a back-of-block service loop (drive a full circuit) ----------
   C.road(0, 0, 260, 13, 0, { curb: ['#151515', '#F2C230'], walk: 3, walkColor: '#6E6A66' });
   for (let i = 0; i < 13; i++) { C.add(streetLight(true, '#FFE6B0'), -66 + i * 11, 10.6, Math.PI); C.add(streetLight(true, '#FFE6B0'), -60 + i * 11, -10.6, 0); }
+  const RO = { dash: false, color: '#2E2F38', walk: 1.6, walkColor: '#54505A' };
+  [C.road(5, 38, 150, 7, 0, RO), C.road(-70, 19, 38, 7, Math.PI / 2, RO), C.road(80, 19, 38, 7, Math.PI / 2, RO)].forEach(r => { r.position.y = .055; });
+  for (let i = 0; i < 9; i++) C.add(streetLight(true, '#FFE6B0'), -58 + i * 16, 41.6, Math.PI);
 
   techPark(C);
   office(C);
@@ -37,11 +40,13 @@ export function build() {
   // ---------- traffic ----------
   C.lane(auto, 1.6, 1, 10, 5, 240);
   C.lane(auto, -1.6, -1, 9, 4, 240);
-  C.lane(() => car(['#E5E7E9', '#2C3E50', '#8B1E2B'][Math.floor(rnd() * 3)], true), 3.6, 1, 12, 3, 240);
-  C.lane(() => car('#E5E7E9', true), -3.4, -1, 11, 2, 240);
+  C.lane(() => realCar('sedan', ['#E5E7E9', '#2C3E50', '#8B1E2B'][Math.floor(rnd() * 3)], true), 3.6, 1, 12, 3, 240);
+  C.lane(() => realCar('suv', '#E5E7E9', true), -3.4, -1, 11, 2, 240);
   C.lane(() => bike(['#E74C3C', '#111', '#2C3E50'][Math.floor(rnd() * 3)]), 5.4, 1, 12, 4, 240);
+  C.lane(auto, 36.6, -1, 8, 3, 150);   // the service road behind the block
   C.hero(-30, -4.8, Math.PI);
   C.crowd([[-18, -10.2], [-14, -10.6], [6, -10.4], [16, -10.2], [-40, 9.6], [40, 9.8]]);
+  deliveryQueue(C, 30, -14);
 
   // ---------- spots (order = stops.js) ----------
   C.spot(-24, 16, -19);   // 1 Brokai Labs
@@ -50,10 +55,32 @@ export function build() {
   addOSM(C, brokaiOSM, {
     handRoads: [{ z: 0, half: 10, halfX: 135 }],
     clearBoxes: [{ minX: -19, maxX: 7, minZ: 15, maxZ: 35 },         // the empty lot ("your company here") that raiseLot() builds on
-      { minX: 24, maxX: 36, minZ: -47, maxZ: -14 }],                  // tech-park gate road
+      { minX: 24, maxX: 36, minZ: -47, maxZ: -14 },                  // tech-park gate road
+      { minX: -74, maxX: 84, minZ: 33, maxZ: 43 },                    // service road
+      { minX: -76, maxX: -62, minZ: -4, maxZ: 41 },                   // west link
+      { minX: 74, maxX: 86, minZ: -4, maxZ: 41 }],                    // east link
   });
+  // invisible walls around the playable block
+  (C.colliders ||= []).push(
+    { minX: -118, maxX: 118, minZ: -124, maxZ: -116 },  // north
+    { minX: -118, maxX: 118, minZ: 48, maxZ: 56 },      // south
+    { minX: -118, maxX: -108, minZ: -124, maxZ: 56 },   // west
+    { minX: 108, maxX: 118, minZ: -124, maxZ: 56 },     // east
+  );
+  C.driveRadius = 160;
   C.credit = 'Streets & buildings: © OpenStreetMap contributors';
   return C;
+}
+
+// ===== local life: a queue of food-delivery riders waiting outside the tech-park gate =====
+function deliveryQueue(C, gx, gz) {
+  const DEL = ['#F43F5E', '#22C55E', '#F59E0B', '#3B82F6', '#EF4444'];
+  for (let i = 0; i < 6; i++) {
+    const b = bike(DEL[i % DEL.length]);
+    b.add(box(.62, .64, .56, DEL[(i + 2) % DEL.length], -.55, .95, 0));   // insulated delivery top-box
+    b.add(box(.5, .5, .04, glow('#FFFFFF', .6), -.55, 1.1, .3));          // reflective panel
+    C.add(b, gx - 9 + i * 2.5, gz + 6.4, -.08 + rnd() * .16);
+  }
 }
 
 // ===== tech park towers =====

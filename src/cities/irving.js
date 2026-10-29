@@ -6,7 +6,7 @@
 import { newCity } from '../kit/city.js';
 import { addOSM } from '../kit/osm.js';
 import irvingOSM from '../data/osm/irving.json';
-import { THREE, mat, glow, mesh, box, cyl, cone, ball, lathe, extrude, grp, building, sign, person, SKIN, car, pickup, semi, streetLight, rnd, reseed, wheel } from '../kit/kit.js';
+import { THREE, mat, glow, mesh, box, cyl, cone, ball, lathe, extrude, grp, building, sign, person, SKIN, car, realCar, pickup, semi, streetLight, rnd, reseed, wheel } from '../kit/kit.js';
 
 const BRONZE = mat('#7B5531', { metalness: .6, roughness: .4 });
 const BRONZE_D = mat('#5A3C22', { metalness: .6, roughness: .45 });
@@ -111,13 +111,16 @@ export function build() {
   }
   C.lane(() => pickup(['#B03A2E', '#2E4053', '#F4F6F6', '#1C1C1C', '#7D6608'][Math.floor(rnd() * 5)]), HZ + 9.8, 1, 26, 3, 230);
   C.lane(semi, HZ + 5.8, 1, 20, 2, 230);
-  C.lane(() => car(['#D5D8DC', '#34495E', '#C0392B'][Math.floor(rnd() * 3)]), HZ + 2, 1, 28, 3, 230);
+  C.lane(() => realCar('sedan', ['#D5D8DC', '#34495E', '#C0392B'][Math.floor(rnd() * 3)]), HZ + 2, 1, 28, 3, 230);
   C.lane(() => pickup(['#F4F6F6', '#1C1C1C', '#8E8E8E'][Math.floor(rnd() * 3)]), HZ - 2, -1, 27, 3, 230);
   C.lane(semi, HZ - 5.8, -1, 19, 2, 230);
-  C.lane(() => car(['#ECF0F1', '#1B2631', '#2E86C1'][Math.floor(rnd() * 3)]), HZ - 9.8, -1, 25, 3, 230);
-  C.lane(() => car(['#ECF0F1', '#7F8C8D', '#B03A2E'][Math.floor(rnd() * 3)]), 9.5, 1, 12, 3, 230);
+  C.lane(() => realCar('sedan', ['#ECF0F1', '#1B2631', '#2E86C1'][Math.floor(rnd() * 3)]), HZ - 9.8, -1, 25, 3, 230);
+  C.lane(() => realCar('suv', ['#ECF0F1', '#7F8C8D', '#B03A2E'][Math.floor(rnd() * 3)]), 9.5, 1, 12, 3, 230);
   C.lane(() => pickup('#2E4053'), 14.5, -1, 11, 2, 230);
   for (let x = -100; x <= 100; x += 25) { C.add(streetLight(), x, 4.8, Math.PI); C.add(streetLight(), x + 12, 19.2); }
+  // loop: cross streets joining Las Colinas Blvd and the frontage road (drive a full circuit)
+  const RO = { color: '#5A5C62', dash: false, walk: 2, walkColor: '#D9D2C2' };
+  [C.road(-85, 32, 42, 8, Math.PI / 2, RO), C.road(85, 32, 42, 8, Math.PI / 2, RO)].forEach(r => { r.position.y = .045; });
 
   // ---------- Williams Square: granite plaza + fountain + mustangs ----------
   const PX = 8, PZ = -14;
@@ -224,16 +227,44 @@ export function build() {
   C.particles('dust', 500);
 
   deliveryWorld(C);
+  localLife(C, HZ);
 
   C.spot(-48, 24, -16);
   C.spot(PX, 6, PZ);
   C.spot(SX - 4, 3.5, SZ + 4);
   addOSM(C, irvingOSM, {
     handRoads: [{ z: 12, half: 10, halfX: 125 }, { z: 52, half: 5, halfX: 125 }, { z: 70, half: 20, halfX: 125 }],
-    clearBoxes: [{ minX: -130, maxX: 130, minZ: -96, maxZ: 4 }], // Williams Square plaza + fountain, towers, DART line, canal
+    clearBoxes: [{ minX: -130, maxX: 130, minZ: -96, maxZ: 4 }, // Williams Square plaza + fountain, towers, DART line, canal
+      { minX: -90, maxX: -80, minZ: 8, maxZ: 56 },               // west cross
+      { minX: 80, maxX: 90, minZ: 8, maxZ: 56 }],                // east cross
   });
+  // invisible walls: keep the car on the boulevard/frontage block, off the highway and out of the canal
+  (C.colliders ||= []).push(
+    { minX: -120, maxX: 120, minZ: -70, maxZ: -62 },  // north (toward canal/DART)
+    { minX: -120, maxX: 120, minZ: 60, maxZ: 68 },    // south (before the highway)
+    { minX: -120, maxX: -110, minZ: -70, maxZ: 68 },  // west
+    { minX: 110, maxX: 120, minZ: -70, maxZ: 68 },    // east
+  );
+  C.driveRadius = 150;
   C.credit = 'Streets & buildings: © OpenStreetMap contributors';
   return C;
+}
+
+// ===== local life: planes on approach to DFW + heat haze shimmering over the interchange =====
+function localLife(C, HZ) {
+  const skin = mat('#EDEFF2', { fog: false }), wing = mat('#D6DADF', { fog: false }), tail = mat('#C9CDD2', { fog: false });
+  const plane = () => grp(
+    box(8.5, 1.2, 1.4, skin, 0, 0), cone(1.3, 2.2, skin, 4.2, 0, 0, 10),            // fuselage + nose
+    box(1.8, .22, 9.5, wing, -.6, 0), box(1.3, .2, 3.6, wing, -3.6, .25),            // wings + tailplane
+    box(.9, 1.7, .26, tail, -3.7, .7), box(1.1, .5, .5, tail, 2.0, -.7, 1.6), box(1.1, .5, .5, tail, 2.0, -.7, -1.6));
+  const planes = [plane(), plane()];
+  planes.forEach((p, i) => { p.children[1].rotation.z = -Math.PI / 2; p.scale.setScalar(2.0); p.userData.noCollide = true; p.userData.o = i * .55; p.rotation.y = Math.PI; C.add(p); });
+  C.tick.push(t => planes.forEach(p => { const k = (t * .028 + p.userData.o) % 1; p.position.set(200 - k * 460, 130 - k * 78, -150 - (p.userData.o * 60)); p.rotation.z = .05; }));
+  // heat haze: faint translucent slivers rising and wobbling over the highway
+  const hazeM = new THREE.MeshBasicMaterial({ color: '#F6F1E6', transparent: true, opacity: .07, depthWrite: false, fog: false, side: THREE.DoubleSide });
+  const haze = [];
+  for (let i = 0; i < 12; i++) { const q = new THREE.Mesh(new THREE.PlaneGeometry(7, 6), hazeM); q.position.set(40 + (i - 6) * 9, 3.2, HZ); q.userData.o = i * .7; q.renderOrder = 2; C.add(q); haze.push(q); }
+  C.tick.push(t => haze.forEach(q => { q.position.y = 3.2 + Math.sin(t * 2.1 + q.userData.o) * .5; q.scale.set(1 + Math.sin(t * 2.6 + q.userData.o) * .12, 1 + Math.cos(t * 1.8 + q.userData.o) * .14, 1); }));
 }
 
 // ===== World reaction: 'etl:done' — delivery trucks leave the depot by the office and drive out along the boulevard =====
