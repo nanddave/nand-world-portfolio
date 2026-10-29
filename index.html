@@ -3,60 +3,58 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>Nand's World</title>
-<meta name="description" content="Nand Dave's portfolio as a trip: a real Earth, a street-level scene for each city, and live demos of the work.">
+<title>Nand Dave | Nand's World — Applied AI</title>
+<meta name="description" content="Explore Nand Dave's applied AI work, voice agents and data systems through an interactive journey.">
 <meta property="og:type" content="website">
-<meta property="og:title" content="Nand's World">
-<meta property="og:description" content="Drive through Nand Dave's career: real streets, live weather, and working AI demos in seven stops.">
-<meta property="og:image" content="https://nanddave.github.io/nand-world-portfolio/og.png">
-<meta property="og:url" content="https://nanddave.github.io/nand-world-portfolio/">
+<meta property="og:title" content="Nand Dave | Nand's World — Applied AI">
+<meta property="og:description" content="Explore Nand Dave's applied AI work, voice agents and data systems through an interactive journey.">
+<meta property="og:image" content="https://nand-world-portfolio.vercel.app/og.png">
+<meta property="og:url" content="https://nand-world-portfolio.vercel.app/">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="theme-color" content="#0B1026">
+<style>
+#readable{position:fixed;inset:0;z-index:99;overflow:auto;background:#fff;color:#1a1c2c;font:16px/1.55 system-ui,sans-serif}#readable main{max-width:760px;margin:auto;padding:32px 20px 48px}#readable h1{font-size:34px;line-height:1.1;margin:0}#readable h2{font-size:13px;letter-spacing:.12em;text-transform:uppercase;border-bottom:1px solid #d8dae6;margin:28px 0 10px}#readable h4{font-size:16px;margin:0}#readable p{margin:4px 0}#readable article{margin:10px 0}#readable a{color:#1d4ed8}#readable ul{padding-left:20px}#returnWorld{display:none;min-height:44px}body.world-ready:not(.reading) #readable{display:none}body.world-ready #returnWorld{display:inline-block}
+</style>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@700;800;900&family=Schibsted+Grotesk:wght@400;500;600;700&family=Kalam:wght@400;700&display=swap">
+<link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@700;800;900&family=Schibsted+Grotesk:wght@400;500;600;700&family=Kalam:wght@400;700&display=swap" onload="this.onload=null;this.rel='stylesheet'"><noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@700;800;900&family=Schibsted+Grotesk:wght@400;500;600;700&family=Kalam:wght@400;700&display=swap"></noscript>
 </head>
 <body>
-<noscript><p style="position:fixed;inset:0;z-index:99;margin:0;padding:24px;background:#0B1026;color:#F6EEDC;font:18px/1.5 system-ui,sans-serif">This 3D trip needs JavaScript. <a href="cv.html" style="color:#FFD166">Read the plain résumé instead</a>.</p></noscript>
+<section id="readable" aria-label="Readable résumé"><main><p id="readableNotice">Read Nand's career and contact details without 3D.</p><button id="returnWorld" type="button">Return to the 3D journey</button><!-- READABLE_CONTENT --></main></section>
 <canvas id="scene" aria-label="A 3D journey: a globe with Nand's cities, and a street-level scene for each city"></canvas>
 <div id="fade" aria-hidden="true"></div>
 
 <header id="top">
   <a class="mark" href="#" id="home" aria-label="Nand Dave, back to the start">Nand Dave</a>
   <div class="tools">
-    <a class="chip hide-sm" id="cvLink" href="cv.html">Plain résumé</a>
-    <button class="chip" id="soundBtn" type="button" aria-pressed="false">Sound off</button>
-    <button class="chip hide-xs" id="skillsBtn" type="button">Skills</button>
+    <button class="chip" id="soundBtn" type="button" aria-pressed="false" aria-label="World sound off"><span aria-hidden="true">♫</span><span class="sound-label">Sound off</span></button>
     <button class="chip" id="passBtn" type="button" aria-label="Passport">Passport <span class="prog" id="passProg"></span> <span class="n" id="passN">0/7</span></button>
-    <button class="chip hide-sm" id="quickBtn" type="button">30-second version</button>
-    <button class="chip hide-sm" id="howBtn" type="button">How this was built</button>
     <button class="chip talk" id="talkBtn" type="button" aria-haspopup="dialog">Talk<span class="hide-xs">&nbsp;to&nbsp;Nand</span></button>
+    <button class="chip" id="menuBtn" type="button" aria-haspopup="dialog" aria-label="Menu"><span aria-hidden="true">☰</span><span class="menu-label">Menu</span></button>
   </div>
 </header>
 
 <section id="intro" aria-labelledby="introT">
   <h1 id="introT">Nand Dave</h1>
-  <p class="pos" id="introPos">Applied AI Engineer | Voice Agents | Customer Delivery</p>
+  <p class="pos" id="introPos">Applied AI engineer. I build voice agents and data systems.</p>
   <p id="introFor" class="for" hidden></p>
-  <p class="hook">A trip from Nadiad to Bangalore, with live demos of the voice agents, data pipelines and research behind the résumé.</p>
+  <p class="hook">From paper-cup machines to AI tools: explore what I built, how I think, and what I learned along the way.</p>
   <div class="row">
     <button class="btn primary" id="startBtn" type="button">Start the journey</button>
     <button class="btn ghost" id="quickBtn2" type="button">Hiring? 30-second version</button>
-    <a class="btn ghost" id="resumeBtn" href="./Nand_Dave_Resume.pdf" target="_blank" rel="noopener">Résumé</a>
-    <button class="btn ghost" id="trailerBtn" type="button">Watch the 60-s trailer</button>
   </div>
-  <p class="founders"><button class="linkbtn" id="foundersLink" type="button" aria-haspopup="dialog">Founders: what I can build for you</button></p>
-  <div class="hint">sound comes on when you start · drag to spin the earth</div>
+  <p class="founders"><a id="resumeBtn" href="./Nand_Dave_Resume.pdf" target="_blank" rel="noopener">Résumé</a> · <button class="linkbtn" id="foundersLink" type="button" aria-haspopup="dialog">For founders</button></p>
+  <div class="hint">drag to spin the earth</div>
 </section>
 
 <div id="daycap" aria-live="polite"></div>
 <div id="travel" aria-live="polite"><div class="k" id="travelK"></div><div class="t" id="travelT"></div></div>
 <div id="pins"></div>
 
-<div id="ctitle"><div class="stop" id="cStop"></div><h2 id="cName"></h2><div class="meta" id="cMeta"></div><div class="credit" id="cCredit"></div><div class="live" id="cLive" hidden><span id="cLiveT"></span> <span class="wxcredit" id="cWxCredit" hidden>Weather: Open-Meteo.com</span></div><button type="button" class="chip livebtn" id="moodBtn" aria-pressed="true" hidden>Live</button><button type="button" class="chip drivebtn" id="driveBtn" aria-pressed="false">Drive</button></div>
+<div id="ctitle"><div class="stop" id="cStop"></div><h2 id="cName"></h2><div class="meta" id="cMeta"></div><div class="credit" id="cCredit"></div><div class="scene-label" id="cScene">Designed scene</div><div class="live" id="cLive" hidden><span id="cLiveT"></span> <span class="wxcredit" id="cWxCredit" hidden>Weather: Open-Meteo.com</span></div><button type="button" class="chip livebtn" id="moodBtn" aria-pressed="true" hidden>Live</button><button type="button" class="chip drivebtn" id="driveBtn" aria-pressed="false">Drive</button><button type="button" class="chip drivebtn" id="carBtn" aria-label="Change car">Car: Classic</button><button type="button" class="chip drivebtn" id="placesBtn" aria-haspopup="dialog">Places in this city</button></div>
 <div id="speedo" aria-hidden="true"><b id="speedN">0</b><span>km/h</span></div>
 <button type="button" id="drivePrompt" hidden></button>
-<div id="driveHint" aria-hidden="true">WASD / arrows to drive · H horn · E open a spot · Esc back to orbit</div>
+<div id="driveHint" aria-hidden="true">WASD / arrows to drive · H horn · C change car · E open a spot · Esc back to orbit</div>
 <div id="joy" aria-label="Driving joystick"><i></i></div>
 <button type="button" id="hornBtn" aria-label="Horn">Horn</button>
 
@@ -91,11 +89,19 @@
   <div class="stops" id="stops"></div>
 </nav>
 
+<div class="modal" id="places" hidden><div class="sheet" role="dialog" aria-modal="true" aria-labelledby="placesT"><button class="sx" type="button" data-close aria-label="Close">×</button><h2 id="placesT">Places in this city</h2><div id="placesList" class="menu-links"></div></div></div>
+<div class="modal" id="menu" hidden><div class="sheet" role="dialog" aria-modal="true" aria-labelledby="menuT">
+  <button class="sx" type="button" data-close aria-label="Close">×</button><h2 id="menuT">Menu</h2>
+  <div class="menu-links"><button id="cvLink" type="button">Read without 3D</button><button id="quickBtn" type="button">30-second version</button><button id="projectsBtn" type="button">Projects</button><button id="skillsBtn" type="button">Skills</button><button id="copilotBtn" type="button">Open co-pilot</button><button id="motionBtn" type="button" aria-pressed="false">Pause scene motion</button><button id="howBtn" type="button">How this was built</button><button id="trailerBtn" type="button">Watch the 60-s trailer</button></div>
+</div></div>
+<div class="modal" id="projects" hidden><div class="sheet wide" role="dialog" aria-modal="true" aria-labelledby="projectsT"><button class="sx" type="button" data-close aria-label="Close">×</button><h2 id="projectsT">Projects</h2><div id="projectsList" class="project-list"></div></div></div>
+<div class="modal" id="project" hidden><div class="sheet wide" role="dialog" aria-modal="true" aria-labelledby="projectT"><button class="sx" type="button" data-close aria-label="Close">×</button><h2 id="projectT"></h2><div id="projectBody"></div><div class="project-actions"><button class="btn primary" id="projectVisit" type="button">Visit this chapter</button><a class="btn small" id="projectContact">Email Nand</a></div></div></div>
 <div class="modal" id="quick" hidden><div class="sheet wide" role="dialog" aria-modal="true" aria-labelledby="qT">
   <button class="sx" type="button" data-close aria-label="Close">×</button>
   <h2 id="qT">Nand Dave, in 30 seconds</h2>
   <p class="lead" id="quickHead"></p>
   <p id="quickSum"></p>
+  <div id="quickContact" class="contact"></div>
   <h3>Results</h3>
   <ul id="quickList" class="facts"></ul>
   <h3>Roles</h3>
@@ -104,7 +110,6 @@
     <div><h3>Papers</h3><ul id="quickPapers" class="plain"></ul></div>
     <div><h3>Education</h3><ul id="quickEdu" class="plain"></ul></div>
   </div>
-  <div id="quickContact" class="contact"></div>
   <div class="contact"><button class="btn primary" type="button" id="quickTrip">Or take the trip →</button><button class="linkbtn dark" type="button" data-founders>What I can build for you</button></div>
 </div></div>
 
@@ -125,10 +130,11 @@
   <h2 id="bdT">What I can build for you</h2>
   <p>Three things I have already delivered, each one you can poke at on this trip.</p>
   <ul id="offerList" class="offers"></ul>
-  <div class="contact"><a class="btn primary" id="callBtn" href="#" data-autofocus>Book a 20-min call</a><button class="btn ghost-dark" type="button" id="buildTrip">Or take the trip →</button></div>
+  <div class="contact"><a class="btn primary" id="callBtn" href="#" data-autofocus>Email me about a call</a><a class="btn small" id="buildLinkedin" href="#" target="_blank" rel="noopener">LinkedIn</a><a class="btn small" id="buildResume" href="#" target="_blank" rel="noopener">Résumé (PDF)</a><button class="btn ghost-dark" type="button" id="buildTrip">Or take the trip →</button></div>
 </div></div>
 
 <div class="modal" id="pass" hidden><div class="sheet" role="dialog" aria-modal="true" aria-labelledby="pT">
+  <button class="sx" type="button" data-close aria-label="Close">×</button>
   <h2 id="pT">Your passport</h2>
   <p id="passLine"></p>
   <div class="stamps" id="stampGrid"></div>
@@ -137,6 +143,7 @@
 </div></div>
 
 <div class="modal" id="yours" hidden><div class="sheet" role="dialog" aria-modal="true" aria-labelledby="yT">
+  <button class="sx" type="button" data-close aria-label="Close">×</button>
   <h2 id="yT">Where are you reading this from?</h2>
   <form id="yoursForm" autocomplete="off">
     <p>One bonus stop. Type your city and I'll fetch its real streets from OpenStreetMap and leave an empty lot for you.</p>
@@ -148,26 +155,32 @@
 </div></div>
 
 <div class="modal" id="skills" hidden><div class="sheet" role="dialog" aria-modal="true" aria-labelledby="sT">
+  <button class="sx" type="button" data-close aria-label="Close">×</button>
   <h2 id="sT">Skills, and where to see them</h2>
-  <p>Pick one and I'll take you there. "Try it" means there's a live demo.</p>
+  <p>Explore a browser illustration, inspect project evidence, or read a paper.</p>
+  <h3>Inspect project evidence</h3><div id="skillProjects" class="menu-links"></div>
+  <h3>Read the papers</h3><ul id="skillPapers"></ul>
+  <h3>Explore the journey</h3>
   <ul id="skillList" class="skills"></ul>
   <div class="contact"><button class="btn" type="button" data-close data-autofocus>Back to the trip</button></div>
 </div></div>
 
 <div class="modal" id="how" hidden><div class="sheet" role="dialog" aria-modal="true" aria-labelledby="hT">
+  <button class="sx" type="button" data-close aria-label="Close">×</button>
   <h2 id="hT">How this was built</h2>
   <ul>
-    <li><b>Procedural three.js.</b> Every building, car and kite is built from code: boxes, lathes and extrusions. No downloaded models.</li>
+    <li><b>Static web application.</b> Vite builds a JavaScript and three.js site with lazy-loaded city and mission modules. It is hosted on Vercel; a single-file build also provides a readable offline fallback.</li>
+    <li><b>Procedural three.js.</b> Buildings, cars and kites are built from code: boxes, lathes and extrusions. No downloaded models.</li>
     <li><b>A real Earth.</b> Coastlines come from Natural Earth's public-domain land data, packed into a 32 KB bit mask. Mountains, biomes and clouds are generated.</li>
     <li><b>Demos run in your browser.</b> The missions do their work on your device; "Show your work" lists each step they actually ran. Anything scripted says so.</li>
-    <li><b>The co-pilot is search, not a chatbot.</b> It ranks every story on the trip with BM25 plus a small synonym list, and shows you the match and its score.</li>
+    <li><b>Co-pilot search.</b> By default it ranks the stories locally with BM25 and a small synonym list. An optional configured endpoint can answer remotely; the standalone build stays local.</li>
     <li><b>Drive mode and real streets.</b> The yellow car is arcade physics against box colliders derived from the scene; Bangalore's streets and buildings are OpenStreetMap data baked offline into a small JSON file (© OpenStreetMap contributors), with approximate building heights.</li>
-    <li><b>Live local time and weather.</b> The time in each city comes from your browser's clock and that city's time zone. If you are online, current weather comes from Open-Meteo.com (free, no key) and tints the sky and adds rain or snow; offline, or with the "Designed" toggle, you get the hand-designed look.</li>
+    <li><b>Local time and optional weather.</b> Time comes from your browser's clock and the city's time zone. The designed scene is the default; where available, Open-Meteo weather can be selected. The standalone file makes no weather request.</li>
     <li><b>Voice is the browser's own.</b> The mic button and the spoken answers use your browser's built-in speech features (speech recognition and speech synthesis). This site never records or stores audio; where your browser sends speech for recognition is up to the browser.</li>
-    <li><b>Your own city.</b> If you type where you are, one lookup goes to a free geocoder (Photon, or OpenStreetMap's Nominatim as a fallback) and one to OpenStreetMap's Overpass, straight from your browser, to draw your streets. If either is slow or blocked you get a designed street instead.</li>
-    <li><b>No paid services.</b> No APIs, no tracking, no paid assets. Sound is synthesised live with WebAudio. It's a static site on free hosting.</li>
+    <li><b>Your own city.</b> In the hosted version, a city name is sent to a geocoder and OpenStreetMap's Overpass to draw streets; a designed street is used when those requests fail. The standalone build uses the designed street without these requests.</li>
+    <li><b>Runtime and code access.</b> The site uses no paid APIs or assets in this build. Sound is synthesised with WebAudio. The code for this portfolio is open on GitHub; the client and team projects it describes stay private.</li>
   </ul>
-  <div class="contact"><a class="btn small" id="howRepo" href="#" rel="noopener" target="_blank">Code: repo (coming public)</a><button class="btn" type="button" data-close data-autofocus>Back to the trip</button></div>
+  <div class="contact"><a class="btn small" id="howRepo" href="#" rel="noopener" target="_blank">View the source on GitHub</a><button class="btn" type="button" data-close data-autofocus>Back to the trip</button></div>
 </div></div>
 
 <div id="toast" role="status" aria-live="polite" hidden><span>That's real code. Want this for your team?</span> <button class="btn small primary" type="button" id="toastTalk">Talk to Nand</button><button class="tx" type="button" id="toastX" aria-label="Dismiss">×</button></div>

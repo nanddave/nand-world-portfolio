@@ -8,7 +8,6 @@ import {
   THREE, mat, glow, box, cyl, ball, grp, building, sign, textTex,
   treeRain, streetLight, auto, car, bike, person, SKIN, wheel, rnd, reseed, clamp,
 } from '../kit/kit.js';
-import { VISITOR } from '../core/visitor.js';
 
 const FONT = '800 64px "Big Shoulders Display", "Arial Narrow", sans-serif';
 const NEON = ['#5EEAD4', '#FFC93C', '#F472B6', '#60A5FA', '#A3E635', '#C084FC'];
@@ -188,7 +187,7 @@ function lot(C) {
 
   // two-sided sign board on posts at the road edge (one face to the street, one to the lot)
   const so = { bg: '#FFFFFF', fg: '#16192E', w: 1024, h: 256, font: '800 120px "Big Shoulders Display", "Arial Narrow", sans-serif', glow: true };
-  const first = VISITOR.company ? 'RESERVED FOR ' + VISITOR.company.toUpperCase().trim().slice(0, 24) : 'YOUR COMPANY HERE';
+  const first = 'WHAT COULD WE BUILD?';
   const sA = sign(first, 8, 2, so), sB = sign(first, 8, 2, so);
   [sA, sB].forEach(m => { m.material.emissiveIntensity = .55; });
   sA.position.set(X + 5, 3.4, Z - D / 2 - .5); sA.rotation.y = Math.PI;
@@ -217,11 +216,12 @@ function lot(C) {
     blocks.forEach((b, i) => { const k = clamp((t - start - i * .45) / 2.2, 0, 1); const e = 1 - Math.pow(1 - k, 3); b.visible = k > 0; b.scale.y = Math.max(.001, e); });
     ring.visible = inner.visible = (t - start) < 3;
   });
-  C.raiseLot = name => {
+  C.raiseLot = (name, { immediate = false } = {}) => {
     const n = String(name ?? '').replace(/\s+/g, ' ').trim().toUpperCase().slice(0, 24) || 'YOU';
-    paint('BUILT FOR ' + n);
-    start = null; armed = true;
-    blocks.forEach(b => { b.scale.y = .001; b.visible = false; });
+    paint('NEXT IDEA: ' + n);
+    start = null; armed = !immediate;
+    blocks.forEach(b => { b.scale.y = immediate ? 1 : .001; b.visible = immediate; });
+    if (immediate) ring.visible = inner.visible = false;
     return now;
   };
 }

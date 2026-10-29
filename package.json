@@ -8,7 +8,9 @@
     "dev": "vite",
     "build": "vite build",
     "build:single": "node tools/build-cv.mjs && SINGLE=1 vite build --outDir dist-single",
-    "shot": "node tools/shot.mjs"
+    "shot": "node tools/shot.mjs",
+    "test": "node tools/test-all.mjs",
+    "test:launch": "npm run build && node tools/launch-test.mjs --online"
   },
   "dependencies": {
     "three": "0.160.0"

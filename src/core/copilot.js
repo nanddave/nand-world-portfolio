@@ -63,7 +63,7 @@ export function search(q, n = 3) {
 /** Ask a question. Resolves { text, match: {ci,k,score} | null, source: 'retrieval'|'remote' }. */
 export async function ask(q) {
   const url = import.meta.env?.VITE_COPILOT_URL;
-  if (url) {
+  if (!__SINGLE__ && url) {
     try {
       const r = await fetch(url, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ q }) });
       const j = await r.json(); const ci = typeof j.stop === 'number' ? j.stop : STOPS.findIndex(s => s.id === j.stop);

@@ -1,3 +1,4 @@
+import { browserPath } from './browser.mjs';
 // Drive-mode smoke test: enter Bangalore directly, hold W 3 s then A 1 s, screenshot shots/drive-blr.png, print window.__drive.
 // Usage: node tools/drive-test.mjs [cityIndex=1]
 import { createServer } from 'vite';
@@ -5,7 +6,7 @@ import { chromium } from 'playwright-core';
 const ci = +(process.argv[2] ?? 1);
 const server = await createServer({ server: { port: 0, host: '127.0.0.1' }, logLevel: 'error' }); await server.listen();
 const port = server.httpServer.address().port;
-const b = await chromium.launch({ executablePath: '/opt/pw-browsers/chromium', args: ['--use-gl=swiftshader', '--enable-webgl', '--ignore-gpu-blocklist'] });
+const b = await chromium.launch({ executablePath: browserPath, args: ['--use-gl=swiftshader', '--enable-webgl', '--ignore-gpu-blocklist'] });
 const p = await b.newPage({ viewport: { width: 1440, height: 900 } }); const errs = [];
 p.on('pageerror', e => errs.push('pageerror: ' + e.message)); p.on('console', m => { if (m.type() === 'error' && !/404/.test(m.text())) errs.push('console: ' + m.text()); });
 await p.goto(`http://127.0.0.1:${port}/`); await p.waitForFunction(() => window.__ready, null, { timeout: 60000 });

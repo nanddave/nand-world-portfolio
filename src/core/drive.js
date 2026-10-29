@@ -37,8 +37,9 @@ export function createDrive({ cam, reduce = false }) {
       cam.fov = baseFov(); cam.updateProjectionMatrix();
     },
     sync() { D.car.position.x = D.x; D.car.position.z = D.z; D.car.rotation.y = D.h; },
-    /** dt seconds; paused = a card is open (input ignored, car coasts to a stop). Returns { speed, nearSpot }. */
+    /** dt seconds; paused stops movement immediately. Returns { speed, nearSpot }. */
     update(dt, paused = false) {
+      if (paused) { D.speed = 0; return { speed: 0, nearSpot: D.nearSpot }; }
       const MAXF = MAXF0 * D.boost, MAXR = MAXF0 / 3, ACC = ACC0 * D.boost;
       const C = D.C, car = D.car, inp = paused ? { throttle: 0, steer: 0, brake: true } : D.input;
       let sp = D.speed;

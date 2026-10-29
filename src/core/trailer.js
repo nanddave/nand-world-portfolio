@@ -52,7 +52,7 @@ export function createTrailer(app) {
   let cine = null, move = null, drift = 0; // scripted city camera
   let ap = null; // drive autopilot
   let endShot = null;
-  let keyHandler = null;
+  let keyHandler = null, generation = 0;
 
   /* ---------- DOM ---------- */
   function buildDom() {
@@ -536,6 +536,7 @@ export function createTrailer(app) {
   /* ---------- lifecycle ---------- */
   T.start = async (opts = {}) => {
     if (T.active) return;
+    const run = ++generation;
     T.active = true; T.done = false; T.ready = false; T.t = 0; idx = 0; stall = null; endShot = null; cine = null; move = null; ap = null; C = null; loaded.clear();
     window.__trailerDone = false; window.__trailerReady = false;
     document.body.classList.add('trailer'); document.body.classList.toggle('trailer-v', VERT); document.body.classList.add('on');
@@ -544,22 +545,23 @@ export function createTrailer(app) {
     if (VERT) { city.fov = 62; globe.fov = REELM ? 56 : 58; } else { city.fov = null; globe.fov = REELM ? 34 : null; }
     globe.trailer = true; app.resize();
     state.mode = 'globe'; state.transit = false; globe.u = 0; globe.tw = null; globe.view = 'intro'; globe.spin = 1; globe.faceIndia(); globe.hidePins();
-    drive.boost = 1; drive.chase = null; Sound.set(!REC && opts.sound !== false);
+    drive.boost = 1; drive.chase = null; if (REC || opts.sound !== undefined) Sound.set(!REC && opts.sound);
     if (REELM) { document.body.classList.add('reel'); reelReset(); }
     keyHandler = e => { if (e.key === 'Escape') { e.preventDefault(); e.stopImmediatePropagation(); T.stop(); } };
     addEventListener('keydown', keyHandler, true);
     try { await Promise.race([document.fonts.load('900 60px "Big Shoulders Display"'), new Promise(r => (window.__realTimeout || setTimeout)(r, 2500))]); } catch { /* fallback font is fine */ }
+    if (!T.active || run !== generation) return;
     // Preload every city and mission up front so nothing builds while the clock runs.
     const ids = [...new Set(shots.filter(s => s.do === 'enter').map(s => CITY_IDX[s.city]))];
     if (REELM) { ids.push(CITY_IDX.brokai); await reelWarm(); } // brokai = backdrop for the your-city prompt and the end card
-    for (const i of ids) { if (!T.active) return; await loadCity(i); els.load.textContent = REC ? '' : `Loading the trailer… ${loaded.size}/${ids.length}`; }
+    for (const i of ids) { if (!T.active || run !== generation) return; await loadCity(i); if (!T.active || run !== generation) return; els.load.textContent = REC ? '' : `Loading the trailer… ${loaded.size}/${ids.length}`; }
     await Promise.all([...new Set(shots.filter(s => s.do === 'mission').map(s => s.id))].map(id => MISSIONS[id]().catch(() => null)));
-    if (!T.active) return;
+    if (!T.active || run !== generation) return;
     els.load.textContent = ''; T.ready = true; window.__trailerReady = true; window.__trailerStart = performance.now();
     Sound.play('globe');
   };
   T.stop = () => {
-    if (!T.active) return; T.active = false; T.ready = false;
+    if (!T.active) return; generation++; T.active = false; T.ready = false;
     panels.forEach(p => { try { p.handle?.unmount?.(); } catch { /* ignore */ } });
     removeEventListener('keydown', keyHandler, true);
     stopDrive(); drive.boost = 1; drive.chase = null; city.cine = null; city.fov = null; globe.fov = null; globe.trailer = false; globe.spin = 1; globe.tw = null;

@@ -57,7 +57,6 @@ export function build() {
   // ---------- spots (order = stops.js) ----------
   C.spot(-20, 11, -11);   // 1 PES University (gate)
   C.spot(0, 16, 29); // 2 ANA Packaging & Trading
-  C.spot(16, 6, -16);     // 3 The darshini
   addOSM(C, blrOSM, { clearRadius: 0, clearBoxes: [{ minX: -5, maxX: 101, minZ: -152, maxZ: -48 }] }); // clearBoxes = hand-made Vidhana Soudha plinth
   C.credit = 'Streets & buildings: © OpenStreetMap contributors';
   return C;

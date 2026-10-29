@@ -1,10 +1,11 @@
+import { browserPath } from './browser.mjs';
 // Drive check across all cities: spawn clear of colliders, every spot reachable within 12 m, proximity + E opens card, Esc resumes.
 // Usage: node tools/drive-cities.mjs
 import { createServer } from 'vite';
 import { chromium } from 'playwright-core';
 const server = await createServer({ server: { port: 0, host: '127.0.0.1' }, logLevel: 'error' }); await server.listen();
 const port = server.httpServer.address().port;
-const b = await chromium.launch({ executablePath: '/opt/pw-browsers/chromium', args: ['--use-gl=swiftshader', '--enable-webgl', '--ignore-gpu-blocklist'] });
+const b = await chromium.launch({ executablePath: browserPath, args: ['--use-gl=swiftshader', '--enable-webgl', '--ignore-gpu-blocklist'] });
 const p = await b.newPage({ viewport: { width: 1280, height: 800 } }); const errs = [];
 p.on('pageerror', e => errs.push(e.message));
 await p.goto(`http://127.0.0.1:${port}/`); await p.waitForFunction(() => window.__ready, null, { timeout: 60000 });

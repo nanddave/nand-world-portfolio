@@ -155,6 +155,14 @@ export function build() {
   }
   C.tick.push((t, dt) => boats.forEach((b, i) => { b.position.x += (2 + i * .3) * dt; if (b.position.x > 220) b.position.x = -220; b.rotation.z = Math.sin(t + i) * .05; }));
 
+  // skydiver drifting down over the bay (canopy + lines + jumper), loops every ~45 s
+  const sky = grp(), cells = ['#E63946', '#F4F1EA', '#1D4E89', '#F4F1EA', '#E63946'];
+  cells.forEach((c, i) => { const a = (i - 2) * .26; const cell = box(1.5, .35, 3.2, mat(c, { side: THREE.DoubleSide })); cell.position.set(0, 7 + Math.cos(a) * 1.2, Math.sin(a) * 5.6); cell.rotation.x = -a; sky.add(cell); });
+  [-1, 1].forEach(s => [-.5, .5].forEach(x => { const l = cyl(.02, .02, 7.4, '#2B2B35', 0, 0, 0, 4); l.position.set(x * .8, 3.6, s * 2.6); l.rotation.x = s * -.62; sky.add(l); }));
+  const jumper = person('#F2C14E'); jumper.position.y = -.2; sky.add(jumper);
+  sky.scale.setScalar(1.6); sky.userData.noCollide = true; C.add(sky, 30, -150);
+  C.tick.push(t => { const u = (t % 45) / 45; sky.position.set(70 - u * 70, 115 - u * 100, -150 + Math.sin(t * .2) * 10); sky.rotation.y = Math.sin(t * .35) * .4; sky.rotation.z = Math.sin(t * .8) * .06; });
+
   // ---- downtown + Transamerica + Coit Tower ----
   [[6, -132, 11, 11, 28, '#D8D2C6'], [20, -152, 12, 12, 38, '#C9C4BC'], [58, -140, 13, 12, 44, '#B9C3CC'], [72, -158, 14, 14, 34, '#D2CABD'],
     [46, -170, 12, 12, 52, '#AEB8C2'], [-6, -150, 10, 10, 22, '#E0D6C6'], [88, -136, 10, 10, 26, '#C8BFB0'], [32, -178, 10, 10, 30, '#BFC6CC']].forEach(([x, z, w, d, h, c], i) =>

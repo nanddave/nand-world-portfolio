@@ -120,6 +120,12 @@ export function newCity(cfg) {
     return () => { live = false; const i = C.tick.indexOf(f); if (i >= 0) C.tick.splice(i, 1); };
   };
   C.hero = (x, z, ry = 0) => { const c = heroCar(!!cfg.night); C.add(c, x, z, ry); C.heroCar = c; return c; };
+  /** Replace the hero car mesh with another kind, keeping its pose and flags. Returns the new car. */
+  C.swapHero = kind => {
+    const o = C.heroCar; if (!o || o.userData.kind === kind) return o;
+    const c = heroCar(!!cfg.night, kind); c.position.copy(o.position); c.rotation.copy(o.rotation); c.userData.noCollide = o.userData.noCollide;
+    o.parent.add(c); o.parent.remove(o); C.heroCar = c; return c;
+  };
   C.crowd = pts => pts.forEach(([x, z, ry]) => C.add(person(SKIN[Math.floor(rnd() * SKIN.length)]), x, z, ry ?? rnd() * 6));
   /** Called every frame by the app/harness. */
   C.update = (t, dt) => {

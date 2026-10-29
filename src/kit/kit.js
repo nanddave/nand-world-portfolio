@@ -121,7 +121,32 @@ export function car(c, night = false) {
     box(.08, .22, .4, lamp('#FFF6D0', night), 2.12, .75, .55), box(.08, .22, .4, lamp('#FFF6D0', night), 2.12, .75, -.55),
     box(.08, .2, .4, lamp(night ? '#FF3030' : '#B02020', night), -2.12, .75, .55), box(.08, .2, .4, lamp(night ? '#FF3030' : '#B02020', night), -2.12, .75, -.55));
 }
-export function heroCar(night = false) { const g = car('#FFC93C', night); g.scale.setScalar(1.05); g.userData.hero = true; return g; }
+// Selectable hero cars: unbranded silhouettes (side outline extruded across the width), footprint close to the classic car so drive tuning holds.
+function shapedCar({ body, glass, w, c, wheels, r, lampY, front, back, extra }, night) {
+  const paint = mat(c, { roughness: .32, metalness: .55 }), lamp = (col, n) => n ? glow(col, 2) : col;
+  const g = grp(extrude(body, w, paint), extrude(glass, w - .14, mat('#22303C', { roughness: .15, metalness: .6 })));
+  wheels.forEach(x => [1, -1].forEach(s => { g.add(wheel(x, s * (w / 2 - .12), r)); const rim = cyl(r * .55, r * .55, .32, mat('#C9CDD2', { metalness: .8, roughness: .3 })); rim.rotation.x = Math.PI / 2; rim.position.set(x, r, s * (w / 2 - .1)); g.add(rim); }));
+  [1, -1].forEach(s => { g.add(box(.08, .16, .42, lamp('#FFF6D0', night), front, lampY, s * (w / 2 - .32))); g.add(box(.08, .14, .5, lamp(night ? '#FF3030' : '#B02020', night), back, lampY, s * (w / 2 - .32))); });
+  extra?.(g, paint); return g;
+}
+export const CARS = [
+  { id: 'classic', label: 'Classic', build: n => car('#FFC93C', n) },
+  { id: 'sedan', label: 'Luxury sedan', build: n => shapedCar({ c: '#1C1F26', w: 1.9, r: .38, lampY: .72, front: 2.6, back: -2.6, wheels: [1.65, -1.6],
+    body: [[-2.62, .3], [2.62, .3], [2.66, .62], [2.45, .86], [1.05, .98], [-1.75, .98], [-2.5, .92], [-2.66, .64]],
+    glass: [[1.05, .97], [.25, 1.48], [-1.05, 1.5], [-1.78, .97]],
+    extra: (g, p) => g.add(box(5.3, .05, 1.94, mat('#B8BEC6', { metalness: .9, roughness: .25 }), 0, .62)) }, n) },
+  { id: 'hyper', label: 'Hypercar', build: n => shapedCar({ c: '#FF6A13', w: 2, r: .36, lampY: .58, front: 2.3, back: -2.32, wheels: [1.45, -1.4],
+    body: [[-2.32, .22], [2.3, .22], [2.36, .42], [1.3, .7], [.35, 1.02], [-.95, 1.08], [-2.15, .86], [-2.34, .5]],
+    glass: [[1.05, .78], [.32, 1.06], [-.7, 1.1], [-.35, .8]],
+    extra: (g, p) => { g.add(box(.5, .06, 2.1, p, -2.1, 1.3)); [.7, -.7].forEach(z => g.add(box(.08, .32, .08, '#1E1E24', -2.05, .98, z))); [1, -1].forEach(s => g.add(box(1, .3, .05, '#14161A', -.6, .45, s * 1.01))); } }, n) },
+  { id: 'suv', label: 'Off-roader', build: n => shapedCar({ c: '#3E5A46', w: 2, r: .48, lampY: .98, front: 2.42, back: -2.42, wheels: [1.55, -1.5],
+    body: [[-2.4, .42], [2.4, .42], [2.45, 1.05], [1.75, 1.22], [-2.4, 1.25]],
+    glass: [[1.65, 1.21], [1.05, 1.9], [-2.32, 1.9], [-2.36, 1.24]],
+    extra: (g, p) => { g.add(box(3.6, .08, 2.04, p, -.65, 1.9)); g.add(box(3.2, .06, 1.7, '#2A2D33', -.7, 2.02)); const sp = cyl(.42, .42, .2, '#1E1E24', -2.5, .55); sp.rotation.z = Math.PI / 2; g.add(sp); } }, n) },
+];
+let heroKind = 'classic';
+export const setHeroKind = id => { heroKind = CARS.some(c => c.id === id) ? id : 'classic'; return heroKind; };
+export function heroCar(night = false, kind = heroKind) { const g = (CARS.find(c => c.id === kind) || CARS[0]).build(night); g.scale.setScalar(1.05); g.userData.hero = true; g.userData.kind = kind; return g; }
 export function auto() { return grp(box(2.4, .8, 1.3, '#2E8B3E', 0, .3), box(1.8, .08, 1.36, '#F2C230', -.1, 1.9), box(.1, 1.0, 1.3, '#F2C230', .9, 1.1), cyl(.05, .05, .8, '#222', -.95, 1.1, .6), cyl(.05, .05, .8, '#222', -.95, 1.1, -.6), wheel(.9, 0, .3), wheel(-.8, .55, .3), wheel(-.8, -.55, .3)); }
 export function bus(c1, c2, night = false) { return grp(box(11, 2.6, 2.5, c1, 0, .5), box(11.02, .9, 2.52, c2, 0, 1.6), wheel(3.6, 1.1, .55), wheel(-3.6, 1.1, .55), wheel(3.6, -1.1, .55), wheel(-3.6, -1.1, .55), box(10.2, .8, 2.54, night ? glow('#FFE6B0', .9) : '#2D3E50', 0, 1.65)); }
 export function pickup(c) { return grp(box(5.4, 1.0, 2.1, c, 0, .5), box(2.2, .9, 2, c, .5, 1.5), box(2.25, .7, 1.9, '#AFC6D6', .5, 1.55), wheel(1.8, 1, .48), wheel(-1.8, 1, .48), wheel(1.8, -1, .48), wheel(-1.8, -1, .48)); }

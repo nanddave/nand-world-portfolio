@@ -1,9 +1,10 @@
+import { browserPath } from './browser.mjs';
 // Full-journey smoke test: intro → start → a few cities and missions. Saves shots/j-*.png and prints errors.
 import { createServer } from 'vite';
 import { chromium } from 'playwright-core';
 const server = await createServer({ server: { port: 0, host: '127.0.0.1' }, logLevel: 'error' }); await server.listen();
 const port = server.httpServer.address().port;
-const b = await chromium.launch({ executablePath: '/opt/pw-browsers/chromium', args: ['--use-gl=swiftshader', '--enable-webgl', '--ignore-gpu-blocklist'] });
+const b = await chromium.launch({ executablePath: browserPath, args: ['--use-gl=swiftshader', '--enable-webgl', '--ignore-gpu-blocklist'] });
 const p = await b.newPage({ viewport: { width: 1440, height: 900 } }); const errs = [];
 p.on('pageerror', e => errs.push('pageerror: ' + e.message)); p.on('console', m => { if (m.type() === 'error' && !/404/.test(m.text())) errs.push('console: ' + m.text()); });
 const shot = async n => { await p.screenshot({ path: `shots/j-${n}.png` }); console.log('shot', n); };

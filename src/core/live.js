@@ -36,7 +36,7 @@ async function fetchWeather(lat, lon) {
   } catch { return null; } finally { clearTimeout(timer); }
 }
 
-function localTime(tz, hourOverride) {
+export function localTime(tz, hourOverride) {
   let hour = new Date().getHours(), minute = new Date().getMinutes();
   try {
     const parts = new Intl.DateTimeFormat('en-US', { timeZone: tz, hour: 'numeric', minute: '2-digit', hour12: false }).formatToParts(new Date());
