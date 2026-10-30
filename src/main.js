@@ -122,7 +122,7 @@ async function toIntro() { const request = ++jumpVersion; globe.cancelSweep(); $
 $('#home').addEventListener('click', e => { e.preventDefault(); pushRoute(); restoreRoute(); });
 /* trailer entry points: the intro button, or ?trailer=1 (autoplay). Esc stops it and returns to the intro. */
 trailer.onStop = () => { state.mode = 'intro'; state.cityIdx = -1; state.transit = false; globe.view = 'intro'; globe.u = 0; globe.faceIndia(); document.body.classList.remove('on', 'incity'); $('#travel').classList.remove('show'); Sound.play('globe'); updateChips(); };
-$('#trailerBtn').addEventListener('click', () => { closeModals(); if (state.mode === 'intro') trailer.start(); else toIntro().then(() => trailer.start()); });
+document.querySelectorAll('#trailerBtn, #trailerLink').forEach(el => el.addEventListener('click', () => { closeModals(); if (state.mode === 'intro') trailer.start(); else toIntro().then(() => trailer.start()); }));
 if (QS.has('trailer')) trailer.start();
 
 /** Go to stop i (and optionally open spot k there). Works from intro, globe or another city. */
