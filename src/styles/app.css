@@ -118,6 +118,7 @@ body.on #pilot{opacity:1;transform:none;pointer-events:auto;visibility:visible}
 @keyframes live{50%{opacity:.35}}
 .bubble small{display:block;margin-top:6px;color:var(--ink-soft);font-size:12px;font-family:var(--mono)}
 .sugg{display:flex;gap:6px;flex-wrap:wrap}
+.sugg button.more{background:var(--sun,#FFC93C)}
 .sugg button{min-height:36px;padding:0 12px;border-radius:18px;border:0;background:rgba(255,251,243,.9);color:var(--ink);font-size:13px;font-weight:600}
 #ask{display:flex;gap:6px;background:var(--paper);border-radius:26px;padding:4px 4px 4px 16px;box-shadow:0 8px 22px rgba(0,0,0,.25)}
 #ask input{flex:1;min-width:0;border:0;background:transparent;font:inherit;color:var(--ink)}

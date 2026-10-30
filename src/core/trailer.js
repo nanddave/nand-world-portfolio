@@ -7,7 +7,8 @@
 import { THREE, V, clamp, lerp } from '../kit/kit.js';
 import { STOPS, CONTACT, isReal } from '../content/stops.js';
 import { SHOTS, TRAILER_END, TRAILER_LENGTH } from '../content/trailer.js';
-import { REEL, REEL_END, REEL_LENGTH } from '../content/reel.js';
+import * as HERO from '../content/reel.js';
+import { PLATES, REEL_END as LAUNCH_END } from '../content/reel-launch.js';
 import { VISITOR } from './visitor.js';
 import '../styles/reel.css';
 import { MISSIONS, mountMission } from '../missions/index.js';
@@ -38,7 +39,7 @@ export function createTrailer(app) {
   const params = new URLSearchParams(location.search);
   const VERT = params.get('v') === '1';
   const REC = FIXED_FPS > 0;
-  const REELM = params.get('reel') === 'hero'; // social reel (src/content/reel.js); without it the 60-s trailer plays unchanged
+  const RNAME = params.get('reel'), PLATE = PLATES[RNAME], REELM = RNAME === 'hero' || !!PLATE, { REEL, REEL_END, REEL_LENGTH } = PLATE ? { REEL: PLATE.shots, REEL_END: LAUNCH_END, REEL_LENGTH: PLATE.len } : HERO; // social reel (src/content/reel.js); without it the 60-s trailer plays unchanged
   const shots = (REELM ? REEL : SHOTS).map((s, i) => ({ ...s, _i: i })).sort((a, b) => a.at - b.at || a._i - b._i);
   const LEN = REELM ? REEL_LENGTH : TRAILER_LENGTH;
 

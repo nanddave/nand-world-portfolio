@@ -1,7 +1,8 @@
 // WebAudio ambience, synthesised live (no audio files). One soundscape per city id plus 'globe'.
 // Off until the visitor presses Start; a toggle in the top bar switches it.
+import { Music } from './music.js';
 export const Sound = {
-  ctx: null, master: null, on: false, nodes: [], timers: [], noiseBuf: null, current: null, _last: null, onChange: null,
+  ctx: null, master: null, on: false, nodes: [], timers: [], wnodes: [], wtimers: [], wx: null, noiseBuf: null, current: null, _last: null, onChange: null,
   init() {
     if (this.ctx) return;
     try {
@@ -14,17 +15,28 @@ export const Sound = {
     if (this.ctx.state === 'suspended') this.ctx.resume();
     this.master.gain.setTargetAtTime(on ? .55 : 0, this.ctx.currentTime, .3);
     if (on && this.current) this.play(this.current, true); else if (!on) { this.stop(); this._last = null; }
+    this.applyWeather();
   },
-  noise(type, f, q, g) {
+  noise(type, f, q, g, bucket = this.nodes) {
     const c = this.ctx, s = c.createBufferSource(); s.buffer = this.noiseBuf; s.loop = true; const fl = c.createBiquadFilter(); fl.type = type; fl.frequency.value = f; fl.Q.value = q || 1; const gn = c.createGain(); gn.gain.value = 0;
-    s.connect(fl); fl.connect(gn); gn.connect(this.master); s.start(); gn.gain.setTargetAtTime(g, c.currentTime, 1); this.nodes.push({ s, gn }); return { s, fl, gn };
+    s.connect(fl); fl.connect(gn); gn.connect(this.master); s.start(); gn.gain.setTargetAtTime(g, c.currentTime, 1); bucket.push({ s, gn }); return { s, fl, gn };
   },
   tone(type, f, dur, g, slide) {
     const c = this.ctx, o = c.createOscillator(), gn = c.createGain(); o.type = type; o.frequency.setValueAtTime(f, c.currentTime); if (slide) o.frequency.exponentialRampToValueAtTime(slide, c.currentTime + dur * .8);
     gn.gain.setValueAtTime(0, c.currentTime); gn.gain.linearRampToValueAtTime(g, c.currentTime + .02); gn.gain.exponentialRampToValueAtTime(.0001, c.currentTime + dur); o.connect(gn); gn.connect(this.master); o.start(); o.stop(c.currentTime + dur + .05);
   },
-  every(min, max, fn) { const go = () => { fn(); this.timers.push(setTimeout(go, (min + Math.random() * (max - min)) * 1000)); }; this.timers.push(setTimeout(go, min * 500)); },
-  stop() { const c = this.ctx; if (!c) return; this.timers.forEach(clearTimeout); this.timers = []; this.nodes.forEach(n => { try { n.gn.gain.setTargetAtTime(0, c.currentTime, .4); n.s.stop(c.currentTime + 1.5); } catch (e) { /* already stopped */ } }); this.nodes = []; },
+  every(min, max, fn, bucket = this.timers) { const go = () => { fn(); bucket.push(setTimeout(go, (min + Math.random() * (max - min)) * 1000)); }; bucket.push(setTimeout(go, min * 500)); },
+  /** Weather layer, independent of the city ambience: { rain, snow (0..1), thunder } or null. Designed scenes pass their own; live scenes pass the real weather. */
+  weather(w) { this.wx = w; this.applyWeather(); },
+  applyWeather() {
+    const c = this.ctx; if (!c) return; const S = this, w = this.wx;
+    this.wtimers.forEach(clearTimeout); this.wtimers = []; this.wnodes.forEach(n => { try { n.gn.gain.setTargetAtTime(0, c.currentTime, .5); n.s.stop(c.currentTime + 2); } catch (e) { /* already stopped */ } }); this.wnodes = [];
+    if (!this.on || !w) return; const rain = w.rain || 0, snow = w.snow || 0;
+    if (rain) { S.noise('highpass', 1400, .7, .04 + .14 * rain, S.wnodes); S.noise('bandpass', 700, .8, .015 + .05 * rain, S.wnodes); S.every(.15, .7, () => S.tone('sine', 1500 + Math.random() * 1500, .06, .01 + .02 * rain), S.wtimers); }
+    if (snow) { S.noise('lowpass', 450, .7, .04 + .05 * snow, S.wnodes); S.noise('bandpass', 3000, .6, .006, S.wnodes); S.every(1.2, 3.5, () => S.tone('sine', 2600 + Math.random() * 900, .6, .006), S.wtimers); }
+    if (w.thunder) S.every(7, 16, () => S.voice('sawtooth', 58, 0, 2.4, .13, ['lowpass', 220]), S.wtimers);
+  },
+  stop() { const c = this.ctx; if (!c) return; Music.stop(); this.timers.forEach(clearTimeout); this.timers = []; this.nodes.forEach(n => { try { n.gn.gain.setTargetAtTime(0, c.currentTime, .4); n.s.stop(c.currentTime + 1.5); } catch (e) { /* already stopped */ } }); this.nodes = []; },
   /** One-shot synth voice for horns: osc → optional filter → gain envelope → master. */
   voice(type, f, at, dur, g, flt) {
     const c = this.ctx, t = c.currentTime + at, o = c.createOscillator(), gn = c.createGain(); o.type = type; o.frequency.value = f;
@@ -58,10 +70,11 @@ export const Sound = {
         const o = S.ctx.createOscillator(), am = S.ctx.createOscillator(), g = S.ctx.createGain(), amg = S.ctx.createGain(); o.frequency.value = 4700; am.frequency.value = 38; amg.gain.value = .018; g.gain.value = 0; am.connect(amg); amg.connect(g.gain); o.connect(g); g.connect(S.master); o.start(); am.start(); S.nodes.push({ s: o, gn: g }, { s: am, gn: amg });
         const hw = S.noise('lowpass', 650, 1, .07); S.every(2.5, 5, () => { const t = S.ctx.currentTime; hw.gn.gain.cancelScheduledValues(t); hw.gn.gain.setTargetAtTime(.2, t, .6); hw.gn.gain.setTargetAtTime(.07, t + 1.6, .8); });
       },
-      seattle() { S.noise('highpass', 1400, .7, .16); S.noise('lowpass', 380, 1, .07); S.every(.2, .9, () => S.tone('sine', 1500 + Math.random() * 1500, .06, .02)); },
+      seattle() { S.noise('lowpass', 380, 1, .07); },
       sf() { S.noise('lowpass', 500, 1, .1); S.every(10, 16, () => { S.tone('sawtooth', 92, 2.4, .07); setTimeout(() => S.on && S.tone('sawtooth', 78, 2.6, .07), 2500); }); S.every(9, 15, () => { S.tone('triangle', 1600, .5, .03); setTimeout(() => S.on && S.tone('triangle', 1600, .5, .03), 220); }); },
       brokai() { S.noise('lowpass', 260, 1, .1); S.every(.6, 1.6, () => { for (let k = 0; k < 3; k++) setTimeout(() => S.on && S.tone('sine', 4300, .05, .015), k * 70); }); S.every(4, 9, () => S.tone('square', 440, .2, .018)); },
     };
     (scapes[name] || scapes[name === 'bellevue' ? 'seattle' : 'globe'])();
+    Music.play(this, name); this.applyWeather();
   },
 };

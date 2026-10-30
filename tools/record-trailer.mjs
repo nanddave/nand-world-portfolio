@@ -22,13 +22,15 @@ import path from 'node:path';
 const argv = process.argv.slice(2);
 const flag = n => argv.includes('--' + n);
 const val = (n, d) => { const i = argv.indexOf('--' + n); return i >= 0 && argv[i + 1] != null ? argv[i + 1] : d; };
-import { REEL_LENGTH } from '../src/content/reel.js';
+import { REEL_LENGTH as HERO_LEN } from '../src/content/reel.js';
+import { PLATES } from '../src/content/reel-launch.js';
+const REEL_LENGTH = PLATES[val('reel', '')]?.len ?? HERO_LEN;
 const VERT = flag('vertical'), FPS = +val('fps', 30), WEBM = flag('webm'), REEL = val('reel', '');
 const W = VERT ? 1080 : 1920, H = VERT ? 1920 : 1080, LEN = REEL ? REEL_LENGTH : 60;
 const QREEL = REEL ? `&reel=${REEL}` : '';
 const from = +val('from', 0), to = +val('to', LEN), ranged = from > 0 || to < LEN;
 const suffix = VERT ? '-vertical' : '';
-const outName = REEL ? `shots/reel-${VERT ? 'vertical' : 'landscape'}` : `shots/trailer${suffix}`;
+const outName = REEL ? `shots/reel-${REEL}-${VERT ? 'vertical' : 'landscape'}` : `shots/trailer${suffix}`;
 fs.mkdirSync('shots', { recursive: true });
 
 const server = await createServer({ server: { port: 0, host: '127.0.0.1' }, logLevel: 'error' }); await server.listen();
@@ -53,7 +55,7 @@ try {
     const video = page.video(); await ctx.close(); const out = `${outName}.webm`; await video.saveAs(out); fs.rmSync(dir, { recursive: true, force: true });
     console.log('saved', out);
   } else {
-    const dir = `shots/frames${REEL ? '-reel' : ''}${VERT ? '-v' : ''}`; if (!flag('keep')) fs.rmSync(dir, { recursive: true, force: true }); fs.mkdirSync(dir, { recursive: true });
+    const dir = `shots/frames${REEL ? '-reel-' + REEL : ''}${VERT ? '-v' : ''}`; if (!flag('keep')) fs.rmSync(dir, { recursive: true, force: true }); fs.mkdirSync(dir, { recursive: true });
     const page = await browser.newPage({ viewport: { width: W, height: H } }); hook(page);
     await page.goto(`http://127.0.0.1:${port}/?trailer=1&fixed=${FPS}${QREEL}${VERT ? '&v=1' : ''}`);
     await waitFlag(page, '__trailerReady', 240000);

@@ -44,11 +44,16 @@ export const PROJECTS = [
     limitations:['The call on this site uses your browser\'s voice and a pretend calendar; no real booking is made.','Real call recordings stay private to the client.'],
     evidenceNote:'The salon handled about 300 calls and 240 confirmed bookings a month through it (client-reported figures).' },
 ];
-/** What founders can hire me for, each tied to the spot that shows it. [title, description, city id, spot title]. */
+/** What Brokai Labs builds, each tied to the spot that shows the delivered work. [title, description, city id, spot title]. */
 export const OFFERS = [
-  ['Voice receptionist', 'Answers calls and books appointments. Delivered for a US salon: about 300 calls and about 240 confirmed bookings a month.', 'brokai', 'The salon (US client)'],
-  ['Internal ops agent', 'Jarvis: a voice agent with persistent memory that works across Slack, Linear, Gmail, Calendar and Notion, evaluated on 30–40 cases per round.', 'brokai', 'Brokai Labs'],
-  ['Résumé screening and ranking', 'Bulk résumé ingestion and candidate ranking, used to screen 300+ applicants.', 'brokai', 'Brokai Labs'],
+  ['Voice receptionist', 'Answers every call, books and reschedules appointments. Live at a US salon: about 300 calls and 240 confirmed bookings a month (client-reported).', 'brokai', 'The salon (US client)'],
+  ['Internal ops agent', 'Ask once by voice; it acts across Slack, Linear, Gmail, Calendar and Notion and remembers context. Scored on 30–40 test cases per round.', 'brokai', 'Brokai Labs'],
+  ['Tool integrations for AI agents', 'One API so an agent can act in Gmail, Sheets, Slack and PostgreSQL, instead of a custom integration per app. A prototype with 28 actions.', 'brokai', 'Brokai Labs'],
+  ['Résumé screening and ranking', 'Bulk résumé intake and candidate ranking, used to screen 300+ applicants.', 'brokai', 'Brokai Labs'],
+  ['Booking and intake workflows', 'A healthcare appointment assistant that books, holds calendar slots and emails, plus a seven-question-type patient intake with encryption, audit logging and retries.', 'sf', 'Oaklet'],
+  ['Data pipelines and reporting', 'Messy multi-source data rebuilt in PySpark: 10+ sources, data accuracy up 18%, KPI runtimes down 23.7%.', 'irving', '7-Eleven'],
+  ['Data labeling and quality', 'Audio and text pipelines with human review: 6,000+ hours a week, processing time down 70%, 95%+ labeling accuracy, near-duplicate detection in 10+ languages.', 'seattle', 'Centific'],
+  ['Decision analytics for operations', 'Inventory and buyer-risk analysis with R/SQL and A/B tests: stockouts down 17%, payment defaults down 70%, order conversion up 16.2%.', 'blr', 'ANA Packaging & Trading'],
 ];
 /** Short "what you'll do" phrase per mission, used to tease the next stop. */
 export const MISSION_TEASE = {
@@ -116,7 +121,7 @@ export const STOPS = [
     id: 'brokai', tz: 'Asia/Kolkata', wlat: 12.93, wlon: 77.62, name: 'Bangalore, again', short: 'Bangalore', lat: 12.93, lon: 77.62, stamp: '#1F2A5C',
     region: 'Karnataka, India', coord: '12.93° N, 77.62° E', mood: 'Late night, the tech parks still lit',
     spots: [
-      { t: 'Brokai Labs', m: 'Founder & Lead AI Engineer, Nov 2025–Oct 2026', mission: 'jarvis', b: `<p>I came back to India to build for Indian businesses, and founded Brokai Labs, an AI and automation agency.</p><ul><li><b>Jarvis</b>: ${PROJECTS[0].text}</li><li><b>Résumé ranking</b>: led delivery of a bulk résumé-ingestion and candidate-ranking workflow used to screen 300+ applicants.</li><li><b>Hapi</b>: ${PROJECTS[1].text}</li></ul><p><button type="button" class="go" data-founders>What I can build for you</button></p>` },
+      { t: 'Brokai Labs', m: 'Founder & Lead AI Engineer, Nov 2025–Oct 2026', mission: 'jarvis', b: `<p>I came back to India to build for Indian businesses, and founded Brokai Labs, an AI and automation agency.</p><ul><li><b>Jarvis</b>: ${PROJECTS[0].text}</li><li><b>Résumé ranking</b>: led delivery of a bulk résumé-ingestion and candidate-ranking workflow used to screen 300+ applicants.</li><li><b>Hapi</b>: ${PROJECTS[1].text}</li></ul><p><button type="button" class="go" data-founders>What I build</button></p>` },
       { t: 'The salon (US client)', m: 'Voice AI for a salon in the US', mission: 'voice', b: `<p>Brokai's first paying customer was a US salon. ${PROJECTS[2].text}</p><p>${PROJECTS[2].evidenceNote}</p>` },
       { t: 'Your company here', m: 'The next stop', mission: 'lot', b: '<p>This empty lot is an invitation to imagine what we might build together.</p>' },
     ],

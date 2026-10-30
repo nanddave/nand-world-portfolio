@@ -12,7 +12,7 @@ import { liveFor, localTime } from './core/live.js';
 import { createPost } from './core/post.js';
 import { Sound } from './core/sound.js';
 import { createTrailer } from './core/trailer.js';
-import { ask, search, SUGGESTIONS, PERSONA_SUGGESTIONS } from './core/copilot.js';
+import { ask, search, SUGGESTIONS, PERSONA_SUGGESTIONS, CATEGORIES } from './core/copilot.js';
 import { createCard } from './ui/card.js';
 import { setupModals, openModal, closeModals, openProject, renderPassport, setProgress } from './ui/modals.js';
 
@@ -80,8 +80,11 @@ const initialProject = PROJECTS.find(p => p.id === QS.get('project'));
 const moodPref = { get() { try { return localStorage.getItem('nw.mood'); } catch { return null; } }, set(v) { try { localStorage.setItem('nw.mood', v); } catch { /* ignore */ } } };
 let liveMood = null; // { C, w, hour, live }
 const wxText = w => { const k = w.rain || w.snow; return w.label === 'rain' || w.label === 'snow' ? (k <= .5 ? 'light ' : k >= 1 ? 'heavy ' : '') + w.label : w.label; };
+// Rain and snow are heard in the designed scenes that show them; live mode follows the real weather instead.
+const DESIGNED_WX = { boston: { snow: 1 }, seattle: { rain: .8 } };
+const soundFor = (id, live, w) => Sound.weather(live && w ? { rain: w.rain, snow: w.snow, thunder: w.label === 'thunderstorm' } : DESIGNED_WX[id] || null);
 function applyMood(live) {
-  const m = liveMood; if (!m) return; m.live = live;
+  const m = liveMood; if (!m) return; m.live = live; soundFor(STOPS[state.cityIdx]?.id, live, m.w);
   document.body.classList.toggle('live-mood', !!live);
   $('#cScene').textContent = live ? 'Live weather scene' : 'Designed scene';
   if (live && m.w) m.C.setMood({ hour: m.hour, isDay: m.w.isDay, cloud: m.w.cloud, rain: m.w.rain, snow: m.w.snow, fog: m.w.fog, temp: m.w.temp }); else m.C.resetMood?.();
@@ -190,7 +193,7 @@ async function enterCity(i, request = jumpVersion, ready = null) {
   document.body.classList.add('incity');
   $('#cStop').textContent = `Stop ${i + 1} of ${STOPS.length}`; $('#cName').textContent = s.name; $('#cMeta').innerHTML = `${s.region}<br>${s.coord}<br><span class="designed-mood">Designed scene: ${s.mood}</span>`; $('#cCredit').textContent = C.credit || ''; setDriveUI(); $('#ctitle').classList.add('show'); $('#ctitle').classList.toggle('compact', REDUCE); clearTimeout(titleTimer); titleDue = REDUCE; if (!REDUCE) titleTimer = setTimeout(compactTitle, 2400); setupLive(i, C);
   refreshNext();
-  Sound.play(C.cfg?.sound || s.id); updateChips(); fade(false); state.transit = false;
+  soundFor(s.id, false); Sound.play(C.cfg?.sound || s.id); updateChips(); fade(false); state.transit = false;
   if (state.pending !== null) { const p = state.pending; state.pending = null; setTimeout(() => { if (request === jumpVersion && state.cityIdx === i && state.spot === -1) focusSpot(p); }, REDUCE ? 0 : 1300); }
   else pilotSay(`Welcome to ${s.name}. Tap a yellow marker to explore, or ask me something.`);
   if (!pilotWelcomed && innerWidth >= 800) { pilotWelcomed = true; schedulePilot(); }
@@ -199,7 +202,7 @@ async function enterCity(i, request = jumpVersion, ready = null) {
 async function exitCity() {
   if (state.transit || state.mode !== 'city') return; const request = jumpVersion; state.transit = true; card.close(); fade(true); await wait(600); if (request !== jumpVersion) return;
   setDrive(false); state.mode = 'globe'; city.hide(); globe.view = 'travel'; document.body.classList.remove('incity', 'focus'); $('#ctitle').classList.remove('show','compact'); clearTimeout(titleTimer); liveMood?.C.resetMood?.(); liveMood = null; document.body.classList.remove('live-mood');
-  Sound.play('globe'); fade(false); state.transit = false; state.cityIdx = -1; state.custom = null; updateChips();
+  Sound.weather(null); Sound.play('globe'); fade(false); state.transit = false; state.cityIdx = -1; state.custom = null; updateChips();
 }
 /** Last stop's continue: with a company, take them to the empty lot first; then back to the globe to roam. */
 async function finish() {
@@ -248,7 +251,7 @@ async function showYours({ name, C, real, lat, lon }) {
   globe.view = 'hidden'; globe.hidePins(); city.showCustom(C, { name, spots }); document.body.classList.remove('focus'); document.body.classList.add('incity');
   $('#cStop').textContent = 'Bonus stop'; $('#cName').textContent = name; $('#cMeta').innerHTML = real ? 'Your city<br>real streets from OpenStreetMap' : 'Your city<br>a designed street (live map data was not reachable)';
   $('#cCredit').textContent = C.credit || ''; setDriveUI(); $('#ctitle').classList.add('show');
-  $('#next').textContent = 'Finish the trip'; Sound.play(C.cfg?.sound || 'blr'); updateChips(); window.__city = 'yours';
+  $('#next').textContent = 'Finish the trip'; Sound.weather(null); Sound.play(C.cfg?.sound || 'blr'); updateChips(); window.__city = 'yours';
   fade(false); state.transit = false;
   pilotSay(`Welcome to ${name}. The yellow marker is the empty lot.`);
 }
@@ -337,7 +340,15 @@ $('#passBtn').addEventListener('click', () => { renderPassport(state.stamped, st
 const pilotEl = $('#pilot'); let pilotTimer = 0, pilotManual = false, pilotWelcomed = false;
 function schedulePilot() { clearTimeout(pilotTimer); if (!pilotManual && innerWidth >= 800) pilotTimer = setTimeout(() => { const selection = window.getSelection(); if (pilotEl.contains(document.activeElement) || (selection && !selection.isCollapsed && pilotEl.contains(selection.anchorNode)) || ('speechSynthesis' in window && speechSynthesis.speaking)) schedulePilot(); else setPilotMin(true); }, 8000); }
 function pilotSay(t, match = '') { $('#pilotText').textContent = t; $('#pilotMatch').textContent = match || 'Searches the stories on this trip, right here in your browser.'; }
-$('#sugg').innerHTML = SUGGESTIONS.map(q => `<button type="button" data-q="${q}">${q}</button>`).join('');
+const qBtns = qs => qs.map(q => `<button type="button" data-q="${q}">${q}</button>`).join('');
+/** Co-pilot chips: starter questions + "More topics" -> categories -> that category's questions. */
+function showSugg(view = 'home', base = SUGGESTIONS) {
+  const cat = CATEGORIES.find(([n]) => n === view);
+  $('#sugg').innerHTML = view === 'home' ? qBtns(base) + '<button type="button" class="more" data-cat="topics">More topics</button>'
+    : cat ? qBtns(cat[1]) + '<button type="button" class="more" data-cat="topics">‹ Topics</button>'
+    : CATEGORIES.map(([n]) => `<button type="button" data-cat="${n}">${n}</button>`).join('') + '<button type="button" class="more" data-cat="home">‹ Back</button>';
+}
+showSugg();
 /* voice: push-to-talk in (SpeechRecognition), spoken answer out (speechSynthesis). Both are the browser's own; nothing is recorded here. */
 const synth = 'speechSynthesis' in window ? window.speechSynthesis : null;
 function stopSpeaking() { try { synth?.cancel(); } catch { /* ignore */ } }
@@ -357,9 +368,10 @@ async function runAsk(q, { voice = false } = {}) {
   const r = await ask(q); if (voice) speak(r.text);
   if (r.match) {
     const m = r.match, label = m.label || `${STOPS[m.ci].name} · ${STOPS[m.ci].spots[m.k].t}`;
-    pilotSay(r.text, `Matched: ${label}` + (m.score != null ? ` (score ${m.score.toFixed(2)})` : ' (remote answer)'));
+    pilotSay(r.text, r.source === 'faq' ? `Opening: ${label}` : `Matched: ${label}` + (m.score != null ? ` (score ${m.score.toFixed(2)})` : ' (remote answer)'));
     if (m.project) selectProject(m.project); else if (m.modal) { if (state.mode === 'intro') begin(); openModal(m.modal); } else jumpTo(m.ci, m.k);
-  } else pilotSay(r.text, r.best ? `Closest: ${r.best.label} (score ${r.best.score.toFixed(2)}, below the 1.60 cut-off)` : 'No words matched any story.');
+  } else if (r.source === 'faq') pilotSay(r.text);
+  else pilotSay(r.text, r.best ? `Closest: ${r.best.label} (score ${r.best.score.toFixed(2)}, below the 1.60 cut-off)` : 'No words matched any story.');
 }
 {
   const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
@@ -383,7 +395,7 @@ async function runAsk(q, { voice = false } = {}) {
   }
 }
 $('#ask').addEventListener('submit', e => { e.preventDefault(); const i = $('#askIn'); const q = i.value.trim(); if (q) { runAsk(q); i.value = ''; } });
-$('#sugg').addEventListener('click', e => { const b = e.target.closest('button'); if (b) runAsk(b.dataset.q); });
+$('#sugg').addEventListener('click', e => { const b = e.target.closest('button'); if (!b) return; if (b.dataset.cat) showSugg(b.dataset.cat); else runAsk(b.dataset.q); });
 function setPilotMin(min) { pilotEl.classList.toggle('min', min); const b = $('#pilotMin'); b.textContent = min ? '+' : '–'; b.setAttribute('aria-expanded', String(!min)); b.setAttribute('aria-label', min ? 'Expand co-pilot' : 'Minimise co-pilot'); }
 $('#pilotMin').addEventListener('click', () => { const expand = pilotEl.classList.contains('min'); if (expand) pilotManual = true; setPilotMin(!expand); });
 for (const event of ['pointerdown','keydown','focusin']) pilotEl.addEventListener(event, schedulePilot);
@@ -412,7 +424,7 @@ function stopTour() { if (!tour.on) return; tour.on = false; tour.v++; document.
 async function runTour(key) {
   const P = PERSONAS[key]; if (tour.on || trailer.active || !P) return;
   closeModals(); tour.on = true; const v = ++tour.v; document.body.classList.add('touring'); $('#tourChip').textContent = `Autopilot tour · ${P.chip} · tap to stop`; $('#tourChip').hidden = false;
-  $('#sugg').innerHTML = PERSONA_SUGGESTIONS[key].map(q => `<button type="button" data-q="${q}">${q}</button>`).join('');
+  showSugg('home', PERSONA_SUGGESTIONS[key]);
   const alive = () => tour.on && tour.v === v;
   const until = async fn => { const t0 = performance.now(); while (alive() && !fn() && performance.now() - t0 < 60000) await pause(200); return alive() && fn(); };
   try {
