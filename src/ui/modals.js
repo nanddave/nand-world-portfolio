@@ -6,7 +6,7 @@ import { VISITOR } from '../core/visitor.js';
 import { esc } from './worklog.js';
 
 const $ = s => document.querySelector(s);
-const REPO = 'https://github.com/nanddave/nand-world-portfolio';
+const REPO = ''; // set to https://github.com/nanddave/nand-world-portfolio when the repo goes public (button stays hidden until then)
 const resumeUrl = __SINGLE__ ? new URL(CONTACT.resume, CONTACT.site).href : CONTACT.resume;
 const resumeLabel = __SINGLE__ ? 'Résumé (PDF, online)' : 'Résumé (PDF)';
 let lastFocus = null;
